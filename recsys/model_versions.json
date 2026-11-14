@@ -384,5 +384,120 @@
         ]
       }
     ]
+  },
+  {
+    "public_id": "mf2c904",
+    "internal": "shopper_profile_fresh-v1",
+    "params": {
+      "base": "category_pop",
+      "context": 0.3,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "n_cart": 3,
+      "n_recent": 3,
+      "prior": 5.0,
+      "sub_boost": 1.0,
+      "top_n": 30
+    },
+    "description": "Best sellers from the categories this shopper looks at, with cart and recently viewed products first.",
+    "git_commit": "899a652+dirty",
+    "first_live_utc": "2026-11-14T22:02:06+00:00",
+    "fingerprint": "83402a77f1b107fe"
+  },
+  {
+    "public_id": "m2512b5",
+    "internal": "shopper_profile-v2",
+    "params": {
+      "base": "category_pop",
+      "context": 0.3,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "n_cart": 3,
+      "n_recent": 3,
+      "prior": 5.0,
+      "sub_boost": 1.0,
+      "top_n": 30
+    },
+    "description": "Best sellers from the categories this shopper looks at, with cart and recently viewed products first.",
+    "git_commit": "1763b1f",
+    "first_live_utc": "2026-11-14T22:09:01+00:00",
+    "fingerprint": "48fc4dd6d06bf8ec"
+  },
+  {
+    "public_id": "m14d72f",
+    "internal": "shopper_profile_fresh-v2",
+    "params": {
+      "base": "category_pop",
+      "context": 0.3,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "n_cart": 3,
+      "n_recent": 3,
+      "prior": 5.0,
+      "sub_boost": 1.0,
+      "top_n": 30
+    },
+    "description": "Best sellers from the categories this shopper looks at, with cart and recently viewed products first.",
+    "git_commit": "1763b1f+dirty",
+    "first_live_utc": "2026-11-14T22:09:01+00:00",
+    "fingerprint": "c0043f5a72f0b83f"
+  },
+  {
+    "public_id": "m4e07bd",
+    "internal": "shopper_score-v1",
+    "params": {
+      "alpha": 1.2,
+      "cart": 6.0,
+      "ctx": 1.5,
+      "live_weight": 0.5,
+      "new": 2.5,
+      "prior": 5.0,
+      "recent": 4.5,
+      "top_n": 30,
+      "w_cat": 3.0,
+      "w_sub": 1.0
+    },
+    "description": "Every product scored for this shopper: popularity x how well it fits what we know about the shopper.",
+    "git_commit": "1763b1f+dirty",
+    "first_live_utc": "2026-11-14T22:09:01+00:00",
+    "fingerprint": "0a7fca5c4b63851f"
+  },
+  {
+    "public_id": "mc8377f",
+    "internal": "shopper_discount-v1",
+    "params": {
+      "alpha": 1.2,
+      "boost": 6.0,
+      "cart": 6.0,
+      "ctx": 1.5,
+      "floor": 0.12,
+      "live_weight": 0.5,
+      "new": 2.5,
+      "prior": 5.0,
+      "recent": 4.5,
+      "rel_price": 0.6,
+      "top_n": 30,
+      "w_cat": 3.0,
+      "w_sub": 1.0
+    },
+    "description": "shopper_score with products on sale lifted the way price_discount lifts them.",
+    "git_commit": "1763b1f+dirty",
+    "first_live_utc": "2026-11-14T22:09:01+00:00",
+    "fingerprint": "e18cff27a27b251c"
   }
 ]
