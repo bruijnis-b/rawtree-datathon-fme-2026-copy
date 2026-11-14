@@ -89,7 +89,79 @@ ORDER BY f.ts
     df["click"] = df["clicked"].ne("")
     df["model_version"] = df["model_version"].replace("", pd.NA).fillna(
         df["served_by"].where(df["served_by"] != "team", "(unknown)"))
+    labels = model_labels()
+    df["model"] = df["model_version"].map(lambda v: labels.get(v, (v, ""))[0])
+    df["settings"] = df["model_version"].map(lambda v: labels.get(v, (v, ""))[1])
     return df
+
+
+MODEL_VERSIONS = Path(__file__).resolve().parent.parent / "recsys" / "model_versions.json"
+_labels_cache: tuple[float, dict[str, tuple[str, str]]] = (0.0, {})
+
+
+def model_labels() -> dict[str, tuple[str, str]]:
+    """Public model ID -> (readable name, settings), from our private recsys/model_versions.json.
+
+    Name: the policy chain plus the ID, e.g. 'discount_boost → trend_boost → category_pop (mba8242)'.
+    Settings: the outer policy's own settings, e.g. 'boost=3.0, inject=0.5'. Re-read when the file changes.
+    """
+    global _labels_cache
+    try:
+        mtime = MODEL_VERSIONS.stat().st_mtime
+    except OSError:
+        return {}
+    if mtime != _labels_cache[0]:
+        def chain(internal: str, params: dict) -> str:
+            name = internal.rsplit("-v", 1)[0]
+            inner = params.get("inner")
+            if isinstance(inner, dict):
+                return f"{name} → {chain(inner['policy'], inner)}"
+            return f"{name} → {params['base']}" if "base" in params else name
+
+        labels = {}
+        for e in json.loads(MODEL_VERSIONS.read_text(encoding="utf-8")):
+            own = ", ".join(f"{k}={v}" for k, v in e["params"].items() if k not in ("inner", "base", "policy"))
+            labels[e["public_id"]] = (f"{chain(e['internal'], e['params'])} ({e['public_id']})", own)
+        _labels_cache = (mtime, labels)
+    return _labels_cache[1]
+
+
+# Score estimate. The leaderboard scores each component as 100 x (team - baseline) / (oracle - baseline),
+# clipped to [0, 100], and does not publish the oracle. Fitting every team's published hourly scores on the
+# practice day: score = (50 x conversion + 10 x cold) / 70 (reliability added nothing, the baseline being
+# 100% on time), oracle conversion ~1.31 x the reference's in every hour, cold oracle ~10-15 (loosely
+# determined; we use 6.5 x the reference's cold conversion). Error vs the published hourly scores: ~0.1-0.6.
+ORACLE_PER_REFERENCE = 1.31
+COLD_ORACLE_PER_REFERENCE = 6.5
+
+
+def estimated_score(conv: float, cold: float, base: dict, ref: dict) -> float:
+    """Leaderboard score (0-100) for these expected conversions, against the window's baseline and reference."""
+    def part(team: float, b: float, oracle: float) -> float:
+        return min(100.0, max(0.0, 100 * (team - b) / (oracle - b))) if oracle > b else 0.0
+    return (50 * part(conv, base["conversion"], ORACLE_PER_REFERENCE * ref["conversion"])
+            + 10 * part(cold, base["cold_conversion"], COLD_ORACLE_PER_REFERENCE * ref["cold_conversion"])) / 70
+
+
+def official_by_model(t0: float, t1: float) -> pd.DataFrame:
+    """Official (expected, no-luck) numbers per model_version of ours in [t0, t1], plus the estimated score.
+
+    From the leaderboard's per-model view (any window of 15 min to 3 h). Columns: model_version,
+    off_requests, off_conversion, off_cold, score_est.
+    """
+    t1 = min(t1, time.time())
+    t0 = max(t0, t1 - 10800)
+    if t1 - t0 < 900:
+        t0 = t1 - 900
+    state = leaderboard_state(by="model", **{"from": int(t0), "to": int(t1)})
+    ours = next((t for t in state["teams"] if t["team_id"] == TEAM), None)
+    if not ours or not state.get("baseline") or not state.get("reference"):
+        return pd.DataFrame(columns=["model_version", "off_requests", "off_conversion", "off_cold", "score_est"])
+    rows = [{"model_version": v["model_version"], "off_requests": v["requests"], "off_conversion": v["conversion"],
+             "off_cold": v["cold_conversion"],
+             "score_est": estimated_score(v["conversion"], v["cold_conversion"], state["baseline"], state["reference"])}
+            for v in ours.get("versions", [])]
+    return pd.DataFrame(rows)
 
 
 def summarize(df: pd.DataFrame) -> dict[str, float]:

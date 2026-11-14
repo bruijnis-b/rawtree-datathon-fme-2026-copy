@@ -25,8 +25,10 @@ The organisers' full rules and data description: [CHALLENGE_README.md](CHALLENGE
 
 - **Live catalogue:** the whole catalogue in memory, kept current with the update stream, so checking a
   product's stock or price takes ~0.1 µs per request.
+- **Trend detection:** spots a subcategory that suddenly gets far more views than usual (on the practice
+  day: ~4x views, ~10x purchases, 45 min, every 2 h) within 1-3 minutes. See `recsys/README.md`.
 - **Policies:** one file per algorithm in `recsys/policies/`, all with the same interface, swappable with
-  `--policy`. Current: `baseline`, `category_pop`, `coview`.
+  `--policy`. Current: `baseline`, `category_pop` (best so far), `coview`, plus the `trend_boost` and `discount_boost` wrappers.
 - **Guard:** whatever a policy returns, the answer sent is exactly 10 distinct, active products, padded from
   our fallback (best sellers in the category of the last viewed product, better than the organisers'
   all-time best sellers). If a policy crashes, or a request is already 2000 ms old, the request gets that
@@ -39,11 +41,11 @@ The organisers' full rules and data description: [CHALLENGE_README.md](CHALLENGE
 Put `TEAM_ID` and `RAWTREE_API_KEY` in `.env` (see `.env.example`). Then, from the repo root:
 
 ```bash
-python -m recsys.main --policy coview --dry-run
+python -m recsys.main --policy category_pop --dry-run
 ```
 
 ```bash
-python -m recsys.main --policy coview
+python -m recsys.main --policy category_pop
 ```
 
 The first computes answers without sending them; the second answers live. **Only one process may answer

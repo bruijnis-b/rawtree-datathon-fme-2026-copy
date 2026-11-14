@@ -8,7 +8,7 @@ pluggable **policy** (algorithm). Every answer goes through a **guard** so it is
 From the repo root, with `TEAM_ID` and `RAWTREE_API_KEY` in `.env` (only needs `requests`):
 
 ```bash
-python -m recsys.main --policy coview --dry-run
+python -m recsys.main --policy category_pop --dry-run
 ```
 
 `--dry-run` computes answers against the live stream but sends nothing: use it to try a policy while
@@ -16,7 +16,7 @@ another process is serving. To answer live, **stop any other server first** (the
 the organisers count one answer per request.
 
 ```bash
-python -m recsys.main --policy coview
+python -m recsys.main --policy category_pop
 ```
 
 Logs go to the console and `logs/recsys.log`. Every 30 s, one line: answers sent, push time after the
@@ -55,6 +55,7 @@ request go unanswered or late because of the policy:
 |---|---|
 | `main.py` | Entry point: loads and syncs the catalogue, fits the policy, then loops: pull recent requests, `policy.recommend` (worker threads, with deadline), `guard.finalize`, batch insert (push thread) |
 | `catalog.py` | `LiveCatalog`: the current catalogue in memory, kept in sync with `shop.catalog_updates` |
+| `trends.py` | `TrendDetector`: which subcategories are trending right now, from `shop.events` |
 | `guard.py` | Exactly 10 distinct, active IDs; pads from the fallback; reports what it fixed |
 | `model_registry.py` | Opaque public `model_version` IDs and the private log of what they mean |
 | `features.py` | Signals computed in RawTree SQL: purchase counts, rankings, co-views |
@@ -78,13 +79,93 @@ Checked against a SQL `argMax` over all updates: identical stock and price for e
 Lookups take ~0.1 µs; a sync takes ~0.2 s and never blocks serving. Products added during the event are
 flagged `is_new` (that makes a request "cold" for scoring).
 
+### Trend detection
+
+On the practice day one subcategory at a time got ~4x the views and ~10x the purchases for exactly 45
+minutes, every 2 hours (Aquariums 09:30, Kettles 11:30, Cutting Boards 13:30, Bike Helmets 15:30 UTC).
+`TrendDetector` finds these live: every minute it compares each subcategory's views in the last 3 minutes
+with its normal share (the higher of its 60-day history share and its median over the previous 2 hours).
+A trend starts after 2 checks in a row with lift >= 2.5, z >= 8 and >= 30 views, and ends when the lift
+falls below 1.6. Thresholds are the constants at the top of `trends.py`.
+
+`main.py` runs it in a background thread, logs every trend start and end, and adds the active trends to
+the 30 s stats line. Policies read it as `self.trends.active()` (used by `trend_boost`). Replay today's
+stream through it, the same code, to check changes:
+
+```bash
+python -m recsys.trends
+```
+
+Replayed on the practice day: 4 of 4 trends found 1-3 min after they started, ended 1-2 min after their
+real end, 0 false alarms. Tuned on these 4 events only: the final round's trends may differ.
+
 ## Policies
 
 | Name | Idea |
 |---|---|
 | `baseline` | All-time best sellers, same for everyone (the organisers' baseline; the score's 0 point) |
 | `category_pop` | Best sellers in the category of the last viewed product; all-time best sellers without views |
-| `coview` | Products viewed in the same sessions as the recent views (recent views weigh more), then `category_pop` |
+| `coview` | Products viewed in the same sessions as the recent views (recent views weigh more), then `category_pop`. Live on the practice day it sold ~40% less than `category_pop` and less than the baseline: co-viewed products are mostly alternatives people look at, not what they buy |
+| `trend_boost` | Wraps another policy (`base`, default `category_pop`); while a subcategory is trending, mixes in its best sellers (below) |
+| `discount_boost` | Wraps another policy; pushes products that are on sale up, and pulls in discounted best sellers from the shopper's category (below) |
+
+### Trend boost: tunable settings
+
+`trend_boost` returns the base list unchanged when nothing is trending. During a trend it adds the trending
+subcategory's best sellers (in stock, at most `per_brand` per brand), in one of three ways (`mode`):
+
+| `mode` | What it does | Settings (default) |
+|---|---|---|
+| `slots` | Same number of trend products for everyone | `n_slots` (2), `slot` (1 = first position) |
+| `context` (default) | Depends on the shopper: last viewed the trending subcategory / no views / other | `n_related` (4), `n_home` (3), `n_other` (1), `slot` (1) |
+| `score` | Base rank r scores 1/(r+1), trend rank t adds `boost`/(t+1); sorted by total | `boost` (1.0: top trend product ties the base's first; 0 = off) |
+
+Shared settings: `base` (policy to wrap, default `category_pop`) and `per_brand` (2). Settings of other modes are
+ignored. Notes:
+
+- Trend products already in the base list are moved to the trend positions, never duplicated.
+- With several trends at once, the strongest (highest lift) comes first.
+- The defaults are guesses, not yet tested: the A/B tests are there to find better values.
+- `--set` changes `trend_boost`'s own settings, not those of the wrapped policy (e.g. `category_pop`'s `top_n`).
+
+Tune without editing code; every combination gets its own public model ID:
+
+```bash
+python -m recsys.main --policy trend_boost --set mode=score boost=0.5
+```
+
+### Discount boost: tunable settings
+
+On the practice day ~500-650 products went 11-20% below their original price for 2 hours, every 3 hours
+(10:30, 13:30, 16:30 UTC; a new set each time); while discounted they got ~20% more views and ~30-55% more
+purchases. The live catalogue keeps each product's original price (`Product.list_price`, `Product.discount`).
+
+| Setting (default) | Effect |
+|---|---|
+| `boost` (3.0) | Every product's score is multiplied by 1 + `boost` x discount: 20% off and `boost` 3 = x1.6. 0 = off |
+| `inject` (0.5) | Pulls in discounted best sellers from the category of the last viewed product (all categories without views): candidate rank t adds `inject`/(t+1) next to base rank r's 1/(r+1). 0 = only re-rank the base list |
+| `n_candidates` (10), `min_discount` (0.05) | How many discounted best sellers to consider; how much off counts as discounted |
+
+Both at 0 returns the base list unchanged. Tested on 400 recent requests during a sale: `coview` shows ~1.1
+discounted products per answer; `boost` alone barely changes that (base lists hold few discounted
+products), `inject` 0.5 raises it to ~2.0. Wrappers compose: `discount_boost:base=trend_boost`.
+
+### A/B tests
+
+`--ab` adds extra policies (arms), each optionally with its own settings after a colon. Every request is
+answered by exactly one arm, picked from its request ID (stable), and each arm sends its own public model
+ID, so the dashboard compares them per `model_version`. By default all arms get an equal share;
+`--ab-share N` gives each `--ab` arm N% and `--policy` the rest. `--set` applies to every arm.
+
+```bash
+python -m recsys.main --policy category_pop --ab trend_boost trend_boost:mode=score,boost=2
+```
+
+Each request shows one arm's list, so we only see that arm's result: the comparison is between groups of
+similar requests, not within a request. More arms means fewer requests each. At ~0.75% purchases, telling
+two arms apart takes roughly 8,500 requests each for a +50% difference and 53,000 for +20% (a night is
+~170,000 requests in total); clicks (~2.5%) need about a third of that. For `trend_boost` vs its base,
+compare only requests during trend windows: outside them both answer the same.
 
 ### Public model IDs (never leak our approach)
 

@@ -37,6 +37,9 @@ def params(policy: Policy) -> dict[str, Any]:
     for k, v in vars(policy).items():  # per-instance overrides of those settings
         if k in out and isinstance(v, _SIMPLE):
             out[k] = v
+    inner = getattr(policy, "inner", None)  # a wrapper's base policy (set in fit): its setup is part of ours
+    if isinstance(inner, Policy):
+        out["inner"] = {"policy": inner.internal_version, **params(inner)}
     return dict(sorted(out.items()))
 
 
