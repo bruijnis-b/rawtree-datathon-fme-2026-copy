@@ -46,6 +46,27 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Phase B (Sat 22:53–23:12): 8 configurations × 3 folds × 2 seeds, all 48 succeeded
+
+Table: `phase_b.md` (`python -m training.embed.aggregate embed-b`). Fold/seed noise is small (SE ≈ 0.03 over 6
+runs), much smaller than the bootstrap SE of one run (≈ 0.14), so differences of 0.1 between configurations are real.
+
+| Config | Objective (mean ± SE) | New user | New product | slate_auc | Calibration (mean/max) | Held-out ÷ clicks | Pass all |
+|---|---|---|---|---|---|---|---|
+| b_a2_45 | 3.79 ± 0.04 | 2.79 | 4.18 | 0.766 | 0.24 / 0.29 | **0.12** | 0/6 |
+| b_a2_25 | 3.64 ± 0.03 | 2.86 | 4.00 | 0.758 | 0.21 / 0.35 | 0.97 | 4/6 |
+| b_a2_43 | 3.58 ± 0.03 | **2.98** | 3.85 | 0.749 | **0.13** / 0.21 | 0.97 | 4/6 |
+| b_a2_8 | 3.48 ± 0.01 | 2.47 | 4.00 | 0.765 | 0.30 / 0.45 | 0.99 | 0/6 |
+| default (v0, phase A) | 2.81 | 2.0 | 3.36 | 0.751 | 0.61 (raw) | 2.6 | – |
+
+- **The phase A leader is out**: ID dropout 0 makes new products 8× under-ranked (0.06–0.29 of their click share).
+- `b_a2_25` (dim 64, ID dropout 0.5, history dropout 0.5, mean pooling, lr 7e-4) and `b_a2_43` (dim 32, ID dropout
+  0.5, history dropout 0.5, recency pooling, click weight 0.3, batch 4096, lr 7e-4) both rank held-out products at
+  their click share, gain about +0.8 over v0, and gain most on new users (+0.9). Their failing runs miss calibration
+  narrowly (0.21–0.35) or the held-out band once (0.48×).
+- Recalibration roughly halves the calibration error (0.61 → 0.13–0.33) but does not always reach 0.2.
+- The common factors of the good configurations: description on, ID dropout 0.5, history dropout 0.5, lr 7e-4.
+
 ### Revised plan (Sat 22:50, agreed with Jules): more volume, three issues addressed
 
 Runs take 5–7 min (history) and 1–2 min (fine-tune), so the overnight budget is ~10× the plan. Deadlines unchanged.
