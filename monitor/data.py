@@ -164,6 +164,37 @@ def official_by_model(t0: float, t1: float) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def all_teams() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Every team on the public leaderboard, scored out of 100.
+
+    Returns (board, hourly):
+    - board: one row per team over the leaderboard's current window: team, score_est (our estimate of the
+      score from its expected conversions, see estimated_score), last_hour_score and last_hour (the newest
+      official hourly score), conversion, cold_conversion, on_time, requests, is_us.
+    - hourly: the official hourly scores of every team: team, hour (UTC epoch), score.
+    """
+    state = leaderboard_state()
+    base, ref = state.get("baseline"), state.get("reference")
+    progress = state.get("progress") or {}
+    hourly = pd.DataFrame([{"team": t, "hour": h, "score": v} for t, rows in progress.items() for h, v in rows],
+                          columns=["team", "hour", "score"])
+    rows = []
+    for t in state.get("teams", []):
+        last = (progress.get(t["team_id"]) or [[None, None]])[-1]
+        rows.append({
+            "team": t["team_id"],
+            "score_est": estimated_score(t["conversion"], t["cold_conversion"], base, ref) if base and ref else None,
+            "last_hour_score": last[1], "last_hour": last[0],
+            "conversion": t["conversion"], "cold_conversion": t["cold_conversion"], "on_time": t["on_time"],
+            "requests": t["requests"], "is_us": t["team_id"] == TEAM,
+        })
+    board = pd.DataFrame(rows)
+    if not board.empty:
+        board = board.sort_values("score_est", ascending=False, na_position="last").reset_index(drop=True)
+        board.insert(0, "rank", range(1, len(board) + 1))
+    return board, hourly
+
+
 def summarize(df: pd.DataFrame) -> dict[str, float]:
     """Our own leaderboard row over a detail frame (realised outcomes, not the hidden probabilities)."""
     n = len(df)
