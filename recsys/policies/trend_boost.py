@@ -24,7 +24,7 @@ from .base import Policy, Request
 class TrendBoost(Policy):
     name = "trend_boost"
     version = "v1"
-    base = "coview"     # policy to wrap (a REGISTRY name)
+    base = "category_pop"  # policy to wrap (a REGISTRY name)
     mode = "context"    # "slots" | "context" | "score"
     slot = 1            # first position the trend products take (slots/context)
     n_slots = 2         # slots mode: how many
@@ -79,7 +79,7 @@ class TrendBoost(Policy):
         if self.mode == "score":
             score: dict[str, float] = {}
             for r, p in enumerate(items):
-                score[p] = score.get(p, 0.0) + 1 / (r + 1)
+                score.setdefault(p, 1 / (r + 1))  # first position counts (base lists may repeat a product)
             for t, p in enumerate(picks):
                 score[p] = score.get(p, 0.0) + self.boost / (t + 1)
             return sorted(score, key=lambda p: -score[p])

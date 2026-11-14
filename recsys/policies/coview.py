@@ -31,4 +31,4 @@ class Coview(Policy):
                 if self.catalog.is_active(q):
                     score[q] += self.decay ** k / (rank + 1)
         items = [q for q, _ in score.most_common(10)]
-        return items + self.fallback.recommend(req)  # the guard drops duplicates and keeps the first 10
+        return list(dict.fromkeys(items + self.fallback.recommend(req)))  # no duplicates: wrappers rank this list

@@ -45,6 +45,12 @@ class Product:
     created_at: str
     description: str
     is_new: bool = False  # added during the event (a `new_product` update): makes a request "cold"
+    list_price: float = 0.0  # original price (shop.catalog, or first price of a new product)
+
+    @property
+    def discount(self) -> float:
+        """Fraction below the original price right now: 0.2 = 20% off, 0 = full price (or above)."""
+        return max(0.0, 1 - self.price_eur / self.list_price) if self.list_price > 0 else 0.0
 
 
 class LiveCatalog:
@@ -110,7 +116,8 @@ class LiveCatalog:
                     continue
                 old = self.products.get(pid)
                 is_new = r["change"] == "new_product" or (old is not None and old.is_new)
-                self.products[pid] = _product(r, is_new=is_new)
+                list_price = old.list_price if old is not None else float(r["price_eur"])
+                self.products[pid] = _product(r, is_new=is_new, list_price=list_price)
                 self._applied[pid] = key
                 changed += 1
                 new_batches[r["ts"]][r["change"]] += 1
@@ -150,9 +157,10 @@ class LiveCatalog:
         return time.time() - self.last_sync if self.last_sync else float("inf")
 
 
-def _product(r: dict, is_new: bool = False) -> Product:
+def _product(r: dict, is_new: bool = False, list_price: float | None = None) -> Product:
+    price = float(r["price_eur"])
     return Product(
         product_id=r["product_id"], category=r["category"], subcategory=r["subcategory"], brand=r["brand"],
-        price_eur=float(r["price_eur"]), is_active=bool(r["is_active"]), created_at=r["created_at"],
-        description=r["description"], is_new=is_new,
+        price_eur=price, is_active=bool(r["is_active"]), created_at=r["created_at"],
+        description=r["description"], is_new=is_new, list_price=price if list_price is None else list_price,
     )

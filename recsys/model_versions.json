@@ -41,5 +41,143 @@
     "git_commit": "cd94de9+dirty",
     "first_live_utc": "2026-11-14T16:46:27+00:00",
     "fingerprint": "3a54be5aee958e83"
+  },
+  {
+    "public_id": "m686bac",
+    "internal": "discount_boost-v1",
+    "params": {
+      "base": "coview",
+      "boost": 3.0,
+      "inject": 0.5,
+      "min_discount": 0.05,
+      "n_candidates": 10
+    },
+    "description": "Any policy, with products that are on sale pushed up.",
+    "git_commit": "952cdc1+dirty",
+    "first_live_utc": "2026-11-14T17:14:43+00:00",
+    "fingerprint": "98a5d3890d36b9aa"
+  },
+  {
+    "public_id": "mba8242",
+    "internal": "discount_boost-v1",
+    "params": {
+      "base": "trend_boost",
+      "boost": 3.0,
+      "inject": 0.5,
+      "min_discount": 0.05,
+      "n_candidates": 10
+    },
+    "description": "Any policy, with products that are on sale pushed up.",
+    "git_commit": "952cdc1+dirty",
+    "first_live_utc": "2026-11-14T17:14:46+00:00",
+    "fingerprint": "6961fb2dc3ffcbb7",
+    "note": "Until 17:17 UTC the inner trend_boost wrapped coview; from 17:17:44 to 17:18:42 UTC it wrapped category_pop (registry did not yet include inner settings). Later runs of this setup get a new ID."
+  },
+  {
+    "public_id": "m4ea6e9",
+    "internal": "trend_boost-v1",
+    "params": {
+      "base": "category_pop",
+      "boost": 1.0,
+      "mode": "context",
+      "n_home": 3,
+      "n_other": 1,
+      "n_related": 4,
+      "n_slots": 2,
+      "per_brand": 2,
+      "slot": 1
+    },
+    "description": "Any policy, plus the best sellers of the subcategories trending right now.",
+    "git_commit": "952cdc1+dirty",
+    "first_live_utc": "2026-11-14T17:17:42+00:00",
+    "fingerprint": "f6f8a70c46985619"
+  },
+  {
+    "public_id": "m6031bd",
+    "internal": "discount_boost-v1",
+    "params": {
+      "base": "category_pop",
+      "boost": 3.0,
+      "inject": 0.5,
+      "min_discount": 0.05,
+      "n_candidates": 10
+    },
+    "description": "Any policy, with products that are on sale pushed up.",
+    "git_commit": "952cdc1+dirty",
+    "first_live_utc": "2026-11-14T17:17:43+00:00",
+    "fingerprint": "0e78c2ba7af9bef2"
+  },
+  {
+    "public_id": "mc652b9",
+    "internal": "trend_boost-v1",
+    "params": {
+      "base": "category_pop",
+      "boost": 1.0,
+      "inner": {
+        "policy": "category_pop-v1",
+        "top_n": 30
+      },
+      "mode": "context",
+      "n_home": 3,
+      "n_other": 1,
+      "n_related": 4,
+      "n_slots": 2,
+      "per_brand": 2,
+      "slot": 1
+    },
+    "description": "Any policy, plus the best sellers of the subcategories trending right now.",
+    "git_commit": "952cdc1+dirty",
+    "first_live_utc": "2026-11-14T17:18:53+00:00",
+    "fingerprint": "b5b734b16bac3c48"
+  },
+  {
+    "public_id": "m18f6fb",
+    "internal": "discount_boost-v1",
+    "params": {
+      "base": "category_pop",
+      "boost": 3.0,
+      "inject": 0.5,
+      "inner": {
+        "policy": "category_pop-v1",
+        "top_n": 30
+      },
+      "min_discount": 0.05,
+      "n_candidates": 10
+    },
+    "description": "Any policy, with products that are on sale pushed up.",
+    "git_commit": "952cdc1+dirty",
+    "first_live_utc": "2026-11-14T17:18:54+00:00",
+    "fingerprint": "183b247545a704ce"
+  },
+  {
+    "public_id": "me523d9",
+    "internal": "discount_boost-v1",
+    "params": {
+      "base": "trend_boost",
+      "boost": 3.0,
+      "inject": 0.5,
+      "inner": {
+        "policy": "trend_boost-v1",
+        "base": "category_pop",
+        "boost": 1.0,
+        "inner": {
+          "policy": "category_pop-v1",
+          "top_n": 30
+        },
+        "mode": "context",
+        "n_home": 3,
+        "n_other": 1,
+        "n_related": 4,
+        "n_slots": 2,
+        "per_brand": 2,
+        "slot": 1
+      },
+      "min_discount": 0.05,
+      "n_candidates": 10
+    },
+    "description": "Any policy, with products that are on sale pushed up.",
+    "git_commit": "952cdc1+dirty",
+    "first_live_utc": "2026-11-14T17:18:55+00:00",
+    "fingerprint": "ed1e65d104aa219a"
   }
 ]

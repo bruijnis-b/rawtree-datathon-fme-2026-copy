@@ -1,8 +1,8 @@
 """Entry point: keep the live catalogue in sync and answer every shop.requests record with one policy.
 
-    python -m recsys.main --policy coview             # live: answers every request
-    python -m recsys.main --policy coview --dry-run   # computes answers but sends nothing
-    python -m recsys.main --policy coview --ab trend_boost trend_boost:mode=score,boost=2   # 3 arms, 1/3 each
+    python -m recsys.main --policy category_pop             # live: answers every request
+    python -m recsys.main --policy category_pop --dry-run   # computes answers but sends nothing
+    python -m recsys.main --policy category_pop --ab trend_boost trend_boost:mode=score,boost=2   # 3 arms, 1/3 each
 
 Only one process may answer live at a time (the organisers count one answer per request): stop the starter
 baseline or any other server first.
@@ -113,7 +113,7 @@ def log_stats(counts: Counter[str], ages_ms: list[float], issues: Counter[str], 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--policy", default="coview", choices=sorted(REGISTRY))
+    ap.add_argument("--policy", default="category_pop", choices=sorted(REGISTRY))
     ap.add_argument("--ab", nargs="*", default=[], metavar="POLICY[:NAME=VALUE,...]",
                     help="A/B test: extra policies, each with optional own settings, "
                          "e.g. --ab trend_boost trend_boost:mode=score,boost=2")

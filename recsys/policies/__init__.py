@@ -3,8 +3,10 @@ from .base import Policy, Request
 from .baseline import Baseline
 from .category_pop import CategoryPop
 from .coview import Coview
+from .discount_boost import DiscountBoost
 from .trend_boost import TrendBoost
 
-REGISTRY: dict[str, type[Policy]] = {cls.name: cls for cls in (Baseline, CategoryPop, Coview, TrendBoost)}
+REGISTRY: dict[str, type[Policy]] = {cls.name: cls for cls in (Baseline, CategoryPop, Coview, TrendBoost,
+                                                                DiscountBoost)}
 
 __all__ = ["Policy", "Request", "REGISTRY"]
