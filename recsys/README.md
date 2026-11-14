@@ -156,6 +156,7 @@ real end, 0 false alarms. Tuned on these 4 events only: the final round's trends
 | `shopper_profile` | Cart-not-bought and recently viewed products first, then best sellers from the categories the shopper views most (below); `category_pop` for shoppers we know nothing about |
 | `trend_boost` | Wraps another policy (`base`, default `category_pop`); while a subcategory is trending, mixes in its best sellers (below) |
 | `discount_boost` | Wraps another policy; pushes products that are on sale up, and pulls in discounted best sellers from the shopper's category (below) |
+| `price_discount` | `discount_boost` with the lift fitted to the sales: no lift up to 12% off, and cheap products (within their subcategory) gain more than pricey ones (below) |
 
 ### Shopper profile: tunable settings
 
@@ -212,6 +213,13 @@ purchases. The live catalogue keeps each product's original price (`Product.list
 Both at 0 returns the base list unchanged. Tested on 400 recent requests during a sale: `coview` shows ~1.1
 discounted products per answer; `boost` alone barely changes that (base lists hold few discounted
 products), `inject` 0.5 raises it to ~2.0. Wrappers compose: `discount_boost:base=trend_boost`.
+
+`price_discount` replaces the multiplier with 1 + `boost` x max(0, discount - `floor`) x (1 - `rel_price` x q),
+q = list-price percentile in the subcategory (0 cheapest, 1 priciest); defaults `boost` 6, `floor` 0.12,
+`rel_price` 0.6, `min_discount` 0.12. Fitted on the 3 sales of 14 Nov (organic purchases on sale vs the same
+product at full price): 11-14% off 1.02x, 17-20% off 1.36x; cheapest third of a subcategory 1.33x, priciest
+1.19x. The old `boost` 3 gave x1.33-1.60 for every discount, too much for small ones. Result: 18% off is x1.36
+for the cheapest product, x1.14 for the priciest.
 
 ### A/B tests
 
