@@ -128,10 +128,10 @@ class Trainer:
     # ---------------- losses ----------------
     def carousel_loss(self, V, b, idx):
         S, m, cfg = self.S, self.model, self.cfg
-        u = self.user_batch(V, S, idx, "rv_train")
+        u = self.user_batch(V, S, idx, "rv_train", train=m.training)
         shown = S["shown"][idx]
         valid = (shown >= 0) & ~self.held_p[shown.clamp(min=0)]
-        x = (u[:, None, :] * V[shown.clamp(min=0)]).sum(-1) + b[shown.clamp(min=0)]
+        x = m.x_scale * ((u[:, None, :] * V[shown.clamp(min=0)]).sum(-1) + b[shown.clamp(min=0)])
         devi = S["device"][idx]
         k = torch.arange(10, device=self.dev)[None].expand_as(shown)
         sl = m.slot[k, devi[:, None].expand_as(shown)]
@@ -228,6 +228,52 @@ class Trainer:
         return history
 
 
+def calibrate(tr: "Trainer", epochs: int) -> None:
+    """Refit the heads with frozen towers: x -> x_scale * x, c_click, c_purchase, alpha (and the slot term if
+    learned), on the carousel loss only. Then fold x_scale into the user tower output and the product biases, so the
+    exported weights (and the numpy scorer) need no extra parameter."""
+    m = tr.model
+    heads = [m.x_scale, m.c_click, m.c_purchase, m.alpha]  # the slot term stays as trained
+    saved = {n: p.requires_grad for n, p in m.named_parameters()}
+    for p in m.parameters():
+        p.requires_grad_(False)
+    for p in heads:
+        p.requires_grad_(True)
+    with torch.no_grad():
+        V, b = tr.product_matrix(train=False)
+    opt = torch.optim.Adam(heads, lr=0.01)
+    bs = int(tr.cfg.train.batch_size)
+    last = tr.train_idx[tr.data.s["day"][tr.train_idx] >= tr.data.s["day"][tr.train_idx].max() - 13]
+    m.eval()
+    for ep in range(epochs):
+        perm = tr.rng.permutation(last)
+        for i in range(len(perm) // bs):
+            idx = tr.t(perm[i * bs:(i + 1) * bs])
+            lc, lp = tr.carousel_loss(V * 1.0, b, idx)
+            loss = lc + lp
+            opt.zero_grad(set_to_none=True)
+            loss.backward()
+            opt.step()
+            if isinstance(m.slot, torch.nn.Parameter):
+                with torch.no_grad():
+                    m.slot[0].zero_()
+    g = float(m.x_scale.item())
+    with torch.no_grad():
+        m.u2.weight.mul_(g)
+        m.u2.bias.mul_(g)
+        m.p_bias.weight.mul_(g)
+        m.p_bias.bias.mul_(g)
+        m.b_id.weight.mul_(g)
+        m.no_id.mul_(g)
+        m.x_scale.fill_(1.0)
+    for n, p in m.named_parameters():
+        p.requires_grad_(saved[n])
+    m.x_scale.requires_grad_(False)
+    log(f"calibrated heads: x_scale {g:.3f}, c_click {m.c_click.item():.3f}, alpha {m.alpha.item():.3f}, "
+        f"c_purchase {m.c_purchase.item():.3f}")
+    tr.x_scale = g
+
+
 def export_package(tr: Trainer, out: Path, cfg: DictConfig) -> dict:
     """model.npz + user_vectors.npz; returns parity and latency numbers."""
     from training.export.scorer import load as load_scorer
@@ -316,6 +362,9 @@ def main(cfg: DictConfig) -> None:
     tr = Trainer(cfg)
     ev = Evaluator(tr.data, tr.dev, tr.log_theta, max_organic=int(cfg.eval.max_organic))
     tr.fit(ev)
+    tr.x_scale = 1.0
+    if int(cfg.train.calibrate_epochs) > 0:
+        calibrate(tr, int(cfg.train.calibrate_epochs))
     m = tr.model
     m.eval()
     with torch.no_grad():
@@ -336,7 +385,7 @@ def main(cfg: DictConfig) -> None:
         "organic_recall_cold": r["metrics"]["organic_recall@10"]["cold"]["value"],
         "calibration_max_err": r.get("calibration_max_err"), "slot_max_gap": slot_gap,
         **serve, "minutes": (time.time() - t_start) / 60,
-        "alpha": float(m.alpha.item()), "c_click": float(m.c_click.item()), "c_purchase": float(m.c_purchase.item()),
+        "alpha": float(m.alpha.item()), "x_scale": tr.x_scale, "no_id": float(m.no_id.item()), "c_click": float(m.c_click.item()), "c_purchase": float(m.c_purchase.item()),
     }
     if not tr.all_data:
         # interval bounds for the eligibility rule

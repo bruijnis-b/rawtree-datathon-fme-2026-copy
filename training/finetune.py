@@ -69,7 +69,8 @@ class FineTuner:
         self.tr = tr = Trainer(bcfg)
         self.dev = tr.dev
         m = tr.model
-        m.load_state_dict(torch.load(bdir / "model.pt", map_location=tr.dev))
+        missing = m.load_state_dict(torch.load(bdir / "model.pt", map_location=tr.dev), strict=False)
+        log(f"base weights loaded; missing {missing.missing_keys}")
         self.live = lv = L.build(tr.data, live_folder(cfg), holdout=bool(cfg.ft.holdout))
         P0, P = lv.n_hist_products, len(lv.product_ids)
         # extend the ID tables to the new products

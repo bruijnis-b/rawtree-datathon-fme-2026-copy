@@ -20,6 +20,7 @@ model:
   slot: learned      # learned | fixed | off
   description: false
   price: true
+  no_id_offset: true # learned bias offset for products scored without an ID vector
 
 organic:
   mode: joint        # joint | off | staged
@@ -38,6 +39,7 @@ train:
   epochs: 20
   epoch_fraction: 1.0
   seed: 0
+  calibrate_epochs: 1  # head refit with frozen towers after training (0 = off)
 
 eval:
   every_epoch: true

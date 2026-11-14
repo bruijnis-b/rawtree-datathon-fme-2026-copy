@@ -98,11 +98,14 @@ class Model:
         h = _relu(x @ w["p1.weight"].T + w["p1.bias"])
         v = h @ w["p2.weight"].T + w["p2.bias"]
         b = (h @ w["p_bias.weight"].T + w["p_bias.bias"])[:, 0]
+        no_id = float(w["no_id"]) if "no_id" in w else 0.0
         for i, r in enumerate(rows):
             j = self.id_index.get(str(_get(r, "product_id")))
             if j is not None and self.id_has[j] > 0:
                 v[i] += w["e_id.weight"][j]
                 b[i] += w["b_id.weight"][j, 0]
+            else:
+                b[i] += no_id
         ids = [str(_get(r, "product_id")) for r in rows]
         v, b = v.astype(np.float32), b.astype(np.float32)
         if base is not None:

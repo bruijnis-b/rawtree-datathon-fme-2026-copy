@@ -41,6 +41,8 @@ class TwoTower(nn.Module):
         self.b_id = nn.Embedding(n_products, 1)
         nn.init.normal_(self.e_id.weight, std=0.01)
         nn.init.zeros_(self.b_id.weight)
+        self.no_id = nn.Parameter(torch.tensor(0.0))  # bias offset for a product scored without its ID vector
+        self.x_scale = nn.Parameter(torch.tensor(1.0), requires_grad=False)  # head recalibration; folded at export
         # user tower
         self.e_dev = nn.Embedding(n_device + 1, CTX)
         self.e_reg = nn.Embedding(n_region + 1, CTX)
@@ -78,6 +80,8 @@ class TwoTower(nn.Module):
         idx = torch.arange(cat.shape[0], device=cat.device)
         v = self.p2(h) + id_mask[:, None] * self.e_id(idx)
         b = self.p_bias(h)[:, 0] + id_mask * self.b_id(idx)[:, 0]
+        if self.cfg.model.get("no_id_offset", True):
+            b = b + (1 - id_mask) * self.no_id
         return v, b
 
     # ---------------- user tower ----------------
