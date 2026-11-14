@@ -35,6 +35,14 @@ def load_detail(t0: float, t1: float) -> pd.DataFrame:
     return data.request_detail(t0, t1)
 
 
+@st.cache_data(ttl=55, max_entries=8, show_spinner=False)
+def load_official_by_model(t0: float, t1: float) -> pd.DataFrame | None:
+    try:
+        return data.official_by_model(t0, t1)
+    except Exception:
+        return None
+
+
 @st.cache_data(ttl=55, max_entries=2, show_spinner=False)
 def load_official(bucket: int) -> dict | None:
     try:
@@ -137,8 +145,9 @@ def status_bar() -> None:
     light_green = not math.isnan(on_time_5m) and on_time_5m > STATUS_THRESHOLD
     answering = live["share"]
     down = not math.isnan(answering) and answering < ANSWERING_ALERT
-    model = (last5.loc[last5["team"], "model_version"].mode().iat[0]
-             if len(last5) and last5["team"].any() else "–")
+    recent = last5[last5["team"] & (last5["ts"] >= last5["ts"].max() - pd.Timedelta(seconds=90))] if len(last5) else last5
+    live_models = sorted(recent["model"].unique()) if len(recent) else []  # last 90 s: restarts drop out quickly
+    model = live_models[0] if len(live_models) == 1 else f"{len(live_models)} models (A/B)" if live_models else "–"
 
     if down:
         st.error(f"Only {live['answered']} of the last {live['requests']} requests got an answer from us. "
@@ -160,7 +169,8 @@ def status_bar() -> None:
         st.metric("Last answer served", age_label(hb["served_age_s"], STATUS_REFRESH_S), border=True,
                   help="From feedback, which lands about 4 s after each request.")
         st.metric("Last request in stream", age_label(hb["request_age_s"], STATUS_REFRESH_S), border=True)
-        st.metric("Model live", model, border=True)
+        st.metric("Model live", model, border=True,
+                  help="Models that answered in the last 5 min: " + ("; ".join(live_models) or "none"))
 
 
 def leaderboard_view(t0: float, t1: float, label: str, official: dict | None) -> None:
@@ -196,7 +206,8 @@ def leaderboard_view(t0: float, t1: float, label: str, official: dict | None) ->
                 st.metric("On time", fmt(ours.get("on_time"), 1, "%"), border=True)
                 st.metric("Revenue / request", f"€{fmt(ours.get('revenue_per_request'), 3)}", border=True)
             st.caption(f"Baseline {fmt(base.get('conversion'), 3, '%')} · reference "
-                       f"{fmt(ref.get('conversion'), 3, '%')} · model `{ours.get('model_version') or '–'}`")
+                       f"{fmt(ref.get('conversion'), 3, '%')} · model "
+                       f"`{data.model_labels().get(ours.get('model_version'), (ours.get('model_version') or '–',))[0]}`")
             if official is None:
                 st.warning("Leaderboard unreachable right now; showing the last recorded values.",
                            icon=":material/cloud_off:")
@@ -339,20 +350,44 @@ def performance_view(t0: float, t1: float, label: str) -> None:
                "check the ± 95% column before concluding anything.")
 
     with st.container(border=True):
-        st.markdown("**By model version** (from `model_version` in our submissions)")
-        st.dataframe(group_table(df, "model_version"), hide_index=True, column_config=GROUP_COLS,
-                     alt="Conversion per model version")
+        st.markdown("**By model** (public `model_version` IDs translated with `recsys/model_versions.json`)")
+        firsts = df.drop_duplicates("model").set_index("model")
+        t = group_table(df, "model")
+        t.insert(1, "settings", t["model"].map(firsts["settings"]))
+        official = load_official_by_model(t0, t1)
+        if official is not None and len(official):
+            t["model_version"] = t["model"].map(firsts["model_version"])
+            t = t.merge(official[["model_version", "score_est", "off_conversion", "off_cold"]], on="model_version",
+                        how="left").drop(columns="model_version")
+            t.insert(2, "score_est", t.pop("score_est"))
+        st.dataframe(t, hide_index=True, alt="Conversion and estimated score per model",
+                     column_config={**GROUP_COLS, "model": st.column_config.TextColumn("Model (public ID)"),
+                                    "settings": st.column_config.TextColumn("Settings"),
+                                    "score_est": st.column_config.NumberColumn(
+                                        "Score (est.)", format="%.1f",
+                                        help="Estimated leaderboard score (0-100) if this model answered every "
+                                             "request in the window, from the official expected conversion"),
+                                    "off_conversion": st.column_config.NumberColumn(
+                                        "Official conv", format="%.3f%%", help="Expected purchases per 100 requests, "
+                                        "from the leaderboard's per-model view (no luck)"),
+                                    "off_cold": st.column_config.NumberColumn(
+                                        "Official cold", format="%.3f%%", help="The same, on cold requests only")})
+        st.caption("Score (est.) = (50 × conversion part + 10 × cold part) / 70, each part 100 × (model − "
+                   "baseline) / (oracle − baseline) clipped to 0–100, against this window's baseline. The oracle "
+                   "is hidden: estimated as 1.31 × the reference (fit on every team's hourly scores, error ~0.2 "
+                   "points). Reliability added nothing on the practice day. Short windows and small models are "
+                   "noisy; the realised columns come from our own feedback.")
 
     c1, c2 = st.columns(2)
     with c1, st.container(border=True):
         st.markdown("**Conversion per 10 minutes**")
-        b = df.assign(bucket=naive(df["ts"]).dt.floor("10min")).groupby(["bucket", "model_version"]).agg(
+        b = df.assign(bucket=naive(df["ts"]).dt.floor("10min")).groupby(["bucket", "model"]).agg(
             requests=("rid", "size"), purchases=("bought", "sum")).reset_index()
         b["conversion"] = 100 * b["purchases"] / b["requests"]
         chart = alt.Chart(b).mark_line(point=True).encode(
             x=alt.X("bucket:T", title=None), y=alt.Y("conversion:Q", title="Purchases per 100 requests"),
-            color=alt.Color("model_version:N", title=None),
-            tooltip=["bucket:T", "model_version:N", "requests:Q", "purchases:Q",
+            color=alt.Color("model:N", title=None, legend=alt.Legend(orient="bottom", columns=1, labelLimit=400)),
+            tooltip=["bucket:T", "model:N", "requests:Q", "purchases:Q",
                      alt.Tooltip("conversion:Q", format=".3f")])
         st.altair_chart(chart, alt="Realised conversion per 10 minutes by model version")
     with c2, st.container(border=True):

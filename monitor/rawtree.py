@@ -34,9 +34,10 @@ def query(sql: str, timeout: float = 30) -> list[dict[str, Any]]:
     return r.json()["data"]
 
 
-def leaderboard_state(timeout: float = 10) -> dict[str, Any]:
-    """The public leaderboard JSON (no auth needed)."""
-    r = requests.get(LEADERBOARD_STATE_URL, timeout=timeout,
+def leaderboard_state(timeout: float = 10, **params: Any) -> dict[str, Any]:
+    """The public leaderboard JSON (no auth needed). Optional params: by='model', from/to (epoch s, any
+    window of 15 min to 3 h) — pass them as leaderboard_state(by="model", **{"from": t0, "to": t1})."""
+    r = requests.get(LEADERBOARD_STATE_URL, timeout=timeout, params=params or None,
                      headers={"User-Agent": "datathon-team-monitor/1.0"})
     r.raise_for_status()
     return r.json()
