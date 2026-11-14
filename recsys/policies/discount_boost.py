@@ -15,6 +15,7 @@ its own public model ID).
 """
 from __future__ import annotations
 
+from ..catalog import Product
 from .base import Policy, Request
 
 
@@ -59,5 +60,9 @@ class DiscountBoost(Policy):
         for pid in score:
             p = self.catalog.get(pid)
             if p is not None and p.discount >= self.min_discount:
-                score[pid] *= 1 + self.boost * p.discount
+                score[pid] *= self.lift(p)
         return sorted(score, key=lambda pid: -score[pid])
+
+    def lift(self, p: Product) -> float:
+        """Score multiplier for a discounted product."""
+        return 1 + self.boost * p.discount
