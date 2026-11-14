@@ -179,5 +179,31 @@
     "git_commit": "952cdc1+dirty",
     "first_live_utc": "2026-11-14T17:18:55+00:00",
     "fingerprint": "ed1e65d104aa219a"
+  },
+  {
+    "public_id": "m0e1378",
+    "internal": "category_pop-v2",
+    "params": {
+      "live_weight": 0.5,
+      "new_prior": true,
+      "top_n": 30
+    },
+    "description": "Best sellers in the category of the product the shopper viewed last.",
+    "git_commit": "296dc14+dirty",
+    "first_live_utc": "2026-11-14T17:47:33+00:00",
+    "fingerprint": "ad15b15a37defed4"
+  },
+  {
+    "public_id": "me68811",
+    "internal": "category_pop-v2",
+    "params": {
+      "live_weight": 0.0,
+      "new_prior": false,
+      "top_n": 30
+    },
+    "description": "Best sellers in the category of the product the shopper viewed last.",
+    "git_commit": "296dc14+dirty",
+    "first_live_utc": "2026-11-14T17:47:33+00:00",
+    "fingerprint": "e7e853352beb087f"
   }
 ]

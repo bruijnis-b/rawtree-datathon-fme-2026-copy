@@ -56,6 +56,7 @@ request go unanswered or late because of the policy:
 | `main.py` | Entry point: loads and syncs the catalogue, fits the policy, then loops: pull recent requests, `policy.recommend` (worker threads, with deadline), `guard.finalize`, batch insert (push thread) |
 | `catalog.py` | `LiveCatalog`: the current catalogue in memory, kept in sync with `shop.catalog_updates` |
 | `trends.py` | `TrendDetector`: which subcategories are trending right now, from `shop.events` |
+| `popularity.py` | `Popularity`: best-seller rankings from history plus the last hour of live purchases, with new products included |
 | `guard.py` | Exactly 10 distinct, active IDs; pads from the fallback; reports what it fixed |
 | `model_registry.py` | Opaque public `model_version` IDs and the private log of what they mean |
 | `features.py` | Signals computed in RawTree SQL: purchase counts, rankings, co-views |
@@ -78,6 +79,24 @@ Each update row is the full product after the change, so applying it means repla
 Checked against a SQL `argMax` over all updates: identical stock and price for every updated product.
 Lookups take ~0.1 µs; a sync takes ~0.2 s and never blocks serving. Products added during the event are
 flagged `is_new` (that makes a request "cold" for scoring).
+
+### Popularity (history + live, new products included)
+
+Every best-seller ranking (`category_pop`, the trend and discount candidates, our fallback) comes from one
+shared `Popularity`:
+
+    score = (1 - live_weight) x history share + live_weight x share of purchases in the last 60 min
+
+- History share: the product's share of all purchases in `shop.history_events` (60 days).
+- Live share: its share of purchases in `shop.events` over the last 60 minutes, re-counted every minute in a
+  background thread. Trends and sales show up here, and new products earn their place within minutes.
+- New products have no history. With `new_prior` they start at the average history share of the existing
+  products in their subcategory: they sell like average products from their first minute (practice day),
+  and always use an existing subcategory, category and brand.
+
+Default `live_weight` 0.5 (a setting of `category_pop`, `trend_boost` and `discount_boost`). With history only,
+none of the 200 new products of the practice day was ever recommended; with the defaults all 200 are ranked
+and ~6 reach a category's top 30. Rankings are rebuilt once per refresh (~4 ms) and cached.
 
 ### Trend detection
 
@@ -104,7 +123,7 @@ real end, 0 false alarms. Tuned on these 4 events only: the final round's trends
 | Name | Idea |
 |---|---|
 | `baseline` | All-time best sellers, same for everyone (the organisers' baseline; the score's 0 point) |
-| `category_pop` | Best sellers in the category of the last viewed product; all-time best sellers without views |
+| `category_pop` | Best sellers in the category of the last viewed product; overall best sellers without views. "Best sellers" = shared popularity (below); `live_weight` 0 + `new_prior` false = history only, as in v1 |
 | `coview` | Products viewed in the same sessions as the recent views (recent views weigh more), then `category_pop`. Live on the practice day it sold ~40% less than `category_pop` and less than the baseline: co-viewed products are mostly alternatives people look at, not what they buy |
 | `trend_boost` | Wraps another policy (`base`, default `category_pop`); while a subcategory is trending, mixes in its best sellers (below) |
 | `discount_boost` | Wraps another policy; pushes products that are on sale up, and pulls in discounted best sellers from the shopper's category (below) |
