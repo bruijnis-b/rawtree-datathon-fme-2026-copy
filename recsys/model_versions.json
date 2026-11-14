@@ -205,5 +205,27 @@
     "git_commit": "296dc14+dirty",
     "first_live_utc": "2026-11-14T17:47:33+00:00",
     "fingerprint": "e7e853352beb087f"
+  },
+  {
+    "public_id": "m75fa43",
+    "internal": "discount_boost-v1",
+    "params": {
+      "base": "category_pop",
+      "boost": 3.0,
+      "inject": 0.5,
+      "inner": {
+        "policy": "category_pop-v2",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "min_discount": 0.05,
+      "n_candidates": 10
+    },
+    "description": "Any policy, with products that are on sale pushed up.",
+    "git_commit": "77608f8",
+    "first_live_utc": "2026-11-14T17:51:15+00:00",
+    "fingerprint": "de6699c2a7ae0847"
   }
 ]
