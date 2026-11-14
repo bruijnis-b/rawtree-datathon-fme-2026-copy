@@ -46,6 +46,45 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Revised plan (Sat 22:50, agreed with Jules): more volume, three issues addressed
+
+Runs take 5–7 min (history) and 1–2 min (fine-tune), so the overnight budget is ~10× the plan. Deadlines unchanged.
+Launched 22:53: `embed-b` (8 configs × 3 folds × 2 seeds = 48), `embed-a4` (150 random runs in a refined space:
+description on, ID dropout ≥ 0.25, lr 5e-4…1.5e-3, 15–40 epochs, …), `embed-l1b` (80 live recipes on v0, with the
+new-product ID dropout axis).
+
+How each issue is handled:
+1. **Calibration.** History runs: the score is recalibrated (`a · score + c`) on half the validation week and
+   checked on the other half. Fine-tuned runs: refit after tuning on the history validation week (local test:
+   0.86 → 0.11). Calibration ≤ 0.2 is a selection requirement.
+2. **New products.** Check 3 is two-sided (0.5×–2× of the click share) on the history, and fine-tuning adds a live
+   check: the 60 held-out practice products' share of top-10 slots against their share of held-out purchases.
+   **Finding:** v0-based fine-tuning gives them 0.38 % of top-10 slots against 1.15 % of purchases: 3× under-ranked
+   on live data. Fix under test in `embed-l1b`: `ft.new_id_dropout` (0.25–1.0) drops the practice products' ID
+   vectors more often, so the content path and the no-ID bias learn the live level of products without history.
+3. **Offline metric vs live.** The model-ID mapping is in `recsys/model_versions.json` on `origin/main`. Live
+   arms ran one after another, not side by side:
+
+   | Live (UTC) | Requests | Purchases / 100 |
+   |---|---|---|
+   | Organisers' fallback = best sellers, 11:45–14:45 | ~32 k | 0.76 |
+   | category_pop v1, 15:30–15:45 and 17:15–17:45 | 1,933 | 0.98 ± 0.44 |
+   | coview v1, 15:45–17:15 | 13,097 | 0.56 ± 0.13 |
+
+   Offline order: category_pop > coview > baseline. Live: category_pop ≥ baseline > coview, but sequential windows
+   (the fallback's own rate varies 2× between quarter-hours), so this does not establish a mismatch. Instead of
+   switching metrics: (a) a config must be strong on both `ips_hit@10` and `slate_auc`; (b) **live transfer check**:
+   every phase B fold-0 model is scored without fine-tuning on the live hold-out (real simulator purchases, no
+   deployment needed). If the history ranking of configs predicts their live ranking, the offline metric is validated.
+
+### Phase L1 (Sat 22:30–22:40): 40 recipes on v0, live snapshot 1
+
+Reference (v0, no tuning): live objective 2.05 ± 0.07 (all +2.09, cold +1.85). Best recipes 2.23–2.29 (+0.2,
+≈ 3 SE); cold gains most (→ 2.15–2.18). Trade-off with forgetting: live only, 1 epoch, lr 0.3×: 2.29 live but history
+2.79 → 2.59; 80 % history batches: 2.22–2.23 live, history 2.61–2.67; live only at lr 1× for 2–4 epochs wipes out the
+history (0.3–1.3). Feedback task and recency weighting: no clear effect. Freezing history ID vectors ≈ training all.
+Learned discount weight −0.02…−0.1 (Bas measured −2.3): the discount effect stays in Bas's layer.
+
 ### Phase A (Sat 21:15–21:45): 78 runs, fold 0, 1 seed
 
 Full tables: `phase_a.md` (A1 + A2), `phase_a1.md`, `phase_a3_calibration.md`. Default: objective 2.81 ± 0.12.

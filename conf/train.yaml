@@ -58,7 +58,7 @@ hydra:
     chdir: false
 
 sweep:
-  # Phase A4 (refined random search around the phase A winners). Phase A2's space is in git history (a3b7c0e^).
+  # Phase A4 (refined random search around the phase A winners). Phase A2's space is in git history (f9085ed^).
   method: random
   run_cap: 150
   seed: 23
