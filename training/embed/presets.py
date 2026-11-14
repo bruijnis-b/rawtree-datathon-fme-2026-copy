@@ -42,6 +42,18 @@ PRESETS: dict[str, dict] = {
     "bs4096": {"train.batch_size": 4096},
 }
 
+# Phase B candidates: the top eligible configurations of phase A (full settings of the A run they come from).
+PRESETS.update({
+    'b_a2_45': {'loss.click_weight': 1.0, 'loss.propensity_clip': 0.0, 'model.description': True, 'model.dim': 32, 'model.history_dropout': 0.3, 'model.history_len': 50, 'model.id_dropout': 0.0, 'model.pooling': 'mean', 'model.slot': 'fixed', 'organic.mode': 'joint', 'organic.weight': 1.0, 'train.batch_size': 2048, 'train.lr': 0.002, 'train.weight_decay': 0.0001},  # embed-a2/45
+    'b_a2_25': {'loss.click_weight': 1.0, 'loss.propensity_clip': 0.0, 'model.description': True, 'model.dim': 64, 'model.history_dropout': 0.5, 'model.history_len': 20, 'model.id_dropout': 0.5, 'model.pooling': 'mean', 'model.slot': 'learned', 'organic.mode': 'joint', 'organic.weight': 1.0, 'train.batch_size': 2048, 'train.lr': 0.0007, 'train.weight_decay': 1e-05},  # embed-a2/25
+    'b_a2_43': {'loss.click_weight': 0.3, 'loss.propensity_clip': 0.0, 'model.description': True, 'model.dim': 32, 'model.history_dropout': 0.5, 'model.history_len': 20, 'model.id_dropout': 0.5, 'model.pooling': 'recency', 'model.slot': 'learned', 'organic.mode': 'joint', 'organic.weight': 1.0, 'train.batch_size': 4096, 'train.lr': 0.0007, 'train.weight_decay': 1e-05},  # embed-a2/43
+    'b_a2_8': {'loss.click_weight': 0.3, 'loss.propensity_clip': 0.0, 'model.description': True, 'model.dim': 128, 'model.history_dropout': 0.3, 'model.history_len': 50, 'model.id_dropout': 0.5, 'model.pooling': 'mean', 'model.slot': 'learned', 'organic.mode': 'joint', 'organic.weight': 0.3, 'train.batch_size': 1024, 'train.lr': 0.0007, 'train.weight_decay': 0.0},  # embed-a2/8
+    'b_a2_10': {'loss.click_weight': 1.0, 'loss.propensity_clip': 0.05, 'model.description': True, 'model.dim': 32, 'model.history_dropout': 0.3, 'model.history_len': 20, 'model.id_dropout': 0.25, 'model.pooling': 'attention', 'model.slot': 'fixed', 'organic.mode': 'joint', 'organic.weight': 1.0, 'train.batch_size': 1024, 'train.lr': 0.002, 'train.weight_decay': 0.0},  # embed-a2/10
+    'b_desc': PRESETS['desc'],  # embed-a1/26
+    'b_hist50': PRESETS['hist50'],  # embed-a1/11
+    'b_lr07': PRESETS['lr07'],  # embed-a1/28
+})
+
 
 def apply_preset(cfg: DictConfig) -> DictConfig:
     name = str(cfg.get("preset", "default"))

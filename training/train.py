@@ -442,6 +442,7 @@ def main(cfg: DictConfig) -> None:
     torch.save(m.state_dict(), out / "model.pt")
     lt = tr.log_theta
     slot_gap = float(np.abs(m.slot.detach().cpu().numpy() - lt)[:, 1:].max())
+    sh_top, sh_clk = r["share_top10_heldout"], r.get("share_clicks_heldout")
     summary = {
         "objective": r["objective"], "objective_se": r["objective_se"], "lift_all": r["lift_all"],
         "lift_cold": r["lift_cold"],
@@ -452,6 +453,7 @@ def main(cfg: DictConfig) -> None:
         "organic_recall_cold": r["metrics"]["organic_recall@10"]["cold"]["value"],
         "calibration_max_err": r.get("calibration_max_err"), "slot_max_gap": slot_gap,
         **serve, **recal, "minutes": (time.time() - t_start) / 60,
+        "heldout_share_top10": sh_top, "heldout_share_clicks": sh_clk,
         "alpha": float(m.alpha.item()), "x_scale": tr.x_scale, "no_id": float(m.no_id.item()), "c_click": float(m.c_click.item()), "c_purchase": float(m.c_purchase.item()),
     }
     if not tr.all_data:
@@ -467,7 +469,6 @@ def main(cfg: DictConfig) -> None:
     ivan.log_records("metrics", recs)
     ivan.log_records("calibration", r.get("calibration", []))
     ivan.log_records("slot", r.get("slot", []))
-    sh_top, sh_clk = r["share_top10_heldout"], r.get("share_clicks_heldout")
     ivan.log_records("products", [dict(group="held-out", share_top10=sh_top, share_clicks=sh_clk),
                                   dict(group="known", share_top10=1 - sh_top,
                                        share_clicks=None if sh_clk is None else 1 - sh_clk)])
@@ -475,8 +476,9 @@ def main(cfg: DictConfig) -> None:
     cal = summary["calibration_max_err"]
     checks = [
         dict(check="lift_cold > 0 (history fold)", value=f"{cold_lift:+.3f}", needed="> 0", passed=bool(cold_lift > 0)),
-        dict(check="held-out share of top-10 <= 2x share of clicks", value=f"{sh_top:.4f} vs {sh_clk or 0:.4f}",
-             needed="<= 2x", passed=bool(sh_clk is not None and sh_top <= 2 * sh_clk)),
+        dict(check="held-out share of top-10 within 0.5x-2x share of clicks",
+             value=f"{sh_top:.4f} vs {sh_clk or 0:.4f}", needed="0.5x-2x",
+             passed=bool(sh_clk is not None and 0.5 * sh_clk <= sh_top <= 2 * sh_clk)),
         dict(check="calibration within 20 % per decile", value=f"{cal:.3f}" if cal is not None else "n/a",
              needed="<= 0.20", passed=bool(cal is not None and cal <= 0.2)),
         dict(check="numpy = torch", value=f"{serve['parity_max_abs']:.2e}", needed="< 1e-4",
