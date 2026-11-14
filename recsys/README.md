@@ -93,6 +93,10 @@ shared `Popularity`:
 - New products have no history. With `new_prior` they start at the average history share of the existing
   products in their subcategory: they sell like average products from their first minute (practice day),
   and always use an existing subcategory, category and brand.
+- Stock-outs: minutes a product was out of stock in the live window count at its history rate. Stock-outs
+  last exactly 60 min and demand comes back at the same level (0.98x views, 0.99x purchases over 222
+  stock-outs, no catch-up spike), so without this a product that just returned ranked too low for up to an
+  hour (`category_pop` v3).
 
 Default `live_weight` 0.5 (a setting of `category_pop`, `trend_boost` and `discount_boost`). With history only,
 none of the 200 new products of the practice day was ever recommended; with the defaults all 200 are ranked

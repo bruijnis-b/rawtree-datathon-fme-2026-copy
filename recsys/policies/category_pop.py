@@ -3,6 +3,7 @@
 No views (home page, new shopper): the overall best sellers. "Best sellers" comes from the shared
 popularity: history blended with the last hour of live purchases (`live_weight`), with new products
 starting at their subcategory's average (`new_prior`). live_weight 0 and new_prior False = history only (v1).
+v3: out-of-stock minutes in the live window count at the product's history rate (see popularity.py).
 The category comes from the live catalogue, so it also works when the last view is a new product.
 """
 from __future__ import annotations
@@ -12,7 +13,7 @@ from .base import Policy, Request
 
 class CategoryPop(Policy):
     name = "category_pop"
-    version = "v2"
+    version = "v3"
     top_n = 30          # how many per-category candidates to keep; the guard filters inactive ones
     live_weight = 0.5   # weight of the last hour's purchases vs 60 days of history
     new_prior = True    # new products start at their subcategory's average history share

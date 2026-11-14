@@ -227,5 +227,53 @@
     "git_commit": "77608f8",
     "first_live_utc": "2026-11-14T17:51:15+00:00",
     "fingerprint": "de6699c2a7ae0847"
+  },
+  {
+    "public_id": "m1241a9",
+    "internal": "category_pop-v3",
+    "params": {
+      "live_weight": 0.5,
+      "new_prior": true,
+      "top_n": 30
+    },
+    "description": "Best sellers in the category of the product the shopper viewed last.",
+    "git_commit": "919b54c+dirty",
+    "first_live_utc": "2026-11-14T18:14:12+00:00",
+    "fingerprint": "cb870765eabbed12"
+  },
+  {
+    "public_id": "m5147ba",
+    "internal": "category_pop-v3",
+    "params": {
+      "live_weight": 0.0,
+      "new_prior": false,
+      "top_n": 30
+    },
+    "description": "Best sellers in the category of the product the shopper viewed last.",
+    "git_commit": "919b54c+dirty",
+    "first_live_utc": "2026-11-14T18:14:12+00:00",
+    "fingerprint": "2811213499e58bc1"
+  },
+  {
+    "public_id": "mebb64a",
+    "internal": "discount_boost-v1",
+    "params": {
+      "base": "category_pop",
+      "boost": 3.0,
+      "inject": 0.5,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "min_discount": 0.05,
+      "n_candidates": 10
+    },
+    "description": "Any policy, with products that are on sale pushed up.",
+    "git_commit": "919b54c+dirty",
+    "first_live_utc": "2026-11-14T18:14:12+00:00",
+    "fingerprint": "092dc4ba4582d081"
   }
 ]
