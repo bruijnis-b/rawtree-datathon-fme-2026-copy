@@ -1,0 +1,23 @@
+# Live fine-tuning of a history model (python -m training.finetune base=<experiment>). See docs/EMBED_SWEEPS_FINAL.md.
+defaults:
+  - train
+  - override sweep: l1
+  - _self_
+
+base: embed-v0       # history run whose export/model.pt is fine-tuned
+live:
+  version: 1         # rawtree_live version: 1 for phase L1, 2 for phase C
+live_data: ${ivan:rawtree_live,${live.version}}
+
+ft:
+  holdout: true      # live hold-out (20 % users, last 2 h, 60 practice products); false for the final model
+  all_history: false # history batches from all days (final model)
+  train: all         # all | new_parts | freeze_hist_ids
+  lr_mult: 0.3
+  epochs: 2
+  history_share: 0.5
+  feedback: true
+  new_id_dropout: 0.25 # ID dropout for practice-round products during fine-tuning
+  half_life_h: 0     # 0 = no recency weighting of live events
+  score_affine: null # [a, c] fixed score recalibration (bases trained on all history); null = refit on history week
+

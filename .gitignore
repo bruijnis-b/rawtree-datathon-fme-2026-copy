@@ -5,4 +5,6 @@ __pycache__/
 logs/
 /data/
 /outputs/
+/ivan_backup/
 /models/
+/.ivan/

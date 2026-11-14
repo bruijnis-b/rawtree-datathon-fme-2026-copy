@@ -1,0 +1,417 @@
+"""Fine-tune a history model on the live practice stream: python -m training.finetune base=<experiment> [overrides].
+
+`base` names a history run (`ivan run ... --name <base>`; its export is read from the share). The run evaluates on
+the live hold-out (organic_recall@10 lift over live best sellers, objective (50 all + 10 cold) / 60) and checks
+forgetting on the history validation week (ips_hit@10). `ft.epochs=0` is the reference: the base without tuning.
+"""
+from __future__ import annotations
+
+import json
+import os
+import time
+from pathlib import Path
+
+import hydra
+import numpy as np
+import torch
+from omegaconf import DictConfig, OmegaConf
+from torch.nn import functional as Fn
+
+import ivan
+from training.embed import live as L
+from training.embed.metrics import boot_lift
+from training.embed.presets import apply_preset
+from training.export import features as F
+from training.train import Trainer, git_commit, log, run_dir
+
+SHARE_NAMES = Path("/mnt/epoch/projects/rawtree/experiments/names")
+
+
+def base_dir(name: str) -> Path:
+    if os.path.isdir(name):
+        return Path(name)
+    rd = ivan.runs.dir()
+    roots = [Path(rd).parent.parent / "names"] if rd is not None else []
+    roots.append(SHARE_NAMES)
+    for root in roots:
+        for cand in (root / name / "1" / "export", root / name / "export"):
+            if (cand / "model.pt").exists():
+                return cand
+    if "/" in name:
+        exp, k = name.split("/", 1)
+        for root in roots:
+            cand = root / exp / k / "export"
+            if (cand / "model.pt").exists():
+                return cand
+    raise FileNotFoundError(f"no export with model.pt for base {name!r} under {roots}")
+
+
+def live_folder(cfg) -> Path:
+    if os.environ.get("RAWTREE_LIVE"):
+        return Path(os.environ["RAWTREE_LIVE"])
+    if os.environ.get("IVAN_JOB_ID"):
+        import ivan.data
+        return Path(ivan.data.path("rawtree_live", cfg.live.version))
+    return Path(__file__).resolve().parents[1] / "data" / "raw" / "rawtree_live"
+
+
+class FineTuner:
+    def __init__(self, cfg: DictConfig):
+        bdir = base_dir(str(cfg.base))
+        log(f"base export: {bdir}")
+        bcfg = OmegaConf.load(bdir / "config.yaml")
+        # history side: the base's own config (fold, model shape); our run's seed
+        OmegaConf.set_struct(bcfg, False)
+        bcfg.train.seed = cfg.train.seed
+        bcfg.data.all = bool(cfg.ft.all_history) or bool(bcfg.data.all)
+        self.bcfg = bcfg
+        self.cfg = cfg
+        self.tr = tr = Trainer(bcfg)
+        self.dev = tr.dev
+        m = tr.model
+        missing = m.load_state_dict(torch.load(bdir / "model.pt", map_location=tr.dev), strict=False)
+        log(f"base weights loaded; missing {missing.missing_keys}")
+        self.live = lv = L.build(tr.data, live_folder(cfg), holdout=bool(cfg.ft.holdout))
+        P0, P = lv.n_hist_products, len(lv.product_ids)
+        # extend the ID tables to the new products
+        with torch.no_grad():
+            e_id = torch.nn.Embedding(P, m.d).to(self.dev)
+            b_id = torch.nn.Embedding(P, 1).to(self.dev)
+            torch.nn.init.normal_(e_id.weight, std=0.01)
+            torch.nn.init.zeros_(b_id.weight)
+            e_id.weight[:P0] = m.e_id.weight
+            b_id.weight[:P0] = m.b_id.weight
+        m.e_id, m.b_id = e_id, b_id
+        m.disc_beta = torch.nn.Parameter(torch.tensor(0.0, device=self.dev))  # live-only discount weight
+        t = tr.t
+        self.P0, self.P = P0, P
+        self.prod = {k: t(v) for k, v in lv.prod.items()}
+        self.has_id = t((~lv.heldout_products).astype(np.float32))
+        self.held_p = t(lv.heldout_products)
+        e = lv.e
+        self.E = {k: t(v) for k, v in e.items() if k != "ts"}
+        self.h_prod, self.h_type = t(lv.h["prod"]), t(lv.h["type"])
+        self.page_org = tr.data.vocab["page"][F.ORGANIC_PAGE]
+        train = (e["ts"] < lv.t_holdout) & ~lv.heldout_users[e["user"]] & ~lv.heldout_products[e["prod"]]
+        self.org_idx = np.flatnonzero(train)
+        w = np.array(cfg.organic.type_weights, dtype=np.float64)[e["type"][self.org_idx]]
+        if cfg.ft.half_life_h > 0:
+            age_h = (lv.t_end - e["ts"][self.org_idx]) / L.HOUR_MS
+            w = w * 0.5 ** (age_h / cfg.ft.half_life_h)
+        self.org_p = w / w.sum()
+        q = np.bincount(e["prod"][self.org_idx], weights=w, minlength=P)
+        self.logq = t(np.log(np.maximum(q / q.sum(), 1e-9)).astype(np.float32))
+        f = lv.f
+        self.Fb = {k: t(v) for k, v in f.items() if k != "ts"}
+        self.fb_idx = np.flatnonzero((f["ts"] < lv.t_holdout) & ~lv.heldout_users[f["user"]])
+        # validation: held-out purchases (held-out users, or the last 2 hours)
+        vi = np.flatnonzero((e["type"] == 2) & ((e["ts"] >= lv.t_holdout) | lv.heldout_users[e["user"]]))
+        rng = np.random.default_rng(0)
+        if len(vi) > 40000:
+            vi = np.sort(rng.choice(vi, 40000, replace=False))
+        self.vidx = vi
+        nu = lv.new_user[e["user"][vi]]
+        rvv = e["rv"][vi]
+        npd = lv.new_product[e["prod"][vi]] | (lv.new_product[rvv.clip(0)] & (rvv >= 0)).any(1)
+        self.slices = {"all": np.ones(len(vi), bool), "new_user": nu, "new_product": npd, "cold": nu | npd,
+                       "warm": ~(nu | npd)}
+        self.best = np.argsort(-lv.popularity)[:10]
+        log(f"live: {len(self.org_idx)} training events, {len(self.fb_idx)} carousels, {len(vi)} validation purchases")
+
+    def product_matrix(self, train):
+        m, p = self.tr.model, self.prod
+        mask = self.has_id
+        if train:
+            # practice-round products drop their ID vector more often (ft.new_id_dropout), so the content path and
+            # the no-ID bias learn how the live simulator treats products without history
+            drop = torch.full_like(mask, float(self.bcfg.model.id_dropout))
+            drop[self.P0:] = float(self.cfg.ft.get("new_id_dropout", self.bcfg.model.id_dropout))
+            mask = mask * (torch.rand_like(mask) >= drop).float()
+        return m.products(p["cat"], p["sub"], p["brand"], p["price"], p["tokens"], mask)
+
+    def users(self, V, part, idx, page=None, train=True, no_hist=None):
+        m = self.tr.model
+        page_t = part["page"][idx] if page is None else torch.full_like(idx, page)
+        ctx = m.context(part["device"][idx], part["region"][idx], page_t, part["hour"][idx])
+        rec, rh = m.pool_recent(V, part["rv"][idx], ctx)
+        N = m.hist_len
+        if N > 0:
+            pos = part["hist_end"][idx][:, None] - 1 - torch.arange(N, device=self.dev)[None]
+            hm = (pos >= part["hist_lo"][idx][:, None]).float()
+            if no_hist is not None:
+                hm = hm * (~no_hist).float()[:, None]
+            if train and self.bcfg.model.history_dropout > 0:
+                hm = hm * (torch.rand(len(idx), device=self.dev) >= self.bcfg.model.history_dropout).float()[:, None]
+            hist, hh = m.pool_history(V, self.h_prod[pos.clamp(min=0)], self.h_type[pos.clamp(min=0)], hm)
+        else:
+            hist, hh = torch.zeros_like(rec), torch.zeros_like(rh)
+        return m.users(ctx, rec, rh, hist, hh, part["is_new"][idx])
+
+    def organic_loss(self, V, b, idx):
+        m, E = self.tr.model, self.E
+        u = self.users(V, E, idx, page=self.page_org)
+        tgt = E["prod"][idx]
+        logits = u @ V[tgt].T + b[tgt][None] + m.disc_beta * E["disc"][idx][None] - self.logq[tgt][None]
+        same = tgt[:, None] == tgt[None]
+        eye = torch.eye(len(idx), device=self.dev, dtype=torch.bool)
+        return Fn.cross_entropy(logits.masked_fill(same & ~eye, -1e9), torch.arange(len(idx), device=self.dev))
+
+    def feedback_loss(self, V, b, idx):
+        m, S = self.tr.model, self.Fb
+        u = self.users(V, S, idx)
+        shown = S["shown"][idx]
+        valid = (shown >= 0) & ~self.held_p[shown.clamp(min=0)]
+        x = (u[:, None] * V[shown.clamp(min=0)]).sum(-1) + b[shown.clamp(min=0)]
+        k = torch.arange(10, device=self.dev)[None].expand_as(shown)
+        sl = m.slot[k, S["device"][idx][:, None].expand_as(shown)]
+        click = (k == S["click_slot"][idx][:, None]) & valid
+        lc = Fn.binary_cross_entropy_with_logits(x + m.c_click + sl, click.float(), weight=valid.float(),
+                                                 reduction="sum") / valid.float().sum().clamp(min=1) * 100
+        ck = click.any(1)
+        lp = torch.zeros((), device=self.dev)
+        if ck.any():
+            cs = S["click_slot"][idx][ck]
+            xc = x[ck].gather(1, cs[:, None])[:, 0]
+            lp = Fn.binary_cross_entropy_with_logits(m.alpha * xc + m.c_purchase, S["purchased"][idx][ck].float(),
+                                                     reduction="sum") / valid.float().sum().clamp(min=1) * 100
+        return lc, lp
+
+    def param_groups(self):
+        m = self.tr.model
+        what = self.cfg.ft.train
+        P0 = self.P0
+        if what == "new_parts":
+            for p in m.parameters():
+                p.requires_grad_(False)
+            for p in (m.w_new, m.e_id.weight, m.b_id.weight, m.p_bias.weight, m.p_bias.bias, m.disc_beta, m.no_id):
+                p.requires_grad_(True)
+        if what in ("new_parts", "freeze_hist_ids"):
+            def hook(g):
+                g = g.clone()
+                g[:P0] = 0
+                return g
+            m.e_id.weight.register_hook(hook)
+            m.b_id.weight.register_hook(hook)
+        m.type_w.requires_grad_(False)
+        if not isinstance(m.slot, torch.nn.Parameter):
+            pass
+        return [p for p in m.parameters() if p.requires_grad]
+
+    def fit(self):
+        cfg, tr, m = self.cfg, self.tr, self.tr.model
+        epochs = int(cfg.ft.epochs)
+        if epochs <= 0:
+            return
+        params = self.param_groups()
+        lr = float(self.bcfg.train.lr) * float(cfg.ft.lr_mult)
+        opt = torch.optim.AdamW(params, lr=lr, weight_decay=float(self.bcfg.train.weight_decay))
+        bs = int(self.bcfg.train.batch_size)
+        steps = max(1, len(self.org_idx) // bs)
+        hist_share = float(cfg.ft.history_share)
+        for ep in range(epochs):
+            t0 = time.time()
+            org = tr.rng.choice(self.org_idx, size=steps * bs, p=self.org_p)
+            fbi = tr.rng.choice(self.fb_idx, size=steps * (bs // 4)) if len(self.fb_idx) else None
+            hperm = tr.rng.choice(tr.train_idx, size=steps * bs)
+            horg = tr.rng.choice(tr.org_idx, size=steps * bs, p=tr.org_p)
+            sums = {"loss": 0.0, "loss_organic": 0.0, "loss_click": 0.0, "loss_purchase": 0.0}
+            m.train()
+            for i in range(steps):
+                V, b = self.product_matrix(True)
+                lo = self.organic_loss(V, b, tr.t(org[i * bs:(i + 1) * bs]))
+                loss = lo
+                if cfg.ft.feedback and fbi is not None:
+                    q = bs // 4
+                    lc, lp = self.feedback_loss(V, b, tr.t(fbi[i * q:(i + 1) * q]))
+                    loss = loss + cfg.loss.click_weight * lc + lp
+                    if i % 20 == 0:
+                        sums["loss_click"] += lc.item()
+                        sums["loss_purchase"] += lp.item()
+                if hist_share > 0:
+                    Vh, bh = tr.product_matrix(train=True)
+                    hc, hp = tr.carousel_loss(Vh, bh, tr.t(hperm[i * bs:(i + 1) * bs]))
+                    ho = tr.organic_loss(Vh, bh, tr.t(horg[i * bs:(i + 1) * bs]))
+                    hl = self.bcfg.loss.click_weight * hc + hp + self.bcfg.organic.weight * ho
+                    loss = (1 - hist_share) * loss + hist_share * hl
+                opt.zero_grad(set_to_none=True)
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(params, 5.0)
+                opt.step()
+                if isinstance(m.slot, torch.nn.Parameter):
+                    with torch.no_grad():
+                        m.slot[0].zero_()
+                if i % 20 == 0:
+                    sums["loss"] += loss.item()
+                    sums["loss_organic"] += lo.item()
+            nl = len(range(0, steps, 20))
+            row = {k: v / nl for k, v in sums.items()}
+            row.update(epoch=ep + 1, train_s=time.time() - t0)
+            r = self.evaluate(B=200)
+            row.update(val_objective=r["live_objective"], val_lift_all=r["live_lift_all"],
+                       val_lift_cold=r["live_lift_cold"])
+            log(" ".join(f"{k}={v:.4f}" if isinstance(v, float) else f"{k}={v}" for k, v in row.items()))
+            ivan.log_step(row, step=ep + 1)
+
+    @torch.no_grad()
+    def evaluate(self, B=1000):
+        m = self.tr.model
+        m.eval()
+        V, b = self.product_matrix(False)
+        E = self.E
+        n = len(self.vidx)
+        if n == 0:  # no live hold-out (final model)
+            m.train()
+            nan = float("nan")
+            return {"live": {}, "live_objective": nan, "live_objective_se": nan, "live_lift_all": nan,
+                    "live_lift_cold": nan, "live_share_top10_heldout_new": nan}
+        hit = np.zeros(n, np.float32)
+        top_new = 0.0
+        for a in range(0, n, 4096):
+            idx = self.tr.t(self.vidx[a:a + 4096])
+            held = self.tr.t(self.live.heldout_users)[E["user"][idx]]
+            u = self.users(V, E, idx, page=self.page_org, train=False, no_hist=held)
+            top = m.score_from_x(u @ V.T + b).topk(10, dim=1).indices
+            top_new += self.held_p[top].float().sum().item()
+            hit[a:a + 4096] = (top == E["prod"][idx][:, None]).any(1).float().cpu().numpy()
+        base = np.isin(self.live.e["prod"][self.vidx], self.best).astype(np.float32)
+        res, draws = boot_lift(hit, base, {k: v.astype(np.float32) for k, v in self.slices.items()}, B)
+        obj = (50 * res["all"]["lift"] + 10 * res["cold"]["lift"]) / 60
+        od = (50 * draws["all"] + 10 * draws["cold"]) / 60
+        m.train()
+        return {"live": res, "live_objective": float(obj), "live_objective_se": float(np.nanstd(od)),
+                "live_lift_all": res["all"]["lift"], "live_lift_cold": res["cold"]["lift"],
+                "live_share_top10_heldout_new": top_new / max(n * 10, 1),
+                "live_share_purchases_heldout_new": float(self.live.heldout_products[self.live.e["prod"][self.vidx]].mean())}
+
+    @torch.no_grad()
+    def history_check(self):
+        from training.embed.metrics import Evaluator
+        tr = self.tr
+        ev = Evaluator(tr.data, tr.dev, tr.log_theta, max_organic=20000)
+        V, b = tr.product_matrix(train=False)
+        tr.model.eval()
+        return ev.run(tr.model, V, b, B=1000, full=True)
+
+    def export(self, out: Path):
+        from training.export.scorer import load as load_scorer
+        out.mkdir(parents=True, exist_ok=True)
+        m, lv, tr = self.tr.model, self.live, self.tr
+        m.eval()
+        w = {k: v.detach().cpu().numpy().astype(np.float32) for k, v in m.state_dict().items()}
+        w.pop("disc_beta", None)
+        w["type_w"] = m.type_w.detach().cpu().numpy()
+        d = tr.data
+        meta = {"vocab": d.vocab, "sub_mean": d.sub_mean, "global_mean": d.global_mean, "use_desc": m.use_desc,
+                "use_price": m.use_price, "pooling": m.pooling, "recency": float(m.recency), "dim": m.d,
+                "history_len": m.hist_len}
+        np.savez(out / "model.npz", **w, meta__json=np.array(json.dumps(meta)),
+                 meta__id_products=lv.product_ids.astype(str), meta__id_has=self.has_id.cpu().numpy())
+        with torch.no_grad():
+            V, _ = self.product_matrix(False)
+        N = m.hist_len
+        if N > 0:
+            hu = lv.h["user"]
+            ends = np.searchsorted(hu, np.arange(len(lv.user_ids) + 1))
+            lo, hi = ends[:-1], ends[1:]
+            uw = np.flatnonzero(hi > lo)
+            vecs = np.zeros((len(uw), m.d), np.float32)
+            for a in range(0, len(uw), 8192):
+                uu = uw[a:a + 8192]
+                pos = torch.as_tensor(hi[uu], device=self.dev)[:, None] - 1 - torch.arange(N, device=self.dev)[None]
+                hm = (pos >= torch.as_tensor(lo[uu], device=self.dev)[:, None]).float()
+                vec, _ = m.pool_history(V, self.h_prod[pos.clamp(min=0)], self.h_type[pos.clamp(min=0)], hm)
+                vecs[a:a + 8192] = vec.cpu().numpy()
+            np.savez(out / "user_vectors.npz", user_ids=lv.user_ids[uw].astype(str), vectors=vecs)
+        sc = load_scorer(out)
+        rows = [dict(product_id=pid, category=None, subcategory=None, brand=None, price=None, description=None)
+                for pid in lv.product_ids]
+        # product parity: rebuild content features through the scorer from the live catalogue arrays
+        inv = {k: {v: kk for kk, v in d.vocab[k].items()} for k in ("cat", "sub", "brand")}
+        for i, r in enumerate(rows):
+            r["category"] = inv["cat"].get(int(lv.prod["cat"][i]))
+            r["subcategory"] = inv["sub"].get(int(lv.prod["sub"][i]))
+            r["brand"] = inv["brand"].get(int(lv.prod["brand"][i]))
+        return sc, rows
+
+
+@hydra.main(version_base=None, config_path="../conf", config_name="finetune")
+def main(cfg: DictConfig) -> None:
+    cfg = apply_preset(cfg)
+    log("config:\n" + OmegaConf.to_yaml(cfg))
+    t0 = time.time()
+    ft = FineTuner(cfg)
+    ref = ft.evaluate(B=200) if int(cfg.ft.epochs) > 0 else None
+    ft.fit()
+    r = ft.evaluate(B=1000)
+    hc = ft.history_check() if not ft.bcfg.data.all else None
+    # recalibrate the delivered score after tuning: fit on half of the history validation week (check on the other
+    # half), or use fixed values (ft.score_affine) when the base saw all history
+    from training.train import recalibrate
+    fixed = cfg.ft.get("score_affine")
+    rc = OmegaConf.create({"train": {"score_affine": list(fixed) if fixed else None}})
+    if hc is not None:
+        recal = recalibrate(ft.tr.model, hc, rc)
+    elif fixed:
+        with torch.no_grad():
+            ft.tr.model.score_a.fill_(float(fixed[0]))
+            ft.tr.model.score_c.fill_(float(fixed[1]))
+        recal = {"score_a": float(fixed[0]), "score_c": float(fixed[1])}
+    else:
+        recal = {}
+    out = run_dir() / "export"
+    ft.export(out)
+    torch.save(ft.tr.model.state_dict(), out / "model.pt")
+    summary = {**recal, "live_share_purchases_heldout_new": r.get("live_share_purchases_heldout_new"),
+               "calibration_max_err": hc.get("calibration_max_err") if hc else None,
+               "live_objective": r["live_objective"], "live_objective_se": r["live_objective_se"],
+               "live_lift_all": r["live_lift_all"], "live_lift_cold": r["live_lift_cold"],
+               "live_share_top10_heldout_new": r["live_share_top10_heldout_new"],
+               "disc_beta": float(ft.tr.model.disc_beta.item()), "minutes": (time.time() - t0) / 60}
+    if ref is not None:
+        summary["live_objective_before"] = ref["live_objective"]
+    if hc is not None:
+        summary.update(objective=hc["objective"], objective_se=hc["objective_se"], lift_all=hc["lift_all"],
+                       lift_cold=hc["lift_cold"], organic_recall=hc["metrics"]["organic_recall@10"]["all"]["value"],
+                       slate_auc=hc["metrics"]["slate_auc"]["all"]["value"])
+    recs = [dict(dataset="live", slice=sl, metric="organic_recall@10", value=v["value"], baseline=v["baseline"],
+                 lift=v["lift"], lift_lo=v["lift_lo"], lift_hi=v["lift_hi"], n=v["n"]) for sl, v in r["live"].items()]
+    if hc is not None:
+        for metric, by in hc["metrics"].items():
+            for sl, v in by.items():
+                recs.append(dict(dataset="history", slice=sl, metric=metric, value=v["value"], baseline=v["baseline"],
+                                 lift=v["lift"], lift_lo=v["lift_lo"], lift_hi=v["lift_hi"], n=v["n"]))
+    ivan.log_records("metrics", recs)
+    checks = []
+    if r.get("live"):
+        st, sp = r["live_share_top10_heldout_new"], r["live_share_purchases_heldout_new"]
+        checks.append(dict(check="live: held-out new products' top-10 share within 0.5x-2x of their purchase share",
+                           value=f"{st:.4f} vs {sp:.4f}", needed="0.5x-2x", passed=bool(0.5 * sp <= st <= 2 * sp)))
+        checks.append(dict(check="live: lift_cold > 0", value=f"{r['live_lift_cold']:+.3f}", needed="> 0",
+                           passed=bool(r["live_lift_cold"] > 0)))
+        if ref is not None:
+            checks.append(dict(check="live: beats the model without fine-tuning",
+                               value=f"{r['live_objective']:.3f} vs {ref['live_objective']:.3f}", needed=">",
+                               passed=bool(r["live_objective"] > ref["live_objective"])))
+    if hc is not None:
+        cal = hc.get("calibration_max_err")
+        checks.append(dict(check="calibration within 20 % per decile (history, after recalibration)",
+                           value=f"{cal:.3f}" if cal is not None else "n/a", needed="<= 0.20",
+                           passed=bool(cal is not None and cal <= 0.2)))
+        ivan.log_records("calibration", hc.get("calibration", []))
+    ivan.log_records("checks", checks)
+    ivan.log_summary(summary)
+    (out / "metrics.json").write_text(json.dumps({"summary": summary, "metrics": recs}, indent=1))
+    (out / "config.yaml").write_text(OmegaConf.to_yaml(ft.bcfg))
+    (out / "finetune.yaml").write_text(OmegaConf.to_yaml(cfg))
+    (out / "README.txt").write_text(
+        f"Two-tower embedding model, fine-tuned on the live stream.\nexperiment: "
+        f"{os.environ.get('IVAN_EXPERIMENT', 'local')}\nrun dir: {run_dir()}\nbase: {cfg.base}\n"
+        f"live dataset version: {cfg.live.version}\ngit commit: {git_commit()}\n"
+        f"trained: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        + "\n".join(f"{k}: {v}" for k, v in summary.items())
+        + "\n\nUse: from training.export.scorer import load; model = load(<this folder>)\n")
+    log("summary: " + json.dumps(summary))
+
+
+if __name__ == "__main__":
+    main()

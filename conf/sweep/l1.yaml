@@ -1,0 +1,14 @@
+# @package sweep
+method: random
+run_cap: 80
+seed: 13
+metric: {name: live_objective, goal: maximize}
+hypothesis: "A fine-tuning recipe on the live stream beats the history-only model on the live hold-out without forgetting the history"
+parameters:
+  ft.train: {values: [all, new_parts, freeze_hist_ids]}
+  ft.lr_mult: {values: [0.1, 0.3, 1.0]}
+  ft.epochs: {values: [1, 2, 4]}
+  ft.history_share: {values: [0.0, 0.5, 0.8]}
+  ft.feedback: {values: [true, false]}
+  ft.half_life_h: {values: [0, 6]}
+  ft.new_id_dropout: {values: [0.25, 0.5, 0.75, 1.0]}
