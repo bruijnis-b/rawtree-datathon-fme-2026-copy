@@ -37,8 +37,7 @@ class TrendBoost(Policy):
     def fit(self) -> None:
         if self.mode not in ("slots", "context", "score"):
             raise ValueError(f"unknown mode {self.mode!r}: use slots, context or score")
-        from . import REGISTRY  # late import: the registry imports this module
-        self.inner = REGISTRY[self.base](self.catalog, self.trends, self._popularity, self.profiles)
+        self.inner = self.sibling(self.base)
         self.inner.fit()
         self.popularity()
 

@@ -54,6 +54,11 @@ class ShopperScore(Policy):
         """Extra factor per product, for subclasses (e.g. discounts)."""
         return 1.0
 
+    def request_factor(self, req: Request, ids: list[str]) -> np.ndarray | None:
+        """Extra factor per product for this request, in the order of `ids` (the same list object until the
+        next rebuild), for subclasses (e.g. an embedding model's scores, see embed_score). None = none."""
+        return None
+
     def _build(self) -> None:
         """Per-product arrays: base score (popularity, new, multiplier) and category / subcategory index."""
         pop = self.popularity().scores(self.live_weight)
@@ -75,6 +80,9 @@ class ShopperScore(Policy):
                 self._lock.release()
         ids, index, base, cat_of, sub_of, cats, subs = self._arrays
         score = base.copy()
+        factor = self.request_factor(req, ids)
+        if factor is not None:
+            score *= factor
         prof = self.profiles.get(req.user_id) if self.profiles is not None else None
         if prof is not None and prof.views:
             total = prof.views + self.prior
