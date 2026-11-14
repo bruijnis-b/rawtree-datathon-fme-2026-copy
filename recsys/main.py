@@ -56,9 +56,16 @@ def pick_arm(request_id: str, bounds: list[int]) -> int:
     return next(i for i, upper in enumerate(bounds) if bucket < upper)
 
 
-def arm_bounds(n_arms: int, ab_share: int | None) -> list[int]:
-    """Cumulative bucket bounds: each --ab arm gets ab_share percent (default: all arms equal), --policy the rest."""
-    shares = [100 // n_arms] * n_arms if ab_share is None else [100 - ab_share * (n_arms - 1)] + [ab_share] * (n_arms - 1)
+def arm_bounds(n_arms: int, ab_share: list[int] | None) -> list[int]:
+    """Cumulative bucket bounds. --ab-share: one percentage for every --ab arm, or one per --ab arm in order;
+    --policy gets the rest. Default: all arms equal."""
+    if not ab_share:
+        shares = [100 // n_arms] * n_arms
+    else:
+        ab = ab_share * (n_arms - 1) if len(ab_share) == 1 else ab_share
+        if len(ab) != n_arms - 1:
+            raise SystemExit(f"--ab-share needs 1 value or one per --ab arm ({n_arms - 1})")
+        shares = [100 - sum(ab)] + ab
     shares[0] += 100 - sum(shares)
     if min(shares) <= 0:
         raise SystemExit(f"--ab-share {ab_share} leaves no requests for --policy")
@@ -120,7 +127,9 @@ def main() -> None:
     ap.add_argument("--ab", nargs="*", default=[], metavar="POLICY[:NAME=VALUE,...]",
                     help="A/B test: extra policies, each with optional own settings, "
                          "e.g. --ab trend_boost trend_boost:mode=score,boost=2")
-    ap.add_argument("--ab-share", type=int, help="percent of requests per --ab policy (default: all arms equal)")
+    ap.add_argument("--ab-share", type=int, nargs="*", metavar="PERCENT",
+                    help="percent of requests per --ab policy: one value for all, or one per --ab policy "
+                         "(default: all arms equal)")
     ap.add_argument("--set", nargs="*", default=[], metavar="NAME=VALUE",
                     help="override policy settings, e.g. --set mode=score boost=2 (applies where the setting exists)")
     ap.add_argument("--dry-run", action="store_true", help="compute answers but do not insert them")

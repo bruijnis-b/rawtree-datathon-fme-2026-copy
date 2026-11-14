@@ -260,7 +260,7 @@ for the cheapest product, x1.14 for the priciest.
 `--ab` adds extra policies (arms), each optionally with its own settings after a colon. Every request is
 answered by exactly one arm, picked from its request ID (stable), and each arm sends its own public model
 ID, so the dashboard compares them per `model_version`. By default all arms get an equal share;
-`--ab-share N` gives each `--ab` arm N% and `--policy` the rest. `--set` applies to every arm.
+`--ab-share N` gives each `--ab` arm N% and `--policy` the rest; `--ab-share 30 20 20` sets one share per `--ab` arm. `--set` applies to every arm.
 
 ```bash
 python -m recsys.main --policy category_pop --ab trend_boost trend_boost:mode=score,boost=2
