@@ -3,6 +3,7 @@
     python -m recsys.main --policy category_pop             # live: answers every request
     python -m recsys.main --policy category_pop --dry-run   # computes answers but sends nothing
     python -m recsys.main --policy category_pop --ab trend_boost trend_boost:mode=score,boost=2   # 3 arms, 1/3 each
+    python -m recsys.main --arms arms.txt                   # arms from a file, re-read while running
 
 Only one process may answer live at a time (the organisers count one answer per request): stop the starter
 baseline or any other server first.
@@ -12,11 +13,13 @@ from __future__ import annotations
 import argparse
 import logging
 import statistics
+import threading
 import time
 import zlib
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
+from pathlib import Path
 from queue import SimpleQueue
 
 from . import client, guard, model_registry
@@ -71,6 +74,22 @@ def arm_bounds(n_arms: int, ab_share: list[int] | None) -> list[int]:
     if min(shares) <= 0:
         raise SystemExit(f"--ab-share {ab_share} leaves no requests for --policy")
     return [sum(shares[:i + 1]) for i in range(n_arms)]
+
+
+ARMS_POLL_S = 2  # how often the --arms file is checked for changes
+
+
+def read_arms_file(path: Path) -> list[tuple[int, str]]:
+    """Lines of `SHARE POLICY[:NAME=VALUE,...]`, e.g. `35 combined`; shares are percentages that sum to 100.
+    Empty lines and lines starting with # are skipped."""
+    arms = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip() and not line.strip().startswith("#"):
+            share, spec = line.split()
+            arms.append((int(share), spec))
+    if not arms or sum(s for s, _ in arms) != 100 or min(s for s, _ in arms) <= 0:
+        raise ValueError(f"shares must be positive and sum to 100, got {[s for s, _ in arms]}")
+    return arms
 
 
 def apply_settings(policy: Policy, settings: list[str]) -> None:
@@ -133,6 +152,9 @@ def main() -> None:
                          "(default: all arms equal)")
     ap.add_argument("--set", nargs="*", default=[], metavar="NAME=VALUE",
                     help="override policy settings, e.g. --set mode=score boost=2 (applies where the setting exists)")
+    ap.add_argument("--arms", type=Path, metavar="FILE",
+                    help="arms from a file instead of --policy/--ab: lines of 'SHARE POLICY[:NAME=VALUE,...]'. "
+                         "Re-read while running, so arms can be added, removed or re-weighted without a restart")
     ap.add_argument("--dry-run", action="store_true", help="compute answers but do not insert them")
     args = ap.parse_args()
     setup_logging()
@@ -160,20 +182,59 @@ def main() -> None:
     # last viewed product, then overall best sellers. Used to pad answers and when the policy is skipped.
     fallback = CategoryPop(catalog, trends, popularity)
     fallback.fit()
-    arms = []  # (policy, public model ID); with --ab, the request ID decides which arm answers
-    for spec in [args.policy] + args.ab:
-        name, _, own = spec.partition(":")
-        if name not in REGISTRY:
-            raise SystemExit(f"unknown policy {name!r}: choose from {sorted(REGISTRY)}")
-        policy = REGISTRY[name](catalog, trends, popularity, profiles, embeddings)
-        apply_settings(policy, args.set + [s for s in own.split(",") if s])
-        policy.fit()
-        arms.append((policy, model_registry.public_id(policy, register=not args.dry_run)))
-    bounds = arm_bounds(len(arms), args.ab_share)
-    for i, (policy, public_id) in enumerate(arms):
-        log.info("running %s %s as model_version %s, %d%% of requests%s", policy.internal_version,
-                 model_registry.params(policy), public_id, bounds[i] - (bounds[i - 1] if i else 0),
-                 " (DRY RUN, nothing is sent)" if args.dry_run else "")
+    built: dict[str, tuple[Policy, str]] = {}  # arm spec -> (policy, public model ID); kept across reloads
+
+    def build(specs: list[str], bounds: list[int]) -> tuple[list[tuple[Policy, str]], list[int]]:
+        """The arms for these specs. An arm whose spec is unchanged keeps its policy object, and so its state."""
+        arms = []
+        for spec in specs:
+            if spec not in built:
+                name, _, own = spec.partition(":")
+                if name not in REGISTRY:
+                    raise ValueError(f"unknown policy {name!r}: choose from {sorted(REGISTRY)}")
+                policy = REGISTRY[name](catalog, trends, popularity, profiles, embeddings)
+                apply_settings(policy, args.set + [s for s in own.split(",") if s])
+                policy.fit()
+                built[spec] = (policy, model_registry.public_id(policy, register=not args.dry_run))
+            arms.append(built[spec])
+        for i, (policy, public_id) in enumerate(arms):
+            log.info("running %s %s as model_version %s, %d%% of requests%s", policy.internal_version,
+                     model_registry.params(policy), public_id, bounds[i] - (bounds[i - 1] if i else 0),
+                     " (DRY RUN, nothing is sent)" if args.dry_run else "")
+        return arms, bounds
+
+    # (arms, bounds): the request ID decides which arm answers. Replaced in one step when --arms changes.
+    if args.arms:
+        file_arms = read_arms_file(args.arms)
+        shares = [s for s, _ in file_arms]
+        current = build([spec for _, spec in file_arms], [sum(shares[:i + 1]) for i in range(len(shares))])
+    else:
+        try:
+            current = build([args.policy] + args.ab, arm_bounds(1 + len(args.ab), args.ab_share))
+        except ValueError as e:
+            raise SystemExit(str(e))
+
+    def watch_arms() -> None:
+        """Re-read the --arms file when it changes. New arms are fitted here, off the serving loop; a file
+        with a mistake is reported and the running arms stay."""
+        nonlocal current
+        seen_mtime = args.arms.stat().st_mtime
+        while True:
+            time.sleep(ARMS_POLL_S)
+            try:
+                mtime = args.arms.stat().st_mtime
+                if mtime == seen_mtime:
+                    continue
+                seen_mtime = mtime
+                file_arms = read_arms_file(args.arms)
+                shares = [s for s, _ in file_arms]
+                log.info("arms file changed: switching to %s", file_arms)
+                current = build([spec for _, spec in file_arms], [sum(shares[:i + 1]) for i in range(len(shares))])
+            except Exception as e:
+                log.warning("arms file not applied, the running arms stay: %s", e)
+
+    if args.arms:
+        threading.Thread(target=watch_arms, name="arms", daemon=True).start()
 
     workers = ThreadPoolExecutor(max_workers=4, thread_name_prefix="recommend")
     pushers = ThreadPoolExecutor(max_workers=4, thread_name_prefix="push")
@@ -185,6 +246,7 @@ def main() -> None:
     last_stats = time.time()
     while True:
         loop_start = time.time()
+        arms, bounds = current  # one read per loop: a reload never changes the arms halfway through a batch
         try:
             fresh = [Request.from_row(r) for r in client.query(PULL, timeout=5) if r["request_id"] not in seen]
             # Start every recommend() in a worker thread, then wait for each only until its request's deadline.
