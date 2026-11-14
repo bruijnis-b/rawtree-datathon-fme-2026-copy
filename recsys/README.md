@@ -165,6 +165,7 @@ real end, 0 false alarms. Tuned on these 4 events only: the final round's trends
 | `shopper_profile` | Cart-not-bought and recently viewed products first, then best sellers from the categories the shopper views most (below); `category_pop` for shoppers we know nothing about |
 | `shopper_score` | Every product scored as popularity x fit with the shopper (categories viewed, cart, recent views, new product); bought-before products left out (below) |
 | `shopper_discount` | `shopper_score` x `price_discount`'s lift for products on sale (settings `boost`, `floor`, `rel_price`) |
+| `combined` | Everything in one: `shopper_discount` x `trend` (8.0) for products of a trending subcategory. The policy to run when in doubt |
 | `trend_boost` | Wraps another policy (`base`, default `category_pop`); while a subcategory is trending, mixes in its best sellers (below) |
 | `discount_boost` | Wraps another policy; pushes products that are on sale up, and pulls in discounted best sellers from the shopper's category (below) |
 | `price_discount` | `discount_boost` with the lift fitted to the sales: no lift up to 12% off, and cheap products (within their subcategory) gain more than pricey ones (below) |

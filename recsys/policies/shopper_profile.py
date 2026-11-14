@@ -18,6 +18,9 @@ Without a profile and without views it returns the base list unchanged.
 """
 from __future__ import annotations
 
+import os
+import time
+
 from ..profiles import Profiles
 from .base import Policy, Request
 
@@ -81,6 +84,10 @@ class ShopperProfileFresh(ShopperProfile):
     name = "shopper_profile_fresh"
 
     def fit(self) -> None:
-        self.profiles = Profiles(self.catalog, backfill_h=0)
+        # FRESH_SINCE_MS (epoch ms): after a restart, read events from the moment the test began, so the
+        # arm continues where it was instead of starting empty again.
+        since = os.environ.get("FRESH_SINCE_MS")
+        hours = (time.time() * 1000 - int(since)) / 3_600_000 if since else 0
+        self.profiles = Profiles(self.catalog, backfill_h=hours)
         self.profiles.start()
         super().fit()
