@@ -157,6 +157,8 @@ def build(hist: D.Data, folder: Path, holdout: bool = True) -> Live:
         valid = (prev >= 0) & (e_user[pv] == e_user) & (e_ts - e_ts[pv] <= 1_800_000)
         rec[:, F.MAX_RECENT - k] = np.where(valid, e_prod[pv], -1)
     rec[rec == e_prod[:, None]] = -1
+    if D.COMPACT:
+        rec = F.compact(rec)
     hour0 = e_ts // HOUR_MS * HOUR_MS
     e = {"user": e_user, "ts": e_ts, "prod": e_prod, "type": e_type, "device": e_dev, "region": e_reg,
          "hour": ((e_ts // HOUR_MS) % 24).astype(np.int64), "rv": rec, "disc": disc.astype(np.float32),

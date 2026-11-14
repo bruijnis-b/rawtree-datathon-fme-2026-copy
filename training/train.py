@@ -75,7 +75,7 @@ class Trainer:
         self.S = {k: t(v) for k, v in s.items() if k not in ("ts",)}
         rv = s["rv"].copy()
         rv[(rv >= 0) & held_p[rv.clip(0)]] = -1
-        self.S["rv_train"] = t(rv)
+        self.S["rv_train"] = t(F.compact(rv) if D.COMPACT else rv)
         # history source (held-out removed): on GPU
         self.h_prod = t(d.h["prod"])
         self.h_type = t(d.h["type"])
@@ -90,6 +90,7 @@ class Trainer:
         self.logq = t(np.log(np.maximum(q, 1e-9)).astype(np.float32))
         erv = e["rv"].copy()
         erv[(erv >= 0) & held_p[erv.clip(0)]] = -1
+        erv = F.compact(erv) if D.COMPACT else erv
         self.E = {k: t(e[k]) for k in ("prod", "device", "region", "hour", "hist_end", "hist_lo", "user")}
         self.E["rv"] = t(erv)
         self.page_org = d.vocab["page"][F.ORGANIC_PAGE]

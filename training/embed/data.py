@@ -25,7 +25,9 @@ DAY_MS = 86_400_000
 TRAIN_LAST_DAY = 52
 N_HELDOUT_PRODUCTS = 300
 CACHE_VERSION = 3
-KEY = 10**13  # user index * KEY + ts_ms: sortable composite key
+KEY = 10**13
+# Compact contexts (no gaps where a product was removed), as in a real request. False reproduces runs before 01:00 Sun.
+COMPACT = os.environ.get("RAWTREE_COMPACT", "1") == "1"  # user index * KEY + ts_ms: sortable composite key
 
 
 def _log(msg: str) -> None:
@@ -87,6 +89,8 @@ def load(fold: int, folder: Path | None = None) -> Data:
     # (99.98 %), which would teach the model to copy the context; a carousel click is in recent_views only 9 %.
     rv = d.e["rv"]
     rv[rv == d.e["prod"][:, None]] = -1
+    if COMPACT:
+        d.e["rv"] = F.compact(rv)
     return d
 
 

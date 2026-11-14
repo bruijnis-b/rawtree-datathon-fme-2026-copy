@@ -392,16 +392,61 @@ class FineTuner:
                 vec, _ = m.pool_history(V, self.h_prod[pos.clamp(min=0)], self.h_type[pos.clamp(min=0)], hm)
                 vecs[a:a + 8192] = vec.cpu().numpy()
             np.savez(out / "user_vectors.npz", user_ids=lv.user_ids[uw].astype(str), vectors=vecs)
+        return self.parity(out, V)
+
+    @torch.no_grad()
+    def parity(self, out: Path, V):
+        """Numpy scorer vs PyTorch on the exported package: product vectors from the raw catalogue rows (history
+        catalogue + new_product rows), and scores of 300 live requests; plus latency at batch size 1."""
+        import duckdb
+        from training.data.paths import con
+        from training.export.scorer import load as load_scorer
+        m, lv = self.tr.model, self.live
         sc = load_scorer(out)
-        rows = [dict(product_id=pid, category=None, subcategory=None, brand=None, price=None, description=None)
-                for pid in lv.product_ids]
-        # product parity: rebuild content features through the scorer from the live catalogue arrays
-        inv = {k: {v: kk for kk, v in d.vocab[k].items()} for k in ("cat", "sub", "brand")}
-        for i, r in enumerate(rows):
-            r["category"] = inv["cat"].get(int(lv.prod["cat"][i]))
-            r["subcategory"] = inv["sub"].get(int(lv.prod["sub"][i]))
-            r["brand"] = inv["brand"].get(int(lv.prod["brand"][i]))
-        return sc, rows
+        cols = "product_id, category, subcategory, brand, price_eur, description"
+        rows = con().execute(f"SELECT {cols} FROM catalog ORDER BY product_id").fetchall()
+        f = live_folder(self.cfg).as_posix()
+        rows += duckdb.connect().execute(
+            f"SELECT product_id, any_value(category), any_value(subcategory), any_value(brand), any_value(price_eur), "
+            f"any_value(description) FROM read_parquet('{f}/catalog_updates.parquet') WHERE change = 'new_product' "
+            f"GROUP BY product_id ORDER BY product_id").fetchall()
+        known = set()
+        rows = [r for r in rows if not (r[0] in known or known.add(r[0]))]
+        pm = sc.embed_products([dict(product_id=r[0], category=r[1], subcategory=r[2], brand=r[3], price=r[4],
+                                     description=r[5]) for r in rows])
+        order = np.array([pm.index[str(pid)] for pid in lv.product_ids])
+        V_np, b_np = pm.vecs[order], pm.bias[order]
+        _, b = self.product_matrix(False)
+        prod_gap = float(max(np.abs(V_np - V.cpu().numpy()).max(), np.abs(b_np - b.cpu().numpy()).max()))
+        # requests: live events, with their recent context; history from the exported user vectors
+        e, E = lv.e, self.E
+        rng = np.random.default_rng(0)
+        idx = rng.choice(len(e["ts"]), 300, replace=False)
+        inv = {k: {v: kk for kk, v in self.tr.data.vocab[k].items()} for k in ("device", "region")}
+        gap, lat = 0.0, []
+        for i in idx:
+            rq = dict(user_id=str(lv.user_ids[e["user"][i]]), is_new_user=bool(e["is_new"][i]),
+                      device=inv["device"].get(int(e["device"][i])), region=inv["region"].get(int(e["region"][i])),
+                      page="__organic__", ts_ms=int(e["ts"][i]),
+                      recent_views=[str(lv.product_ids[p]) for p in e["rv"][i] if p >= 0])
+            t0 = time.perf_counter()
+            ns = sc.score(rq, pm)
+            lat.append((time.perf_counter() - t0) * 1000)
+            j = sc.user_index.get(rq["user_id"])
+            ii = self.tr.t(np.array([i]))
+            ctx = m.context(E["device"][ii], E["region"][ii], torch.full_like(ii, self.page_org), E["hour"][ii])
+            # a request lists its recent views without gaps: compact the context the same way for torch
+            rv = [p for p in e["rv"][i] if p >= 0]
+            rv_t = torch.as_tensor([[-1] * (len(e["rv"][i]) - len(rv)) + rv], device=self.dev)
+            rec, rh = m.pool_recent(V, rv_t, ctx)
+            has = j is not None and m.hist_len > 0
+            hist = torch.as_tensor(sc.user_vecs[j] if has else np.zeros(m.d, np.float32), device=self.dev)[None]
+            u = m.users(ctx, rec, rh, hist, torch.tensor([[1.0 if has else 0.0]], device=self.dev), E["is_new"][ii])
+            ts_ = m.score_from_x(u @ V.T + b)[0].cpu().numpy()[order.argsort()]
+            gap = max(gap, float(np.abs(ts_ - ns).max()))
+        lat = np.array(lat)
+        return {"parity_max_abs": gap, "product_parity_max_abs": prod_gap,
+                "latency_p50_ms": float(np.percentile(lat, 50)), "latency_p99_ms": float(np.percentile(lat, 99))}
 
 
 @hydra.main(version_base=None, config_path="../conf", config_name="finetune")
@@ -432,11 +477,11 @@ def main(cfg: DictConfig) -> None:
     else:
         recal = {}
     out = run_dir() / "export"
-    ft.export(out)
+    serve = ft.export(out)
     torch.save(ft.tr.model.state_dict(), out / "model.pt")
     hm_summary = {f"hm_{h['mode']}_{h['length']}_{h['slice']}": h["lift"] for h in hm
                   if h["slice"] in ("all", "cold", "new_user")}
-    summary = {**recal, **hm_summary, "live_share_purchases_heldout_new": r.get("live_share_purchases_heldout_new"),
+    summary = {**recal, **serve, **hm_summary, "live_share_purchases_heldout_new": r.get("live_share_purchases_heldout_new"),
                "calibration_max_err": hc.get("calibration_max_err") if hc else None,
                "live_objective": r["live_objective"], "live_objective_se": r["live_objective_se"],
                "live_lift_all": r["live_lift_all"], "live_lift_cold": r["live_lift_cold"],
@@ -467,6 +512,11 @@ def main(cfg: DictConfig) -> None:
             checks.append(dict(check="live: beats the model without fine-tuning",
                                value=f"{r['live_objective']:.3f} vs {ref['live_objective']:.3f}", needed=">",
                                passed=bool(r["live_objective"] > ref["live_objective"])))
+    checks.append(dict(check="numpy = torch (scores and product vectors)",
+                       value=f"{max(serve['parity_max_abs'], serve['product_parity_max_abs']):.2e}", needed="< 1e-4",
+                       passed=bool(max(serve["parity_max_abs"], serve["product_parity_max_abs"]) < 1e-4)))
+    checks.append(dict(check="p99 latency, batch 1", value=f"{serve['latency_p99_ms']:.2f} ms", needed="< 20 ms",
+                       passed=bool(serve["latency_p99_ms"] < 20)))
     if hc is not None:
         cal = hc.get("calibration_max_err")
         checks.append(dict(check="calibration within 20 % per decile (history, after recalibration)",
