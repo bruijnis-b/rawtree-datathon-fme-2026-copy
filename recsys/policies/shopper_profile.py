@@ -11,7 +11,8 @@ of the time, while products from that category sell ~5x better (see profiles.py)
 
    `prior` keeps a shopper with 1-2 views from counting as certain; `context` 0.3 puts the last view's
    category on a par with a category holding 30% of the views (what the practice data showed).
-3. The base policy's list, as filler. Products bought that day are left out everywhere (0.03% when shown).
+3. The base policy's list, as filler. Products the shopper bought before (history or today) are left out
+   everywhere (0.008% when shown).
 
 Without a profile and without views it returns the base list unchanged.
 """
@@ -22,7 +23,7 @@ from .base import Policy, Request
 
 class ShopperProfile(Policy):
     name = "shopper_profile"
-    version = "v1"
+    version = "v2"  # v2: profiles include the 60-day history (cart, purchases, views)
     base = "category_pop"  # filler, and the answer for shoppers we know nothing about
     context = 0.3          # weight of the last view's category, next to the view shares (which sum to <= 1)
     prior = 5.0            # views added to the denominator of every share
