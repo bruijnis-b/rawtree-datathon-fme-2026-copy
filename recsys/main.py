@@ -21,6 +21,7 @@ from queue import SimpleQueue
 
 from . import client, guard, model_registry
 from .catalog import LiveCatalog
+from .embeddings import Embeddings
 from .popularity import Popularity
 from .profiles import Profiles
 from .trends import TrendDetector
@@ -145,6 +146,7 @@ def main() -> None:
     popularity.start()  # background thread: re-counts live purchases every minute
     profiles = Profiles(catalog)
     profiles.start()  # background thread: shopper profiles from shop.events (backfill, then every 2 s)
+    embeddings = Embeddings(catalog, profiles)  # embedding models, loaded when a policy asks for one
     # Our fallback, better than the organisers' (all-time best sellers): best sellers in the category of the
     # last viewed product, then overall best sellers. Used to pad answers and when the policy is skipped.
     fallback = CategoryPop(catalog, trends, popularity)
@@ -154,7 +156,7 @@ def main() -> None:
         name, _, own = spec.partition(":")
         if name not in REGISTRY:
             raise SystemExit(f"unknown policy {name!r}: choose from {sorted(REGISTRY)}")
-        policy = REGISTRY[name](catalog, trends, popularity, profiles)
+        policy = REGISTRY[name](catalog, trends, popularity, profiles, embeddings)
         apply_settings(policy, args.set + [s for s in own.split(",") if s])
         policy.fit()
         arms.append((policy, model_registry.public_id(policy, register=not args.dry_run)))

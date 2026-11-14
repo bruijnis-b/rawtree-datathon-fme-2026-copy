@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..catalog import LiveCatalog
+from ..embeddings import EmbeddingModel, Embeddings
 from ..popularity import Popularity
 from ..profiles import Profiles
 from ..trends import TrendDetector
@@ -65,11 +66,25 @@ class Policy:
     version = "v1"
 
     def __init__(self, catalog: LiveCatalog, trends: "TrendDetector | None" = None,
-                 popularity: "Popularity | None" = None, profiles: "Profiles | None" = None) -> None:
+                 popularity: "Popularity | None" = None, profiles: "Profiles | None" = None,
+                 embeddings: "Embeddings | None" = None) -> None:
         self.catalog = catalog
         self.trends = trends  # live trend detector, for policies that use it
         self._popularity = popularity  # shared live popularity (main.py); see popularity()
         self.profiles = profiles  # live shopper profiles from shop.events, for policies that use them
+        self._embeddings = embeddings  # shared embedding models (main.py); see embedding_model()
+
+    def sibling(self, name: str) -> "Policy":
+        """Another REGISTRY policy sharing this one's live services (for wrappers: their base policy)."""
+        from . import REGISTRY  # late import: the registry imports the policy modules
+        return REGISTRY[name](self.catalog, self.trends, self._popularity, self.profiles, self._embeddings)
+
+    def embedding_model(self, name: str = "") -> EmbeddingModel:
+        """A shared embedding model ('' = the default in recsys/embed_models.json), or one of our own
+        (offline, tests). See recsys/embeddings.py."""
+        if self._embeddings is None:
+            self._embeddings = Embeddings(self.catalog, self.profiles)
+        return self._embeddings.get(name)
 
     def popularity(self) -> Popularity:
         """The shared popularity, or a history-only one of our own (offline, tests)."""

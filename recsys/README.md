@@ -58,6 +58,7 @@ request go unanswered or late because of the policy:
 | `trends.py` | `TrendDetector`: which subcategories are trending right now, from `shop.events` |
 | `popularity.py` | `Popularity`: best-seller rankings from history plus the last hour of live purchases, with new products included |
 | `profiles.py` | `Profiles`: per shopper, the categories viewed, the cart and the purchases, from `shop.events` and `shop.history_events` |
+| `embeddings.py` | `Embeddings`: embedding models as a shared service, per request a purchase log-odds per product; model selection, download and publish (below) |
 | `guard.py` | Exactly 10 distinct, active IDs; pads from the fallback; reports what it fixed |
 | `model_registry.py` | Opaque public `model_version` IDs and the private log of what they mean |
 | `features.py` | Signals computed in RawTree SQL: purchase counts, rankings, co-views |
@@ -135,6 +136,45 @@ from the first minute of the final round. Checked on the practice day's live fee
   its slots on these products.
 - History cart-not-bought products: 0.44%. History view shares predict as well as the live ones.
 
+`events(user_id)` gives the shopper's last 50 events (view, add_to_cart, purchase) in time order: the last
+50 of `shop.history_events`, then the live ones. This is the sequence the embedding models were trained on.
+
+### Embedding models (embeddings.py)
+
+Jules's models score every product for a request: **the log-odds that the shopper buys it when shown in slot 1**.
+Any policy gets one with `self.embedding_model(name)` in `fit()`. That is one shared copy per process, loaded on
+first use (~1 s), with new products embedded within ~0.2 s of their `new_product` update.
+
+```python
+s = self.embedding_model(self.embed_model).scores(req)   # Scores: s.ids, s.values, s.index
+s.get(pid); s.aligned(my_ids); s.top(10)                  # one product, your own order, best in stock
+model.similar(pid, 20)                                    # nearest products by embedding
+```
+
+What the model covers: product content and identity, original price, the request context, its recent views,
+and the shopper's events. Users in the history get their history; once they have live events, the model gets
+their history tail plus the live events, exactly as in training. Do not correct for those again. What it does
+not cover: current discounts, trends, cart and bought-before. Corrections go on top, on the log-odds scale (or as
+odds multipliers: `exp(score) x factor`).
+
+**Choosing a model.** Models are folders under `models/` (gitignored). `recsys/embed_models.json` (tracked) lists
+each one with its checksums and its GitHub release, and names the `default`. Policies built on a model have an
+`embed_model` setting (`''` = default). It is resolved to the real name at startup, so each model gets its own
+public ID.
+
+```bash
+python -m recsys.embeddings list              # models, downloaded or not, * = default
+python -m recsys.embeddings fetch v0          # download from its GitHub release (needs gh, logged in)
+python -m recsys.main --policy embed_score --set embed_model=v1 --dry-run
+python -m recsys.main --policy embed_score --ab embed_score:embed_model=v1    # A/B: default vs v1
+python -m recsys.embeddings publish models/v1 --name v1 [--default]   # Jules: upload a new model
+```
+
+A model is 2 MB of weights plus ~18 MB of user vectors: too big to commit one per version, so each one is a
+release asset of this (private) repo. A name never changes content: the checksums in the manifest refuse a
+different file under the same name. A model with a new architecture adds its format in `load_backend`;
+policies do not change. A folder path also works as `embed_model` for trying a model that is not published.
+
 ### Trend detection
 
 On the practice day one subcategory at a time got ~4x the views and ~10x the purchases for exactly 45
@@ -167,6 +207,8 @@ real end, 0 false alarms. Tuned on these 4 events only: the final round's trends
 | `shopper_discount` | `shopper_score` x `price_discount`'s lift for products on sale (settings `boost`, `floor`, `rel_price`) |
 | `trend_boost` | Wraps another policy (`base`, default `category_pop`); while a subcategory is trending, mixes in its best sellers (below) |
 | `discount_boost` | Wraps another policy; pushes products that are on sale up, and pulls in discounted best sellers from the shopper's category (below) |
+| `embed` | The embedding model on its own: the ten highest scores in stock, no corrections (the reference arm) |
+| `embed_score` | `shopper_discount` with the embedding model's score as its base: `exp(score_weight x score)` x discount lift x cart, bought-before left out. Factors the model covers (`alpha`, `w_cat`, `w_sub`, `ctx`, `recent`, `new`) are off by default. `--set embed_model=NAME` picks the model |
 | `price_discount` | `discount_boost` with the lift fitted to the sales: no lift up to 12% off, and cheap products (within their subcategory) gain more than pricey ones (below) |
 
 ### Shopper profile: tunable settings
@@ -290,4 +332,6 @@ string to a table others might read.
 3. Try it with `--dry-run`, then serve it.
 
 `req` is a `Request`: `request_id`, `ts_ms`, `user_id`, `is_new_user`, `device`, `region`, `page`, and
-`recent_views` (product IDs, oldest first). `self.catalog` gives the live product state.
+`recent_views` (product IDs, oldest first). `self.catalog` gives the live product state, `self.profiles` the
+shopper profiles, `self.popularity()` the best sellers, `self.embedding_model()` an embedding model. A wrapper
+builds its base policy with `self.sibling(name)`, which shares all of these.
