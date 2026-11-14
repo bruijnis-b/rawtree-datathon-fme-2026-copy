@@ -252,7 +252,8 @@
     "description": "Best sellers in the category of the product the shopper viewed last.",
     "git_commit": "919b54c+dirty",
     "first_live_utc": "2026-11-14T18:14:12+00:00",
-    "fingerprint": "2811213499e58bc1"
+    "fingerprint": "2811213499e58bc1",
+    "note": "History-only control arm. Stopped 18:44 UTC: scored below m1241a9 (live popularity) in every window (official conv 0.68 vs 0.97 at 18:14-18:30, 0.75 vs 0.77 at 18:30-18:45) and only took requests from the other arms."
   },
   {
     "public_id": "mebb64a",
@@ -275,5 +276,29 @@
     "git_commit": "919b54c+dirty",
     "first_live_utc": "2026-11-14T18:14:12+00:00",
     "fingerprint": "092dc4ba4582d081"
+  },
+  {
+    "public_id": "m5d991b",
+    "internal": "price_discount-v1",
+    "params": {
+      "base": "category_pop",
+      "boost": 6.0,
+      "floor": 0.12,
+      "inject": 0.5,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "min_discount": 0.12,
+      "n_candidates": 10,
+      "rel_price": 0.6
+    },
+    "description": "discount_boost with the lift shaped like today's sales: only real discounts count, and cheap products gain most.",
+    "git_commit": "f3e82a4+dirty",
+    "first_live_utc": "2026-11-14T19:04:12+00:00",
+    "fingerprint": "c2b0079fc50697c8"
   }
 ]
