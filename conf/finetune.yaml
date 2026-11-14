@@ -1,0 +1,33 @@
+# Live fine-tuning of a history model (python -m training.finetune base=<experiment>). See docs/EMBED_SWEEPS_FINAL.md.
+defaults:
+  - train
+  - _self_
+
+base: embed-v0       # history run whose export/model.pt is fine-tuned
+live:
+  version: 1         # rawtree_live version: 1 for phase L1, 2 for phase C
+live_data: ${ivan:rawtree_live,${live.version}}
+
+ft:
+  holdout: true      # live hold-out (20 % users, last 2 h, 60 practice products); false for the final model
+  all_history: false # history batches from all days (final model)
+  train: all         # all | new_parts | freeze_hist_ids
+  lr_mult: 0.3
+  epochs: 2
+  history_share: 0.5
+  feedback: true
+  half_life_h: 0     # 0 = no recency weighting of live events
+
+sweep:
+  method: random
+  run_cap: 40
+  seed: 11
+  metric: {name: live_objective, goal: maximize}
+  hypothesis: "A fine-tuning recipe on the live stream beats the history-only model on the live hold-out without forgetting the history"
+  parameters:
+    ft.train: {values: [all, new_parts, freeze_hist_ids]}
+    ft.lr_mult: {values: [0.1, 0.3, 1.0]}
+    ft.epochs: {values: [1, 2, 4]}
+    ft.history_share: {values: [0.0, 0.5, 0.8]}
+    ft.feedback: {values: [true, false]}
+    ft.half_life_h: {values: [0, 6]}
