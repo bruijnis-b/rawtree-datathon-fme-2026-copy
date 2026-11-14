@@ -4,6 +4,18 @@ Real-time recommender: for each row in `shop.requests`, insert 10 ranked, distin
 `team_NN.submissions` within 3 s of the request `ts`. Full rules: `CHALLENGE_README.md` (the organisers' README);
 our own overview: `README.md`. Scored only Sun 15 Nov 10:00–12:00 CET.
 
+## Final round: what changes (IMPORTANT, design for it)
+
+- **300 new products** are added at 10:00 (`new_product` in `shop.catalog_updates`). Each arrives with only its
+  catalogue fields: no ID history, no sales. Every model must score them from content alone.
+- **New trend(s)** start in the final round. The 60-day history has none: category shares are flat from week to week.
+  So the trends can only be picked up from the live stream (Bas's trend layer).
+- **New shoppers:** expect many users that are not in the history (in the practice stream, a third of users are not in it).
+- **Cold start is 10 of the 70 automatic points** (about 14 of 100 on the leaderboard). A request is cold when
+  `is_new_user` is set, or when its `recent_views` contain a product added during the event. With 300 new products,
+  many requests will be cold: validate every model on held-out products and on users without a history, not only on
+  the overall history score.
+
 ## Never leak our approach (IMPORTANT)
 
 - The `model_version` field of every submission must be an **opaque random ID** (e.g. `m3f9a2c`) that reveals
