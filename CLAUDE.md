@@ -18,6 +18,20 @@ our own overview: `README.md`. Scored only Sun 15 Nov 10:00–12:00 CET.
 - `monitor/`: our Streamlit monitoring dashboard. Read `monitor/README.md` before running or changing it.
 - `recsys/`: our recommender (live catalogue, policies, guard, serving loop). Read `recsys/README.md` before
   running or changing it. Only one process may answer live at a time.
+- `training/`: Jules's model code (history export, data inspection, embedding training on IVAN).
+- `conf/`, `ivan.yaml`, `pyproject.toml`: the Hydra config and uv project that IVAN runs `training/` with.
+
+## Plan & tools
+
+- **Read `docs/POA.md` first**: the general approach (product × user embeddings, live steering) and who does what
+  (Jules: the model, which returns scores; Bas: the framework, live adjustments, serving).
+- **IVAN** (Team Epoch's GPU scheduler) runs training and sweeps. CLI reference: `ivan-cli.md` in
+  `TeamEpochGithub/ivan` (Jules's laptop: `C:\Users\jules\Projects\ivan\ivan-cli.md`).
+  - From outside the office, set `IVAN_URL=http://localhost:8000`, through an SSH tunnel to an office PC (`ssh epoch`).
+  - Runs that read or write data use `--machine epochserver`, because the share lives there.
+  - `ivan data add` needs the share mounted: run it on an office PC (`ssh epoch`, epochviipc5).
+- **Historical data**: IVAN dataset `rawtree_history` (`ivan.data.path("rawtree_history")`). Locally it lives at
+  `data/raw/rawtree_history/` (gitignored), as Parquet. Inspect it with `python -m training.data.inspect`.
 
 ## Accessing RawTree
 
