@@ -308,6 +308,20 @@ ID, so the dashboard compares them per `model_version`. By default all arms get 
 python -m recsys.main --policy category_pop --ab trend_boost trend_boost:mode=score,boost=2
 ```
 
+**Changing arms without a restart:** start with `--arms FILE` instead of `--policy`/`--ab`. The file has one
+arm per line, `SHARE POLICY[:NAME=VALUE,...]`, with shares summing to 100:
+
+```
+35 combined
+35 embed_score
+30 shopper_score:alpha=1.0
+```
+
+The process re-reads it within ~2 s of a change: new arms are fitted in a background thread and then switched
+in at once; arms whose line is unchanged keep running as they are (same state, same public ID); a file with a
+mistake is logged and ignored. The catalogue, profiles and models stay loaded, so there is no gap in answers.
+A new or changed policy file still needs a restart.
+
 Each request shows one arm's list, so we only see that arm's result: the comparison is between groups of
 similar requests, not within a request. More arms means fewer requests each. At ~0.75% purchases, telling
 two arms apart takes roughly 8,500 requests each for a +50% difference and 53,000 for +20% (a night is
