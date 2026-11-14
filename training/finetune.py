@@ -255,6 +255,11 @@ class FineTuner:
         V, b = self.product_matrix(False)
         E = self.E
         n = len(self.vidx)
+        if n == 0:  # no live hold-out (final model)
+            m.train()
+            nan = float("nan")
+            return {"live": {}, "live_objective": nan, "live_objective_se": nan, "live_lift_all": nan,
+                    "live_lift_cold": nan, "live_share_top10_heldout_new": nan}
         hit = np.zeros(n, np.float32)
         top_new = 0.0
         for a in range(0, n, 4096):
