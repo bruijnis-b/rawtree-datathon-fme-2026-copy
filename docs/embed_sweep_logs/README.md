@@ -11,8 +11,9 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 | Phase A launch | 21:15 | 21:15 | `embed-a1` (33 one-axis presets), `embed-a2` (45 random), all done by 21:45; `embed-a3` (5 reruns with calibration fixes) |
 | v0 to Bas | 22:00 | 21:39 | `embed-v0` → `models/v0`; see `v0_handoff.md` |
 | Live snapshot 1 | 22:00 | 22:00:38 | `rawtree_live` v1 (up to 21:00 UTC; 2.88 M events, 99.9 k carousels) |
-| Phase L1 | 22:30 | | |
-| Phase B | 00:00 | | |
+| Phase L1 | 22:30 | 22:30 | `embed-l1` (40, v0); `embed-l1b` failed (bug); `embed-l1c` 23:27 (b_a2_43); `embed-l1d` 23:30 (grid) |
+| Phase B | 00:00 | 22:53 | `embed-b` (48), `embed-lt` live transfer (16) |
+| v1 to Bas (added) | ~01:00 | 23:31 | `embed-l1c/4` → `models/v1`; see `v1_handoff.md` |
 | Live snapshot 2 | 03:00 | | |
 | Phase C | 03:00 | | |
 | Final model to Bas | 06:30 | | |
@@ -45,6 +46,26 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 - `recsys/policies/__init__.py` registers the new `embed` policy (Bas's area: one line).
 
 ## Findings
+
+### L1c and v1 (Sat 23:27–23:31)
+
+`embed-l1c`: recipes on base `b_a2_43` (live objective before tuning 2.16). IVAN stopped the sweep after 17 of 80
+runs (runs 5–9 are missing from its list; not investigated, the 17 were enough). Best:
+
+| Recipe | Live | New user | New product | New products top-10 / purchases | History | Calibration |
+|---|---|---|---|---|---|---|
+| `l1c/4`: 2 ep, history 50 %, lr 1×, new-ID dropout 0.5, all, no feedback | **2.32** | 2.44 | 1.86 | 1.11 % / 1.15 % | 3.68 | 0.17 |
+| `l1c/3`: 2 ep, history 80 %, lr 0.3×, half-life 6 h, new-ID dropout 0.5 | 2.31 | 2.44 | 1.83 | 1.07 % | 3.76 | 0.16 |
+| `l1c/15`: 2 ep, no history, lr 0.1×, feedback, new-ID dropout 0.25 | 2.30 | 2.41 | 1.81 | 1.15 % | 3.69 | 0.20 |
+| new-ID dropout 1.0 (4 runs) | 2.17–2.19 | 2.33–2.36 | 1.45–1.49 | | | |
+
+- Fine-tuning adds +0.16 live on this base, mostly for new products (1.45 → 1.86) and new users (2.32 → 2.44), with
+  no forgetting (history 3.66 → 3.68). New-ID dropout 0.5 is best; 1.0 (content only for practice products) is worst.
+- The carousel-feedback task is not needed (best recipes have it off), so fine-tuning does not depend on what is
+  deployed.
+- **v1 = `l1c/4`, delivered to `models/v1` at 23:31** (see `v1_handoff.md`): passes every check.
+- `embed-l1d` (23:30): 48-run grid around the best recipes (new-ID dropout 0.25/0.5/0.75 × epochs 2/3 × history
+  50/80 % × lr 0.3/1 × 2 seeds) to pick the phase C recipe reliably.
 
 ### Live transfer check (Sat 23:15–23:21): history gains do not carry over to live (IMPORTANT)
 
