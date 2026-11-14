@@ -13,6 +13,7 @@ dependencies = [
     "requests>=2.32",
     "tqdm>=4.66",
     "pytz>=2026.6",
+    "torch>=2.4",
 ]
 
 [dependency-groups]

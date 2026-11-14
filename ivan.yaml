@@ -1,3 +1,10 @@
 project: rawtree
 data:
   rawtree_history: 1
+views:
+  run:
+    folder: training/views/runs
+    default: overview
+  sweep:
+    folder: training/views/sweeps
+    default: overview

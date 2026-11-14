@@ -38,8 +38,7 @@ class ShopperProfile(Policy):
     live_weight = 0.5      # best-seller ranking: weight of live purchases vs history (see popularity.py)
 
     def fit(self) -> None:
-        from . import REGISTRY  # late import: the registry imports this module
-        self.inner = REGISTRY[self.base](self.catalog, self.trends, self._popularity, self.profiles)
+        self.inner = self.sibling(self.base)
         self.inner.fit()
         self.popularity()
 

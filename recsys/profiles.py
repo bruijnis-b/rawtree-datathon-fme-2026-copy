@@ -16,12 +16,17 @@ per subcategory, cart and purchases. get() returns history and live together. Ch
 live feedback (654 purchases): products bought in the history were bought again 3 times in 39,000 showings
 (0.008%, against 0.095% for the rest), history cart-not-bought products sold 0.44%, and the history view
 shares predict as well as the live ones (60%+ of views in the category: 0.56%).
+
+Each shopper's last MAX_EVENTS events are also kept in time order (history tail, then live), for the embedding
+models: `events(user_id)` gives the sequence they were trained on (see recsys/embeddings.py). Stored as compact
+int arrays (~15 MB for 60,000 shoppers).
 """
 from __future__ import annotations
 
 import logging
 import threading
 import time
+from array import array
 from collections import Counter
 from dataclasses import dataclass, field
 
@@ -35,6 +40,8 @@ STEP_MIN = 30     # at most this many minutes of events per query (~120,000 rows
 POLL_S = 2.0      # pause between reads once caught up
 LAG_S = 3         # read up to this many seconds ago
 HISTORY_CHUNKS = 8  # history is read in this many queries (by shopper hash), to stay under the 30 s limit
+MAX_EVENTS = 50   # events kept per shopper in time order, for the embedding models (they use their last 20-50)
+EVENT_TYPES = ("view", "add_to_cart", "purchase")  # anything else is stored as "other"
 
 
 @dataclass
@@ -56,6 +63,11 @@ class Profiles:
         self.backfill_h = backfill_h  # 0 = start empty and build up from now
         self.users: dict[str, Profile] = {}    # from shop.events (live)
         self.history: dict[str, Profile] = {}  # from shop.history_events; cart times are 0 (older than live)
+        self.seq: dict[str, array] = {}           # live events per shopper, oldest first, encoded (see _code)
+        self.history_seq: dict[str, array] = {}   # last MAX_EVENTS history events per shopper, encoded
+        self.history_ready = False  # history profiles and sequences loaded
+        self._pids: list[str] = []  # product index -> product ID, for the encoded sequences
+        self._pidx: dict[str, int] = {}
         self.cursor_ms = 0   # events up to here are in the profiles (RawTree clock)
         self.offset_ms = 0   # RawTree clock minus local clock
         self._lock = threading.Lock()
@@ -78,10 +90,32 @@ class Profiles:
             out.bought |= h.bought
         return out
 
+    def _code(self, pid: str, event_type: str) -> int:
+        """One event as an int: product index x 4 + event type (0-2, 3 = other). Call under the lock or before
+        the sequences are shared."""
+        i = self._pidx.get(pid)
+        if i is None:
+            i = self._pidx[pid] = len(self._pids)
+            self._pids.append(pid)
+        return i * 4 + (EVENT_TYPES.index(event_type) if event_type in EVENT_TYPES else 3)
+
+    def has_live_events(self, user_id: str) -> bool:
+        return user_id in self.seq
+
+    def events(self, user_id: str, n: int = MAX_EVENTS) -> list[tuple[str, str]]:
+        """The shopper's last n events, oldest first, as (product_id, event_type): history, then live."""
+        types = EVENT_TYPES + ("other",)
+        with self._lock:
+            live = list(self.seq.get(user_id, ()))[-n:]
+            pids = self._pids
+            hist = list(self.history_seq.get(user_id, ()))[-(n - len(live)):] if len(live) < n else []
+            return [(pids[c >> 2], types[c & 3]) for c in hist + live]
+
     def load_history(self) -> None:
         """Per shopper from shop.history_events: views per subcategory, cart and purchases."""
         category = {p.subcategory: p.category for p in self.catalog.snapshot()}
         history: dict[str, Profile] = {}
+        seq: dict[str, array] = {}
         for k in range(HISTORY_CHUNKS):
             for r in client.query(f"""
                     SELECT e.user_id::String AS u, c.subcategory::String AS s, count() AS n
@@ -105,7 +139,19 @@ class Profiles:
                     prof.bought.add(r["p"])
                 else:
                     prof.cart[r["p"]] = 0
-        self.history = history  # swapped in at once: readers see none of it or all of it
+            rows = client.query(f"""
+                    SELECT user_id::String AS u,
+                           arraySlice(arraySort(x -> x.1, groupArray((toUnixTimestamp64Milli(ts::DateTime64(3)),
+                                      product_id::String, event_type::String))), -{MAX_EVENTS}) AS ev
+                    FROM shop.history_events
+                    WHERE cityHash64(user_id::String) % {HISTORY_CHUNKS} = {k}
+                    GROUP BY u""", timeout=30)
+            with self._lock:
+                for r in rows:
+                    seq[r["u"]] = array("i", (self._code(str(e[1]), str(e[2])) for e in r["ev"]))
+        with self._lock:
+            self.history, self.history_seq = history, seq  # swapped in at once: readers see none or all of it
+            self.history_ready = True
 
     def staleness_s(self) -> float:
         return (time.time() * 1000 + self.offset_ms - self.cursor_ms) / 1000
@@ -123,12 +169,19 @@ class Profiles:
                    product_id::String AS p, event_type::String AS e
             FROM shop.events
             WHERE ts::DateTime64(3) > fromUnixTimestamp64Milli({self.cursor_ms})
-              AND ts::DateTime64(3) <= fromUnixTimestamp64Milli({upper})""", timeout=30)
+              AND ts::DateTime64(3) <= fromUnixTimestamp64Milli({upper})
+            ORDER BY t""", timeout=30)
         with self._lock:
             for r in rows:
                 prof = self.users.get(r["u"])
                 if prof is None:
                     prof = self.users[r["u"]] = Profile()
+                seq = self.seq.get(r["u"])
+                if seq is None:
+                    seq = self.seq[r["u"]] = array("i")
+                seq.append(self._code(r["p"], r["e"]))
+                if len(seq) > 2 * MAX_EVENTS:
+                    del seq[:-MAX_EVENTS]
                 if r["e"] == "view":
                     product = self.catalog.get(r["p"])
                     if product is not None:

@@ -5,6 +5,8 @@ from .category_pop import CategoryPop
 from .combined import Combined
 from .coview import Coview
 from .discount_boost import DiscountBoost
+from .embed import Embed
+from .embed_score import EmbedScore
 from .price_discount import PriceDiscount
 from .shopper_discount import ShopperDiscount
 from .shopper_profile import ShopperProfile, ShopperProfileFresh
@@ -14,6 +16,6 @@ from .trend_boost import TrendBoost
 REGISTRY: dict[str, type[Policy]] = {cls.name: cls for cls in (Baseline, CategoryPop, Coview, TrendBoost,
                                                                 DiscountBoost, PriceDiscount, ShopperProfile,
                                                                 ShopperProfileFresh, ShopperScore, ShopperDiscount,
-                                                                Combined)}
+                                                                Combined, Embed, EmbedScore)}
 
 __all__ = ["Policy", "Request", "REGISTRY"]

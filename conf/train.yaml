@@ -1,0 +1,60 @@
+# Two-tower embedding model (python -m training.train). See docs/EMBED_SWEEPS_FINAL.md.
+defaults:
+  - default
+  - sweep: a4   # the search space of `ivan sweep training.train` (conf/sweep/)
+  - _self_
+
+preset: default  # named one-axis variant (training/embed/presets.py); applied on top of the settings below
+
+data:
+  fold: 0        # 0, 1, 2: held-out users and products; a repeat, not a design choice
+  all: false     # true: train on all days, no held-out users or products (final model)
+
+model:
+  dim: 64
+  hidden: 128
+  id_dropout: 0.25
+  history_dropout: 0.3
+  history_len: 20
+  pooling: recency   # recency | mean | attention
+  recency_decay: 0.7
+  slot: learned      # learned | fixed | off
+  description: false
+  price: true
+  no_id_offset: true # learned bias offset for products scored without an ID vector
+
+organic:
+  mode: joint        # joint | off | staged
+  weight: 1.0
+  logq: true
+  type_weights: [1.0, 3.0, 6.0]  # sampling weight of view, add_to_cart, purchase targets
+
+loss:
+  propensity_clip: 0.0  # 0 = off
+  click_weight: 1.0
+
+train:
+  lr: 0.002
+  weight_decay: 1.0e-5
+  batch_size: 2048
+  epochs: 20
+  epoch_fraction: 1.0
+  seed: 0
+  calibrate_epochs: 0  # head refit with frozen towers after training (0 = off; did not help, see sweep log)
+  score_affine: null   # [a, c]: fixed recalibration (all-data runs); null = fit on the validation week
+
+eval:
+  every_epoch: true
+  bootstrap: 1000
+  max_organic: 40000
+
+export:
+  user_vectors: true
+
+hydra:
+  run:
+    dir: ${ivan_run_dir:outputs/hydra/${now:%Y%m%d-%H%M%S}}
+  output_subdir: null
+  job:
+    chdir: false
+
