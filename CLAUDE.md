@@ -3,6 +3,11 @@
 Real-time recommender: for each row in `shop.requests`, insert 10 ranked, distinct, active product IDs into
 `team_NN.submissions` within 3 s of the request `ts`. Full rules: `README.md`. Scored only Sun 15 Nov 10:00–12:00 CET.
 
+## Repo layout
+
+- `starter/`: the organisers' starter kit (baseline recommender, SQL examples, offline evaluation notebook).
+- `monitor/`: our Streamlit monitoring dashboard. Read `monitor/README.md` before running or changing it.
+
 ## Accessing RawTree
 
 - Credentials live in `.env` (`TEAM_ID`, `RAWTREE_API_KEY`). Never print, log or commit the key.
@@ -18,8 +23,8 @@ Real-time recommender: for each row in `shop.requests`, insert 10 ranked, distin
 ## Data gotchas
 
 - Every column is `Dynamic`. Cast join keys, `argMax`/`argMin` and some aggregates: `product_id::String`, `ts::DateTime64(3)`.
-- Timestamps are stored as Unix epoch seconds (floats, e.g. `1794657975.682`), not ISO strings. String date filters
-  like `ts < '2026-11-07'` (used in the starter code) may not behave as intended; verify before trusting them.
+- `ts` is stored as `DateTime64(9)` (UTC). Aggregates like `max(ts)` come back over JSON as epoch floats
+  (e.g. `1794657975.682`). Cast before comparing: `ts::DateTime64(3) > now() - INTERVAL 1 HOUR`.
 - `team_NN.feedback` has a placeholder row `request_id = '__init__'`; filter it out.
 - Products go out of stock live (`shop.catalog_updates`); an out-of-stock or inactive item makes the whole answer invalid.
 - `history_sessions` = old carousel log (shown, propensity, clicked, purchased). `history_events` = organic views,
