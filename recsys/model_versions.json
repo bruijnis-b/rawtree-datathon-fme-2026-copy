@@ -384,5 +384,29 @@
         ]
       }
     ]
+  },
+  {
+    "public_id": "mf2c904",
+    "internal": "shopper_profile_fresh-v1",
+    "params": {
+      "base": "category_pop",
+      "context": 0.3,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "n_cart": 3,
+      "n_recent": 3,
+      "prior": 5.0,
+      "sub_boost": 1.0,
+      "top_n": 30
+    },
+    "description": "Best sellers from the categories this shopper looks at, with cart and recently viewed products first.",
+    "git_commit": "899a652+dirty",
+    "first_live_utc": "2026-11-14T22:02:06+00:00",
+    "fingerprint": "83402a77f1b107fe"
   }
 ]

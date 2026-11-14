@@ -44,8 +44,9 @@ class Profile:
 
 
 class Profiles:
-    def __init__(self, catalog: LiveCatalog) -> None:
+    def __init__(self, catalog: LiveCatalog, backfill_h: float = BACKFILL_H) -> None:
         self.catalog = catalog
+        self.backfill_h = backfill_h  # 0 = start empty and build up from now
         self.users: dict[str, Profile] = {}
         self.cursor_ms = 0   # events up to here are in the profiles (RawTree clock)
         self.offset_ms = 0   # RawTree clock minus local clock
@@ -102,7 +103,7 @@ class Profiles:
                     if not self.cursor_ms:
                         db_now = int(client.query("SELECT toUnixTimestamp64Milli(now64(3)) AS t")[0]["t"])
                         self.offset_ms = db_now - int(time.time() * 1000)
-                        self.cursor_ms = db_now - BACKFILL_H * 3_600_000
+                        self.cursor_ms = db_now - int(self.backfill_h * 3_600_000)
                     done = self.sync()
                     if done and not caught_up:
                         log.info("shopper profiles caught up: %d shoppers", len(self.users))

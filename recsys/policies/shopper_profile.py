@@ -17,6 +17,7 @@ Without a profile and without views it returns the base list unchanged.
 """
 from __future__ import annotations
 
+from ..profiles import Profiles
 from .base import Policy, Request
 
 
@@ -71,3 +72,14 @@ class ShopperProfile(Policy):
         ranked = sorted(score, key=lambda pid: -score[pid])[:self.top_n]
         items = [p for p in dict.fromkeys(first + ranked + base) if p not in bought and self.catalog.is_active(p)]
         return items[:self.top_n]
+
+
+class ShopperProfileFresh(ShopperProfile):
+    """Test arm: shopper_profile with its own profiles that start empty when the process starts, as they
+    may in the final round (shop.events empty at 10:00). Compare with shopper_profile in the same run."""
+    name = "shopper_profile_fresh"
+
+    def fit(self) -> None:
+        self.profiles = Profiles(self.catalog, backfill_h=0)
+        self.profiles.start()
+        super().fit()
