@@ -1,0 +1,13 @@
+[
+  {
+    "public_id": "m1e06ef",
+    "internal": "category_pop-v1",
+    "params": {
+      "top_n": 30
+    },
+    "description": "Best sellers in the category of the product the shopper viewed last.",
+    "git_commit": "d640249+dirty",
+    "first_live_utc": "2026-11-14T14:59:42+00:00",
+    "fingerprint": "5c3ff12797a1e5e6"
+  }
+]
