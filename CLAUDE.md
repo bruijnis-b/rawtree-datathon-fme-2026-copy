@@ -1,12 +1,23 @@
 # RawTree Challenge · Datathon FME 2026
 
 Real-time recommender: for each row in `shop.requests`, insert 10 ranked, distinct, active product IDs into
-`team_NN.submissions` within 3 s of the request `ts`. Full rules: `README.md`. Scored only Sun 15 Nov 10:00–12:00 CET.
+`team_NN.submissions` within 3 s of the request `ts`. Full rules: `CHALLENGE_README.md` (the organisers' README);
+our own overview: `README.md`. Scored only Sun 15 Nov 10:00–12:00 CET.
+
+## Never leak our approach (IMPORTANT)
+
+- The `model_version` field of every submission must be an **opaque random ID** (e.g. `m3f9a2c`) that reveals
+  nothing: no policy or algorithm names, parameters or version counts. Other teams may be able to read it.
+- Get it from `recsys.model_registry.public_id(policy)`; its meaning lives only in our private
+  `recsys/model_versions.json`. Never send `Policy.internal_version` or any descriptive string.
+- The same goes for anything else we write to a table others might read.
 
 ## Repo layout
 
 - `starter/`: the organisers' starter kit (baseline recommender, SQL examples, offline evaluation notebook).
 - `monitor/`: our Streamlit monitoring dashboard. Read `monitor/README.md` before running or changing it.
+- `recsys/`: our recommender (live catalogue, policies, guard, serving loop). Read `recsys/README.md` before
+  running or changing it. Only one process may answer live at a time.
 
 ## Accessing RawTree
 
