@@ -9,5 +9,18 @@
     "git_commit": "d640249+dirty",
     "first_live_utc": "2026-11-14T14:59:42+00:00",
     "fingerprint": "5c3ff12797a1e5e6"
+  },
+  {
+    "public_id": "m94388f",
+    "internal": "coview-v1",
+    "params": {
+      "decay": 0.7,
+      "max_views": 5,
+      "top_k": 20
+    },
+    "description": "Products viewed in the same sessions as this shopper's recent views, then category best sellers.",
+    "git_commit": "d1682c2",
+    "first_live_utc": "2026-11-14T15:47:31+00:00",
+    "fingerprint": "fb9f55c6166f2b56"
   }
 ]
