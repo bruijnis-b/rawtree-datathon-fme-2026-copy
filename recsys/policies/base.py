@@ -6,6 +6,7 @@ from typing import Any
 
 from ..catalog import LiveCatalog
 from ..popularity import Popularity
+from ..profiles import Profiles
 from ..trends import TrendDetector
 
 
@@ -64,10 +65,11 @@ class Policy:
     version = "v1"
 
     def __init__(self, catalog: LiveCatalog, trends: "TrendDetector | None" = None,
-                 popularity: "Popularity | None" = None) -> None:
+                 popularity: "Popularity | None" = None, profiles: "Profiles | None" = None) -> None:
         self.catalog = catalog
         self.trends = trends  # live trend detector, for policies that use it
         self._popularity = popularity  # shared live popularity (main.py); see popularity()
+        self.profiles = profiles  # live shopper profiles from shop.events, for policies that use them
 
     def popularity(self) -> Popularity:
         """The shared popularity, or a history-only one of our own (offline, tests)."""

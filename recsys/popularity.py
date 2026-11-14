@@ -93,9 +93,9 @@ class Popularity:
 
         threading.Thread(target=run, name="popularity", daemon=True).start()
 
-    def ranked(self, group: str = "all", live_weight: float = 0.5, new_prior: bool = True) -> dict[str, list[str]]:
-        """Products by score, best first, per `group` ('all' -> key '', 'category', 'subcategory')."""
-        key = (group, live_weight, new_prior)
+    def scores(self, live_weight: float = 0.5, new_prior: bool = True) -> dict[str, float]:
+        """Score per product (shares, so they sum to ~1): see the module docstring."""
+        key = ("scores", live_weight, new_prior)
         with self._lock:
             cached = self._cache.get(key)
             live, out_minutes = self.live, self.out_minutes
@@ -121,9 +121,21 @@ class Popularity:
                 live[pid] += min(minutes, LIVE_MIN) / LIVE_MIN * share[pid] * live_total
         w = live_weight if live else 0.0
         score = {pid: (1 - w) * s + w * live.get(pid, 0) / live_total for pid, s in share.items()}
+        with self._lock:
+            self._cache[key] = score
+        return score
+
+    def ranked(self, group: str = "all", live_weight: float = 0.5, new_prior: bool = True) -> dict[str, list[str]]:
+        """Products by score, best first, per `group` ('all' -> key '', 'category', 'subcategory')."""
+        key = (group, live_weight, new_prior)
+        with self._lock:
+            cached = self._cache.get(key)
+        if cached is not None:
+            return cached
+        score = self.scores(live_weight, new_prior)
         groups: dict[str, list[str]] = defaultdict(list)
-        for p in sorted(products, key=lambda p: (-score[p.product_id], p.product_id)):
-            if score[p.product_id] <= 0:
+        for p in sorted(self.catalog.snapshot(), key=lambda p: (-score.get(p.product_id, 0.0), p.product_id)):
+            if score.get(p.product_id, 0.0) <= 0:
                 continue  # never bought and no prior: leave out, like the history-only rankings
             k = "" if group == "all" else p.category if group == "category" else p.subcategory
             groups[k].append(p.product_id)

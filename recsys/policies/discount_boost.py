@@ -31,7 +31,7 @@ class DiscountBoost(Policy):
 
     def fit(self) -> None:
         from . import REGISTRY  # late import: the registry imports this module
-        self.inner = REGISTRY[self.base](self.catalog, self.trends, self._popularity)
+        self.inner = REGISTRY[self.base](self.catalog, self.trends, self._popularity, self.profiles)
         self.inner.fit()
         self.popularity()
 

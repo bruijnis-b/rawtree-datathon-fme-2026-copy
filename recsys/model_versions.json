@@ -239,7 +239,22 @@
     "description": "Best sellers in the category of the product the shopper viewed last.",
     "git_commit": "919b54c+dirty",
     "first_live_utc": "2026-11-14T18:14:12+00:00",
-    "fingerprint": "cb870765eabbed12"
+    "fingerprint": "cb870765eabbed12",
+    "results": [
+      {
+        "from_utc": "2026-11-14T19:19+00:00",
+        "to_utc": "2026-11-14T21:25+00:00",
+        "requests": 5869,
+        "conversion": 0.886,
+        "cold_conversion": 1.336,
+        "score_est": 11.2,
+        "ab_with": [
+          "mebb64a",
+          "m5d991b",
+          "m1fe3f6"
+        ]
+      }
+    ]
   },
   {
     "public_id": "m5147ba",
@@ -275,7 +290,22 @@
     "description": "Any policy, with products that are on sale pushed up.",
     "git_commit": "919b54c+dirty",
     "first_live_utc": "2026-11-14T18:14:12+00:00",
-    "fingerprint": "092dc4ba4582d081"
+    "fingerprint": "092dc4ba4582d081",
+    "results": [
+      {
+        "from_utc": "2026-11-14T19:19+00:00",
+        "to_utc": "2026-11-14T21:25+00:00",
+        "requests": 5867,
+        "conversion": 0.949,
+        "cold_conversion": 1.378,
+        "score_est": 13.4,
+        "ab_with": [
+          "m1241a9",
+          "m5d991b",
+          "m1fe3f6"
+        ]
+      }
+    ]
   },
   {
     "public_id": "m5d991b",
@@ -299,6 +329,199 @@
     "description": "discount_boost with the lift shaped like today's sales: only real discounts count, and cheap products gain most.",
     "git_commit": "f3e82a4+dirty",
     "first_live_utc": "2026-11-14T19:04:12+00:00",
-    "fingerprint": "c2b0079fc50697c8"
+    "fingerprint": "c2b0079fc50697c8",
+    "results": [
+      {
+        "from_utc": "2026-11-14T19:19+00:00",
+        "to_utc": "2026-11-14T21:25+00:00",
+        "requests": 5839,
+        "conversion": 1.031,
+        "cold_conversion": 1.466,
+        "score_est": 16.3,
+        "ab_with": [
+          "m1241a9",
+          "mebb64a",
+          "m1fe3f6"
+        ]
+      }
+    ]
+  },
+  {
+    "public_id": "m1fe3f6",
+    "internal": "shopper_profile-v1",
+    "params": {
+      "base": "category_pop",
+      "context": 0.3,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "n_cart": 3,
+      "n_recent": 3,
+      "prior": 5.0,
+      "sub_boost": 1.0,
+      "top_n": 30
+    },
+    "description": "Best sellers from the categories this shopper looks at, with cart and recently viewed products first.",
+    "git_commit": "f0ab6db",
+    "first_live_utc": "2026-11-14T19:17:51+00:00",
+    "fingerprint": "af1b9c04d2ce4f7d",
+    "results": [
+      {
+        "from_utc": "2026-11-14T19:19+00:00",
+        "to_utc": "2026-11-14T21:25+00:00",
+        "requests": 5692,
+        "conversion": 1.147,
+        "cold_conversion": 1.805,
+        "score_est": 20.6,
+        "ab_with": [
+          "m1241a9",
+          "mebb64a",
+          "m5d991b"
+        ]
+      }
+    ]
+  },
+  {
+    "public_id": "mf2c904",
+    "internal": "shopper_profile_fresh-v1",
+    "params": {
+      "base": "category_pop",
+      "context": 0.3,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "n_cart": 3,
+      "n_recent": 3,
+      "prior": 5.0,
+      "sub_boost": 1.0,
+      "top_n": 30
+    },
+    "description": "Best sellers from the categories this shopper looks at, with cart and recently viewed products first.",
+    "git_commit": "899a652+dirty",
+    "first_live_utc": "2026-11-14T22:02:06+00:00",
+    "fingerprint": "83402a77f1b107fe"
+  },
+  {
+    "public_id": "m2512b5",
+    "internal": "shopper_profile-v2",
+    "params": {
+      "base": "category_pop",
+      "context": 0.3,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "n_cart": 3,
+      "n_recent": 3,
+      "prior": 5.0,
+      "sub_boost": 1.0,
+      "top_n": 30
+    },
+    "description": "Best sellers from the categories this shopper looks at, with cart and recently viewed products first.",
+    "git_commit": "1763b1f",
+    "first_live_utc": "2026-11-14T22:09:01+00:00",
+    "fingerprint": "48fc4dd6d06bf8ec"
+  },
+  {
+    "public_id": "m14d72f",
+    "internal": "shopper_profile_fresh-v2",
+    "params": {
+      "base": "category_pop",
+      "context": 0.3,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "n_cart": 3,
+      "n_recent": 3,
+      "prior": 5.0,
+      "sub_boost": 1.0,
+      "top_n": 30
+    },
+    "description": "Best sellers from the categories this shopper looks at, with cart and recently viewed products first.",
+    "git_commit": "1763b1f+dirty",
+    "first_live_utc": "2026-11-14T22:09:01+00:00",
+    "fingerprint": "c0043f5a72f0b83f"
+  },
+  {
+    "public_id": "m4e07bd",
+    "internal": "shopper_score-v1",
+    "params": {
+      "alpha": 1.2,
+      "cart": 6.0,
+      "ctx": 1.5,
+      "live_weight": 0.5,
+      "new": 2.5,
+      "prior": 5.0,
+      "recent": 4.5,
+      "top_n": 30,
+      "w_cat": 3.0,
+      "w_sub": 1.0
+    },
+    "description": "Every product scored for this shopper: popularity x how well it fits what we know about the shopper.",
+    "git_commit": "1763b1f+dirty",
+    "first_live_utc": "2026-11-14T22:09:01+00:00",
+    "fingerprint": "0a7fca5c4b63851f"
+  },
+  {
+    "public_id": "mc8377f",
+    "internal": "shopper_discount-v1",
+    "params": {
+      "alpha": 1.2,
+      "boost": 6.0,
+      "cart": 6.0,
+      "ctx": 1.5,
+      "floor": 0.12,
+      "live_weight": 0.5,
+      "new": 2.5,
+      "prior": 5.0,
+      "recent": 4.5,
+      "rel_price": 0.6,
+      "top_n": 30,
+      "w_cat": 3.0,
+      "w_sub": 1.0
+    },
+    "description": "shopper_score with products on sale lifted the way price_discount lifts them.",
+    "git_commit": "1763b1f+dirty",
+    "first_live_utc": "2026-11-14T22:09:01+00:00",
+    "fingerprint": "e18cff27a27b251c"
+  },
+  {
+    "public_id": "mdfdc72",
+    "internal": "combined-v1",
+    "params": {
+      "alpha": 1.2,
+      "boost": 6.0,
+      "cart": 6.0,
+      "ctx": 1.5,
+      "floor": 0.12,
+      "live_weight": 0.5,
+      "new": 2.5,
+      "prior": 5.0,
+      "recent": 4.5,
+      "rel_price": 0.6,
+      "top_n": 30,
+      "trend": 8.0,
+      "w_cat": 3.0,
+      "w_sub": 1.0
+    },
+    "description": "Everything we have in one policy: shopper_score x the sale lift x a lift for trending subcategories.",
+    "git_commit": "d5f72fa",
+    "first_live_utc": "2026-11-14T22:19:20+00:00",
+    "fingerprint": "a53974f31c113381"
   }
 ]

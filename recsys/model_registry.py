@@ -5,7 +5,8 @@ able to read it). So we send a random ID like `m3f9a2c`, and keep the mapping to
 parameters and the git commit in `recsys/model_versions.json` (this repo is private).
 
 A new ID is created automatically the first time a policy runs live with a combination of
-name, version and parameters that has not been seen before.
+name, version and parameters that has not been seen before. An entry may also carry `results`: the official
+conversion and cold conversion measured for it in a time window (added by hand after an A/B test).
 
     python -m recsys.model_registry     # list every public ID and what it means
 """
@@ -101,6 +102,9 @@ def main() -> None:
         print(f"{e['public_id']}  {e['internal']:<20} {e['first_live_utc']}  {e['git_commit']:<14} {e['params']}")
         if e["description"]:
             print(f"{'':9}{e['description']}")
+        for r in e.get("results", []):  # official numbers from the leaderboard's per-model view, added by hand
+            print(f"{'':9}{r['from_utc']} to {r['to_utc'][11:]}: conversion {r['conversion']}, "
+                  f"cold {r['cold_conversion']}, {r['requests']} requests")
 
 
 if __name__ == "__main__":
