@@ -57,6 +57,7 @@ request go unanswered or late because of the policy:
 | `catalog.py` | `LiveCatalog`: the current catalogue in memory, kept in sync with `shop.catalog_updates` |
 | `trends.py` | `TrendDetector`: which subcategories are trending right now, from `shop.events` |
 | `popularity.py` | `Popularity`: best-seller rankings from history plus the last hour of live purchases, with new products included |
+| `profiles.py` | `Profiles`: per shopper, the categories viewed, the cart and the purchases, from `shop.events` |
 | `guard.py` | Exactly 10 distinct, active IDs; pads from the fallback; reports what it fixed |
 | `model_registry.py` | Opaque public `model_version` IDs and the private log of what they mean |
 | `features.py` | Signals computed in RawTree SQL: purchase counts, rankings, co-views |
@@ -102,6 +103,29 @@ Default `live_weight` 0.5 (a setting of `category_pop`, `trend_boost` and `disco
 none of the 200 new products of the practice day was ever recommended; with the defaults all 200 are ranked
 and ~6 reach a category's top 30. Rankings are rebuilt once per refresh (~4 ms) and cached.
 
+### Shopper profiles (shop.events)
+
+`shop.events` holds the shoppers' other sessions, not the one a request comes from (a request's
+`recent_views` are not in it). 95% of requests come from a shopper with earlier events that day (median ~20
+views), `is_new_user` shoppers included. `Profiles` keeps, per shopper: views per category and subcategory,
+cart and purchases. A background thread reads the last 12 hours at startup (~25 s; policies work without
+profiles until then), then new events every 2 s, up to 3 s ago. The stats line shows how many profiles
+there are and how old the newest event read is.
+
+Measured on 79,000 of our answers (practice day; 598 purchases, so indicative), purchase rate per shown
+product, average 0.076%:
+
+| Shown product is | Purchase rate |
+|---|---|
+| In the shopper's cart, not bought | 1.07% |
+| One of the request's `recent_views` | 0.74% |
+| In a category with 60%+ of the shopper's event views | 0.46% |
+| In a category the shopper never viewed | 0.03% |
+| Already bought by the shopper that day | 0.03% |
+
+The last viewed product is in the shopper's most viewed category only 25% of the time. With the live
+profile known, the shopper's 60-day history profile added almost nothing.
+
 ### Trend detection
 
 On the practice day one subcategory at a time got ~4x the views and ~10x the purchases for exactly 45
@@ -129,8 +153,24 @@ real end, 0 false alarms. Tuned on these 4 events only: the final round's trends
 | `baseline` | All-time best sellers, same for everyone (the organisers' baseline; the score's 0 point) |
 | `category_pop` | Best sellers in the category of the last viewed product; overall best sellers without views. "Best sellers" = shared popularity (below); `live_weight` 0 + `new_prior` false = history only, as in v1 |
 | `coview` | Products viewed in the same sessions as the recent views (recent views weigh more), then `category_pop`. Live on the practice day it sold ~40% less than `category_pop` and less than the baseline: co-viewed products are mostly alternatives people look at, not what they buy |
+| `shopper_profile` | Cart-not-bought and recently viewed products first, then best sellers from the categories the shopper views most (below); `category_pop` for shoppers we know nothing about |
 | `trend_boost` | Wraps another policy (`base`, default `category_pop`); while a subcategory is trending, mixes in its best sellers (below) |
 | `discount_boost` | Wraps another policy; pushes products that are on sale up, and pulls in discounted best sellers from the shopper's category (below) |
+
+### Shopper profile: tunable settings
+
+| Setting (default) | Effect |
+|---|---|
+| `n_cart` (3), `n_recent` (3) | How many cart-not-bought products, then recently viewed products, go first |
+| `context` (0.3) | Weight of the last view's category. A category's weight is its share of the shopper's views, plus `context` if it is the last view's; products score weight / (rank + 1) |
+| `prior` (5) | Views added to the denominator of every share, so 1-2 views do not count as certain |
+| `sub_boost` (1.0) | Within a category, a product scores x (1 + `sub_boost` x its subcategory's share of the views) |
+| `base` (`category_pop`) | Filler after those, and the whole answer without profile and views |
+
+Products the shopper bought that day are left out. Not yet tested live. A model fitted on the practice
+feedback puts it at ~4x the purchases of `category_pop`, nearly all from the cart and recently viewed
+products; that is far outside what we have shown so far, so expect less. Composes with the wrappers:
+`discount_boost:base=shopper_profile`.
 
 ### Trend boost: tunable settings
 

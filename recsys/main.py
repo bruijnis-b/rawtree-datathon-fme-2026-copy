@@ -22,6 +22,7 @@ from queue import SimpleQueue
 from . import client, guard, model_registry
 from .catalog import LiveCatalog
 from .popularity import Popularity
+from .profiles import Profiles
 from .trends import TrendDetector
 from .policies import REGISTRY, Policy, Request
 from .policies.category_pop import CategoryPop
@@ -101,15 +102,16 @@ def setup_logging() -> None:
 
 
 def log_stats(counts: Counter[str], ages_ms: list[float], issues: Counter[str], catalog: LiveCatalog,
-              trends: TrendDetector) -> None:
+              trends: TrendDetector, profiles: Profiles) -> None:
     """One line per STATS_EVERY_S; WARNING if the policy proposed products it should not have."""
     p95 = lambda xs: round(statistics.quantiles(xs, n=20)[18]) if len(xs) >= 2 else None
     level = logging.WARNING if issues.keys() & {"inactive", "unknown", "emergency"} else logging.INFO
     active = {s: f"{t.lift:.1f}x" for s, t in trends.active().items()}
     log.log(level, "answered %d | push %s ms after request (p95, local clock) | deadline fallbacks %d | "
-            "policy errors %d | push errors %d | guard fixes %s | catalogue %.1fs old | trends %s",
+            "policy errors %d | push errors %d | guard fixes %s | catalogue %.1fs old | profiles %d, %.0fs old | trends %s",
             counts["answered"], p95(ages_ms), counts["deadline_fallbacks"], counts["policy_errors"],
-            counts["push_errors"], dict(issues) or "none", catalog.staleness_s(), active or "none")
+            counts["push_errors"], dict(issues) or "none", catalog.staleness_s(), len(profiles.users),
+            profiles.staleness_s(), active or "none")
 
 
 def main() -> None:
@@ -141,6 +143,8 @@ def main() -> None:
     except Exception as e:  # rankings fall back to history until the next refresh works
         log.warning("live popularity not loaded yet: %s", e)
     popularity.start()  # background thread: re-counts live purchases every minute
+    profiles = Profiles(catalog)
+    profiles.start()  # background thread: shopper profiles from shop.events (backfill, then every 2 s)
     # Our fallback, better than the organisers' (all-time best sellers): best sellers in the category of the
     # last viewed product, then overall best sellers. Used to pad answers and when the policy is skipped.
     fallback = CategoryPop(catalog, trends, popularity)
@@ -150,7 +154,7 @@ def main() -> None:
         name, _, own = spec.partition(":")
         if name not in REGISTRY:
             raise SystemExit(f"unknown policy {name!r}: choose from {sorted(REGISTRY)}")
-        policy = REGISTRY[name](catalog, trends, popularity)
+        policy = REGISTRY[name](catalog, trends, popularity, profiles)
         apply_settings(policy, args.set + [s for s in own.split(",") if s])
         policy.fit()
         arms.append((policy, model_registry.public_id(policy, register=not args.dry_run)))
@@ -218,7 +222,7 @@ def main() -> None:
                         seen.pop(a["request_id"], None)
 
             if time.time() - last_stats >= STATS_EVERY_S:
-                log_stats(counts, ages_ms, issues, catalog, trends)
+                log_stats(counts, ages_ms, issues, catalog, trends, profiles)
                 counts, issues, ages_ms, last_stats = Counter(), Counter(), [], time.time()
                 seen = {k: v for k, v in seen.items() if v > loop_start - 60}
         except Exception as e:  # keep running: shoppers keep arriving while you sleep
