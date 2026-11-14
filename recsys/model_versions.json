@@ -239,7 +239,22 @@
     "description": "Best sellers in the category of the product the shopper viewed last.",
     "git_commit": "919b54c+dirty",
     "first_live_utc": "2026-11-14T18:14:12+00:00",
-    "fingerprint": "cb870765eabbed12"
+    "fingerprint": "cb870765eabbed12",
+    "results": [
+      {
+        "from_utc": "2026-11-14T19:19+00:00",
+        "to_utc": "2026-11-14T21:25+00:00",
+        "requests": 5869,
+        "conversion": 0.886,
+        "cold_conversion": 1.336,
+        "score_est": 11.2,
+        "ab_with": [
+          "mebb64a",
+          "m5d991b",
+          "m1fe3f6"
+        ]
+      }
+    ]
   },
   {
     "public_id": "m5147ba",
@@ -274,6 +289,60 @@
     "description": "Any policy, with products that are on sale pushed up.",
     "git_commit": "919b54c+dirty",
     "first_live_utc": "2026-11-14T18:14:12+00:00",
-    "fingerprint": "092dc4ba4582d081"
+    "fingerprint": "092dc4ba4582d081",
+    "results": [
+      {
+        "from_utc": "2026-11-14T19:19+00:00",
+        "to_utc": "2026-11-14T21:25+00:00",
+        "requests": 5867,
+        "conversion": 0.949,
+        "cold_conversion": 1.378,
+        "score_est": 13.4,
+        "ab_with": [
+          "m1241a9",
+          "m5d991b",
+          "m1fe3f6"
+        ]
+      }
+    ]
+  },
+  {
+    "public_id": "m1fe3f6",
+    "internal": "shopper_profile-v1",
+    "params": {
+      "base": "category_pop",
+      "context": 0.3,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "n_cart": 3,
+      "n_recent": 3,
+      "prior": 5.0,
+      "sub_boost": 1.0,
+      "top_n": 30
+    },
+    "description": "Best sellers from the categories this shopper looks at, with cart and recently viewed products first.",
+    "git_commit": "f0ab6db",
+    "first_live_utc": "2026-11-14T19:17:51+00:00",
+    "fingerprint": "af1b9c04d2ce4f7d",
+    "results": [
+      {
+        "from_utc": "2026-11-14T19:19+00:00",
+        "to_utc": "2026-11-14T21:25+00:00",
+        "requests": 5692,
+        "conversion": 1.147,
+        "cold_conversion": 1.805,
+        "score_est": 20.6,
+        "ab_with": [
+          "m1241a9",
+          "mebb64a",
+          "m5d991b"
+        ]
+      }
+    ]
   }
 ]
