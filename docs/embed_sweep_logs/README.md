@@ -46,6 +46,35 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Live transfer check (Sat 23:15–23:21): history gains do not carry over to live (IMPORTANT)
+
+`embed-lt`: the 16 fold-0 phase B models, no fine-tuning, scored on the live hold-out (snapshot 1).
+
+| Config | History objective | Live objective | Live new user | Live new product | New products: top-10 share / purchase share |
+|---|---|---|---|---|---|
+| b_desc | 3.35 | **2.18** | 2.33 | 1.35 | 0.96 % / 1.15 % |
+| b_a2_43 | 3.66 | **2.17** | 2.32 | **1.45** | 1.14 % / 1.15 % |
+| b_hist50 | 3.25 | 2.17 | 2.33 | 1.04 | 0.53 % / 1.15 % |
+| b_lr07 | 3.27 | 2.10 | 2.25 | 0.99 | 0.46 % / 1.15 % |
+| b_a2_8 | 3.49 | 2.09 | 2.22 | 1.29 | 1.03 % / 1.15 % |
+| b_a2_10 | 3.36 | 2.08 | 2.26 | 1.30 | 0.92 % / 1.15 % |
+| b_a2_45 | 3.86 | 2.07 | 2.26 | 0.86 | 0.15 % / 1.15 % |
+| b_a2_25 | 3.66 | 2.00 | 2.16 | 1.13 | 1.03 % / 1.15 % |
+| v0 (default) | 2.79 | 2.05 | | | 0.4 % / 1.15 % |
+
+- Rank correlation between history and live over the 8 configurations: **−0.45** (history ips objective), −0.19
+  (history organic recall, the *same* metric as live), −0.57 (slate_auc). So it is a **data shift** (the live
+  simulator differs from the history), not a metric problem.
+- The +0.8 history gain over v0 becomes at most +0.13 live. The live spread between configurations (2.00–2.18) is
+  small, about 2–3 × the noise (≈ 0.05 for 2 runs).
+- New products are the weak spot live: lift 0.9–1.45 against ~4 on held-out history products.
+- **Decision:** select the final model on the **live hold-out (after fine-tuning)**, with the history metrics as a
+  guard (forgetting, calibration, new-product band). Base for v1 and the recipe search: **b_a2_43** (2nd on history,
+  2nd on live, best live new-product lift, new products at exactly their purchase share, best calibration).
+- `embed-l1b` (80 recipes on v0) failed on every run: a variable shadowing bug in the new-product ID dropout, and the
+  fine-tune sweep inherited the A4 parameters (Hydra merged the two `sweep` sections). Both fixed (`conf/sweep/`);
+  relaunched as `embed-l1c` on base `embed-b/13` (b_a2_43, fold 0, seed 0) at 23:27.
+
 ### Phase B (Sat 22:53–23:12): 8 configurations × 3 folds × 2 seeds, all 48 succeeded
 
 Table: `phase_b.md` (`python -m training.embed.aggregate embed-b`). Fold/seed noise is small (SE ≈ 0.03 over 6
