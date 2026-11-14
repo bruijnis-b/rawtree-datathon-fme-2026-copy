@@ -8,7 +8,7 @@ leaderboard goes dark.
 
 From the repo root, with `TEAM_ID` and `RAWTREE_API_KEY` in `.env`:
 
-Each command on its own (Windows PowerShell 5.1 has no `&&`):
+Each command on its own (Windows PowerShell 5.1 has no `&&`); skip the first if `.venv` already exists:
 
 ```bash
 uv venv .venv
