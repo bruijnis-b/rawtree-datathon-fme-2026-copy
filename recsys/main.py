@@ -21,6 +21,7 @@ from queue import SimpleQueue
 
 from . import client, guard, model_registry
 from .catalog import LiveCatalog
+from .popularity import Popularity
 from .trends import TrendDetector
 from .policies import REGISTRY, Policy, Request
 from .policies.category_pop import CategoryPop
@@ -133,16 +134,23 @@ def main() -> None:
     except Exception as e:  # optional signal: serve without it rather than not at all
         log.warning("trend detector not loaded, it will build up from live data: %s", e)
     trends.start()  # background thread: re-checks subcategory views every minute, logs trend start/end
+    popularity = Popularity(catalog)  # history + last hour of live purchases, shared by all policies
+    popularity.load()
+    try:
+        popularity.refresh()
+    except Exception as e:  # rankings fall back to history until the next refresh works
+        log.warning("live popularity not loaded yet: %s", e)
+    popularity.start()  # background thread: re-counts live purchases every minute
     # Our fallback, better than the organisers' (all-time best sellers): best sellers in the category of the
-    # last viewed product, then all-time best sellers. Used to pad answers and when the policy is skipped.
-    fallback = CategoryPop(catalog)
+    # last viewed product, then overall best sellers. Used to pad answers and when the policy is skipped.
+    fallback = CategoryPop(catalog, trends, popularity)
     fallback.fit()
     arms = []  # (policy, public model ID); with --ab, the request ID decides which arm answers
     for spec in [args.policy] + args.ab:
         name, _, own = spec.partition(":")
         if name not in REGISTRY:
             raise SystemExit(f"unknown policy {name!r}: choose from {sorted(REGISTRY)}")
-        policy = REGISTRY[name](catalog, trends)
+        policy = REGISTRY[name](catalog, trends, popularity)
         apply_settings(policy, args.set + [s for s in own.split(",") if s])
         policy.fit()
         arms.append((policy, model_registry.public_id(policy, register=not args.dry_run)))

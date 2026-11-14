@@ -17,7 +17,6 @@ from __future__ import annotations
 
 from collections import Counter
 
-from .. import features
 from .base import Policy, Request
 
 
@@ -33,19 +32,15 @@ class TrendBoost(Policy):
     n_other = 1         # context mode: anything else
     boost = 1.0         # score mode: weight of the trend ranking
     per_brand = 2       # at most this many trend products per brand
+    live_weight = 0.5   # trend product ranking: weight of live purchases vs history (see popularity.py)
 
     def fit(self) -> None:
         if self.mode not in ("slots", "context", "score"):
             raise ValueError(f"unknown mode {self.mode!r}: use slots, context or score")
         from . import REGISTRY  # late import: the registry imports this module
-        self.inner = REGISTRY[self.base](self.catalog, self.trends)
+        self.inner = REGISTRY[self.base](self.catalog, self.trends, self._popularity)
         self.inner.fit()
-
-        def subcategory(pid: str) -> str | None:
-            p = self.catalog.get(pid)
-            return p.subcategory if p else None
-
-        self.best_by_sub = features.rank_by_group(features.purchase_counts(), subcategory)
+        self.popularity()
 
     def trend_products(self) -> list[str]:
         """Best sellers of the active trends, strongest trend first, in stock, capped per brand."""
@@ -53,7 +48,7 @@ class TrendBoost(Policy):
         out: list[str] = []
         for sub in sorted(active, key=lambda s: -active[s].lift):
             brands: Counter[str] = Counter()
-            for pid in self.best_by_sub.get(sub, []):
+            for pid in self.popularity().ranked("subcategory", self.live_weight).get(sub, []):
                 p = self.catalog.get(pid)
                 if p and p.is_active and brands[p.brand] < self.per_brand:
                     brands[p.brand] += 1

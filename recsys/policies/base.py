@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..catalog import LiveCatalog
+from ..popularity import Popularity
 from ..trends import TrendDetector
 
 
@@ -62,9 +63,18 @@ class Policy:
     name = "policy"
     version = "v1"
 
-    def __init__(self, catalog: LiveCatalog, trends: "TrendDetector | None" = None) -> None:
+    def __init__(self, catalog: LiveCatalog, trends: "TrendDetector | None" = None,
+                 popularity: "Popularity | None" = None) -> None:
         self.catalog = catalog
         self.trends = trends  # live trend detector, for policies that use it
+        self._popularity = popularity  # shared live popularity (main.py); see popularity()
+
+    def popularity(self) -> Popularity:
+        """The shared popularity, or a history-only one of our own (offline, tests)."""
+        if self._popularity is None:
+            self._popularity = Popularity(self.catalog)
+            self._popularity.load()
+        return self._popularity
 
     @property
     def internal_version(self) -> str:

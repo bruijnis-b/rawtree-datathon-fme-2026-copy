@@ -25,6 +25,8 @@ The organisers' full rules and data description: [CHALLENGE_README.md](CHALLENGE
 
 - **Live catalogue:** the whole catalogue in memory, kept current with the update stream, so checking a
   product's stock or price takes ~0.1 µs per request.
+- **Popularity:** best sellers = 60 days of history blended with the last hour of live purchases; new
+  products start at their subcategory's average, so they get recommended too. See `recsys/README.md`.
 - **Trend detection:** spots a subcategory that suddenly gets far more views than usual (on the practice
   day: ~4x views, ~10x purchases, 45 min, every 2 h) within 1-3 minutes. See `recsys/README.md`.
 - **Policies:** one file per algorithm in `recsys/policies/`, all with the same interface, swappable with
