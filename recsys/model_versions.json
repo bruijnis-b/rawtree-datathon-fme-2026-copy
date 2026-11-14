@@ -22,5 +22,24 @@
     "git_commit": "d1682c2",
     "first_live_utc": "2026-11-14T15:47:31+00:00",
     "fingerprint": "fb9f55c6166f2b56"
+  },
+  {
+    "public_id": "m9c4a84",
+    "internal": "trend_boost-v1",
+    "params": {
+      "base": "coview",
+      "boost": 1.0,
+      "mode": "context",
+      "n_home": 3,
+      "n_other": 1,
+      "n_related": 4,
+      "n_slots": 2,
+      "per_brand": 2,
+      "slot": 1
+    },
+    "description": "Any policy, plus the best sellers of the subcategories trending right now.",
+    "git_commit": "cd94de9+dirty",
+    "first_live_utc": "2026-11-14T16:46:27+00:00",
+    "fingerprint": "3a54be5aee958e83"
   }
 ]

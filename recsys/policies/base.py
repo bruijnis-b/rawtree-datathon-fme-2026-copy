@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..catalog import LiveCatalog
+from ..trends import TrendDetector
 
 
 @dataclass(frozen=True)
@@ -61,8 +62,9 @@ class Policy:
     name = "policy"
     version = "v1"
 
-    def __init__(self, catalog: LiveCatalog) -> None:
+    def __init__(self, catalog: LiveCatalog, trends: "TrendDetector | None" = None) -> None:
         self.catalog = catalog
+        self.trends = trends  # live trend detector, for policies that use it
 
     @property
     def internal_version(self) -> str:

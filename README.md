@@ -25,6 +25,8 @@ The organisers' full rules and data description: [CHALLENGE_README.md](CHALLENGE
 
 - **Live catalogue:** the whole catalogue in memory, kept current with the update stream, so checking a
   product's stock or price takes ~0.1 µs per request.
+- **Trend detection:** spots a subcategory that suddenly gets far more views than usual (on the practice
+  day: ~4x views, ~10x purchases, 45 min, every 2 h) within 1-3 minutes. See `recsys/README.md`.
 - **Policies:** one file per algorithm in `recsys/policies/`, all with the same interface, swappable with
   `--policy`. Current: `baseline`, `category_pop`, `coview`.
 - **Guard:** whatever a policy returns, the answer sent is exactly 10 distinct, active products, padded from

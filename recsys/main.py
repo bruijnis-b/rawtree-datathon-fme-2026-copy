@@ -2,6 +2,7 @@
 
     python -m recsys.main --policy coview             # live: answers every request
     python -m recsys.main --policy coview --dry-run   # computes answers but sends nothing
+    python -m recsys.main --policy coview --ab trend_boost trend_boost:mode=score,boost=2   # 3 arms, 1/3 each
 
 Only one process may answer live at a time (the organisers count one answer per request): stop the starter
 baseline or any other server first.
@@ -12,6 +13,7 @@ import argparse
 import logging
 import statistics
 import time
+import zlib
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
@@ -19,7 +21,8 @@ from queue import SimpleQueue
 
 from . import client, guard, model_registry
 from .catalog import LiveCatalog
-from .policies import REGISTRY, Request
+from .trends import TrendDetector
+from .policies import REGISTRY, Policy, Request
 from .policies.category_pop import CategoryPop
 
 log = logging.getLogger("recsys")
@@ -43,6 +46,31 @@ organisers' 3000 ms deadline. recommend() runs in a worker thread; if it is not 
 gets the fallback and the slow call finishes in the background, unused (Python cannot kill a thread)."""
 BATCH_BUDGET_MS = 500
 """Also wait at most this long per batch, so slow policies never stop the loop from pulling new requests."""
+
+
+def pick_arm(request_id: str, bounds: list[int]) -> int:
+    """Stable split: the request ID's bucket (0-99) picks the arm whose share covers it; same ID, same arm."""
+    bucket = zlib.crc32(request_id.encode()) % 100
+    return next(i for i, upper in enumerate(bounds) if bucket < upper)
+
+
+def arm_bounds(n_arms: int, ab_share: int | None) -> list[int]:
+    """Cumulative bucket bounds: each --ab arm gets ab_share percent (default: all arms equal), --policy the rest."""
+    shares = [100 // n_arms] * n_arms if ab_share is None else [100 - ab_share * (n_arms - 1)] + [ab_share] * (n_arms - 1)
+    shares[0] += 100 - sum(shares)
+    if min(shares) <= 0:
+        raise SystemExit(f"--ab-share {ab_share} leaves no requests for --policy")
+    return [sum(shares[:i + 1]) for i in range(n_arms)]
+
+
+def apply_settings(policy: Policy, settings: list[str]) -> None:
+    """--set NAME=VALUE overrides, converted to the type of the policy's default."""
+    for item in settings:
+        key, _, value = item.partition("=")
+        if hasattr(policy, key) and not key.startswith("_"):
+            default = getattr(policy, key)
+            setattr(policy, key, value.lower() in ("1", "true", "yes") if isinstance(default, bool)
+                    else type(default)(value))
 
 
 def fallback_items(fallback: CategoryPop, req: Request) -> list[str]:
@@ -71,19 +99,27 @@ def setup_logging() -> None:
                                   logging.FileHandler(client.ROOT / "logs" / "recsys.log", encoding="utf-8")])
 
 
-def log_stats(counts: Counter[str], ages_ms: list[float], issues: Counter[str], catalog: LiveCatalog) -> None:
+def log_stats(counts: Counter[str], ages_ms: list[float], issues: Counter[str], catalog: LiveCatalog,
+              trends: TrendDetector) -> None:
     """One line per STATS_EVERY_S; WARNING if the policy proposed products it should not have."""
     p95 = lambda xs: round(statistics.quantiles(xs, n=20)[18]) if len(xs) >= 2 else None
     level = logging.WARNING if issues.keys() & {"inactive", "unknown", "emergency"} else logging.INFO
+    active = {s: f"{t.lift:.1f}x" for s, t in trends.active().items()}
     log.log(level, "answered %d | push %s ms after request (p95, local clock) | deadline fallbacks %d | "
-            "policy errors %d | push errors %d | guard fixes %s | catalogue %.1fs old",
+            "policy errors %d | push errors %d | guard fixes %s | catalogue %.1fs old | trends %s",
             counts["answered"], p95(ages_ms), counts["deadline_fallbacks"], counts["policy_errors"],
-            counts["push_errors"], dict(issues) or "none", catalog.staleness_s())
+            counts["push_errors"], dict(issues) or "none", catalog.staleness_s(), active or "none")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--policy", default="coview", choices=sorted(REGISTRY))
+    ap.add_argument("--ab", nargs="*", default=[], metavar="POLICY[:NAME=VALUE,...]",
+                    help="A/B test: extra policies, each with optional own settings, "
+                         "e.g. --ab trend_boost trend_boost:mode=score,boost=2")
+    ap.add_argument("--ab-share", type=int, help="percent of requests per --ab policy (default: all arms equal)")
+    ap.add_argument("--set", nargs="*", default=[], metavar="NAME=VALUE",
+                    help="override policy settings, e.g. --set mode=score boost=2 (applies where the setting exists)")
     ap.add_argument("--dry-run", action="store_true", help="compute answers but do not insert them")
     args = ap.parse_args()
     setup_logging()
@@ -91,15 +127,30 @@ def main() -> None:
     catalog = LiveCatalog()
     catalog.load()
     catalog.start()  # background thread: applies shop.catalog_updates every 0.2-1 s
+    trends = TrendDetector()
+    try:
+        trends.load()
+    except Exception as e:  # optional signal: serve without it rather than not at all
+        log.warning("trend detector not loaded, it will build up from live data: %s", e)
+    trends.start()  # background thread: re-checks subcategory views every minute, logs trend start/end
     # Our fallback, better than the organisers' (all-time best sellers): best sellers in the category of the
     # last viewed product, then all-time best sellers. Used to pad answers and when the policy is skipped.
     fallback = CategoryPop(catalog)
     fallback.fit()
-    policy = REGISTRY[args.policy](catalog)
-    policy.fit()
-    public_id = model_registry.public_id(policy, register=not args.dry_run)
-    log.info("running %s %s as model_version %s%s", policy.internal_version, model_registry.params(policy),
-             public_id, " (DRY RUN, nothing is sent)" if args.dry_run else "")
+    arms = []  # (policy, public model ID); with --ab, the request ID decides which arm answers
+    for spec in [args.policy] + args.ab:
+        name, _, own = spec.partition(":")
+        if name not in REGISTRY:
+            raise SystemExit(f"unknown policy {name!r}: choose from {sorted(REGISTRY)}")
+        policy = REGISTRY[name](catalog, trends)
+        apply_settings(policy, args.set + [s for s in own.split(",") if s])
+        policy.fit()
+        arms.append((policy, model_registry.public_id(policy, register=not args.dry_run)))
+    bounds = arm_bounds(len(arms), args.ab_share)
+    for i, (policy, public_id) in enumerate(arms):
+        log.info("running %s %s as model_version %s, %d%% of requests%s", policy.internal_version,
+                 model_registry.params(policy), public_id, bounds[i] - (bounds[i - 1] if i else 0),
+                 " (DRY RUN, nothing is sent)" if args.dry_run else "")
 
     workers = ThreadPoolExecutor(max_workers=4, thread_name_prefix="recommend")
     pushers = ThreadPoolExecutor(max_workers=4, thread_name_prefix="push")
@@ -114,11 +165,12 @@ def main() -> None:
         try:
             fresh = [Request.from_row(r) for r in client.query(PULL, timeout=5) if r["request_id"] not in seen]
             # Start every recommend() in a worker thread, then wait for each only until its request's deadline.
-            jobs = {}
+            jobs, arm_of = {}, {}
             for req in fresh:
                 seen[req.request_id] = loop_start
+                arm_of[req.request_id] = arms[pick_arm(req.request_id, bounds)]
                 if time.time() * 1000 - req.ts_ms < DEADLINE_MS:
-                    jobs[req.request_id] = workers.submit(policy.recommend, req)
+                    jobs[req.request_id] = workers.submit(arm_of[req.request_id][0].recommend, req)
             answers = []
             batch_end = time.time() + BATCH_BUDGET_MS / 1000
             for req in fresh:
@@ -139,7 +191,8 @@ def main() -> None:
                         log.exception("policy failed on %s", req.request_id)
                 final, fixed = guard.finalize(items, catalog, fallback_items(fallback, req))
                 issues.update(fixed)
-                answers.append({"request_id": req.request_id, "items": final, "model_version": public_id})
+                answers.append({"request_id": req.request_id, "items": final,
+                                "model_version": arm_of[req.request_id][1]})
 
             if answers and not args.dry_run:  # push in the background: the next pull starts right away
                 pushers.submit(push, answers, [r.ts_ms for r in fresh], pushed)
@@ -157,7 +210,7 @@ def main() -> None:
                         seen.pop(a["request_id"], None)
 
             if time.time() - last_stats >= STATS_EVERY_S:
-                log_stats(counts, ages_ms, issues, catalog)
+                log_stats(counts, ages_ms, issues, catalog, trends)
                 counts, issues, ages_ms, last_stats = Counter(), Counter(), [], time.time()
                 seen = {k: v for k, v in seen.items() if v > loop_start - 60}
         except Exception as e:  # keep running: shoppers keep arriving while you sleep
