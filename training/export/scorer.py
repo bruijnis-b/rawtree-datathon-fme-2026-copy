@@ -172,7 +172,8 @@ class Model:
         x = pm.vecs @ u + pm.bias
         w = self.w
         lc = _log_sigmoid(x + w["c_click"]) + _log_sigmoid(w["alpha"] * x + w["c_purchase"])
-        return (lc - np.log1p(-np.minimum(np.exp(lc), 1 - 1e-7))).astype(np.float32)
+        sc = lc - np.log1p(-np.minimum(np.exp(lc), 1 - 1e-7))
+        return (float(w.get("score_a", 1.0)) * sc + float(w.get("score_c", 0.0))).astype(np.float32)
 
 
 def load(folder: str | Path) -> Model:

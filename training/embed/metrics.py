@@ -111,7 +111,7 @@ class Evaluator:
         top_held = 0.0
         top_total = 0.0
         # calibration and slot rows
-        pred_all, obs_all, cold_all, slot_all, devv_all, ctrp_all, clk_all = [], [], [], [], [], [], []
+        pred_all, obs_all, cold_all, slot_all, devv_all, ctrp_all, clk_all, sess_all = [], [], [], [], [], [], [], []
         for a in range(0, n, chunk):
             idx = self.vidx[a:a + chunk]
             u = self._users(model, V, s, idx)
@@ -170,6 +170,7 @@ class Evaluator:
                 slot_all.append(k[vm].cpu().numpy())
                 devv_all.append(devi[:, None].expand_as(shown)[vm].cpu().numpy())
                 ctrp_all.append(pc[vm].cpu().numpy())
+                sess_all.append((torch.arange(len(idx), device=dev)[:, None].expand_as(shown) + a)[vm].cpu().numpy())
                 clk_all.append(clk[vm].cpu().numpy())
         res = {}
         click_rows = ips_den > 0
@@ -232,6 +233,7 @@ class Evaluator:
                     if o[sel].sum() >= 30:  # relative error only where the observed rate is measurable
                         errs.append(abs(pm / om - 1))
             out["calibration"] = cal
+            out["_imp"] = {"pred": pred, "obs": obs, "cold": cold, "sess": np.concatenate(sess_all)}
             out["calibration_max_err"] = float(max(errs)) if errs else None
             slots = []
             dev_names = {v: k for k, v in d.vocab["device"].items()}

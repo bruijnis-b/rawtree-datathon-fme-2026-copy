@@ -39,7 +39,8 @@ train:
   epochs: 20
   epoch_fraction: 1.0
   seed: 0
-  calibrate_epochs: 1  # head refit with frozen towers after training (0 = off)
+  calibrate_epochs: 0  # head refit with frozen towers after training (0 = off; did not help, see sweep log)
+  score_affine: null   # [a, c]: fixed recalibration (all-data runs); null = fit on the validation week
 
 eval:
   every_epoch: true

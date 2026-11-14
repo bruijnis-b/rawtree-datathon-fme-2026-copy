@@ -65,6 +65,9 @@ class TwoTower(nn.Module):
         else:
             self.register_buffer("slot", lt.clone() if m.slot == "fixed" else torch.zeros_like(lt))
         self.register_buffer("slot_init", lt.clone())
+        # out-of-sample recalibration of the delivered score: score -> score_a * score + score_c
+        self.register_buffer("score_a", torch.tensor(1.0))
+        self.register_buffer("score_c", torch.tensor(0.0))
 
     # ---------------- product tower ----------------
     def products(self, cat, sub, brand, price, tok, id_mask):
@@ -121,4 +124,4 @@ class TwoTower(nn.Module):
     def score_from_x(self, x):
         """Delivered score: purchase log-odds in slot 1."""
         lc = Fn.logsigmoid(x + self.c_click) + Fn.logsigmoid(self.alpha * x + self.c_purchase)  # log p
-        return lc - torch.log1p(-torch.exp(lc).clamp(max=1 - 1e-7))
+        return self.score_a * (lc - torch.log1p(-torch.exp(lc).clamp(max=1 - 1e-7))) + self.score_c

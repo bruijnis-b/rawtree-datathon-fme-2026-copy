@@ -274,6 +274,72 @@ def calibrate(tr: "Trainer", epochs: int) -> None:
     tr.x_scale = g
 
 
+def fit_affine(p, y, iters=50):
+    """Logistic recalibration q = sigmoid(a * logit(p) + c), by Newton's method."""
+    L = np.log(np.clip(p, 1e-9, 1 - 1e-9)) - np.log1p(-np.clip(p, 1e-9, 1 - 1e-9))
+    a, c = 1.0, 0.0
+    for _ in range(iters):
+        z = a * L + c
+        q = 1 / (1 + np.exp(-z))
+        g = np.array([((q - y) * L).sum(), (q - y).sum()])
+        w = q * (1 - q)
+        H = np.array([[(w * L * L).sum(), (w * L).sum()], [(w * L).sum(), w.sum()]]) + 1e-6 * np.eye(2)
+        step = np.linalg.solve(H, g)
+        a, c = a - step[0], c - step[1]
+        if np.abs(step).max() < 1e-8:
+            break
+    return float(a), float(c)
+
+
+def apply_affine(p, a, c):
+    L = np.log(np.clip(p, 1e-9, 1 - 1e-9)) - np.log1p(-np.clip(p, 1e-9, 1 - 1e-9))
+    return 1 / (1 + np.exp(-(a * L + c)))
+
+
+def calibration_records(p, y, cold, dataset="history"):
+    cal, errs = [], []
+    for name, mk in (("all", np.ones_like(cold, dtype=bool)), ("cold", cold)):
+        pp, oo = p[mk], y[mk]
+        if len(pp) < 100:
+            continue
+        edges = np.quantile(pp, np.linspace(0, 1, 11))
+        dec = np.clip(np.searchsorted(edges, pp, side="right") - 1, 0, 9)
+        for q in range(10):
+            sel = dec == q
+            pm, om = float(pp[sel].mean()), float(oo[sel].mean())
+            cal.append(dict(dataset=dataset, slice=name, decile=q + 1, predicted=pm, observed=om, n=int(sel.sum())))
+            if oo[sel].sum() >= 30:
+                errs.append(abs(pm / om - 1))
+    return cal, (max(errs) if errs else None)
+
+
+def recalibrate(m, r, cfg):
+    """Fit score -> a * score + c on half of the validation requests, check deciles on the other half."""
+    imp = r.pop("_imp", None)
+    if imp is None:
+        return {}
+    p, y, cold, sess = imp["pred"], imp["obs"], imp["cold"], imp["sess"]
+    fixed = cfg.train.get("score_affine")
+    out = {"calibration_max_err_raw": r.get("calibration_max_err")}
+    if fixed:
+        a, c = float(fixed[0]), float(fixed[1])
+        cal, err = calibration_records(apply_affine(p, a, c), y, cold)
+    else:
+        half = (sess % 2) == 0
+        a1, c1 = fit_affine(p[half], y[half])
+        cal, err = calibration_records(apply_affine(p[~half], a1, c1), y[~half], cold[~half])
+        a, c = fit_affine(p, y)
+        out.update(score_a_half=a1, score_c_half=c1)
+    with torch.no_grad():
+        m.score_a.fill_(a)
+        m.score_c.fill_(c)
+    r["calibration"] = cal
+    r["calibration_max_err"] = err
+    out.update(score_a=a, score_c=c)
+    log(f"recalibration: score -> {a:.3f} * score + {c:.3f}; max decile error {out['calibration_max_err_raw']} -> {err}")
+    return out
+
+
 def export_package(tr: Trainer, out: Path, cfg: DictConfig) -> dict:
     """model.npz + user_vectors.npz; returns parity and latency numbers."""
     from training.export.scorer import load as load_scorer
@@ -370,6 +436,7 @@ def main(cfg: DictConfig) -> None:
     with torch.no_grad():
         V, b = tr.product_matrix(train=False)
         r = ev.run(m, V, b, B=int(cfg.eval.bootstrap), full=True)
+    recal = recalibrate(m, r, cfg)
     out = run_dir() / "export"
     serve = export_package(tr, out, cfg)
     torch.save(m.state_dict(), out / "model.pt")
@@ -384,7 +451,7 @@ def main(cfg: DictConfig) -> None:
         "organic_recall_lift": r["metrics"]["organic_recall@10"]["all"]["lift"],
         "organic_recall_cold": r["metrics"]["organic_recall@10"]["cold"]["value"],
         "calibration_max_err": r.get("calibration_max_err"), "slot_max_gap": slot_gap,
-        **serve, "minutes": (time.time() - t_start) / 60,
+        **serve, **recal, "minutes": (time.time() - t_start) / 60,
         "alpha": float(m.alpha.item()), "x_scale": tr.x_scale, "no_id": float(m.no_id.item()), "c_click": float(m.c_click.item()), "c_purchase": float(m.c_purchase.item()),
     }
     if not tr.all_data:
