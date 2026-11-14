@@ -54,6 +54,14 @@ PRESETS.update({
     'b_lr07': PRESETS['lr07'],  # embed-a1/28
 })
 
+# Phase B2 candidates: the best phase A4 configurations by live objective after fine-tuning (embed-s4).
+PRESETS.update({
+    'c_a4_39': {'model.description': True, 'loss.click_weight': 1.0, 'model.dim': 48, 'model.hidden': 192, 'model.history_dropout': 0.5, 'model.history_len': 50, 'model.id_dropout': 0.25, 'model.pooling': 'recency', 'model.slot': 'fixed', 'organic.weight': 1.5, 'train.batch_size': 4096, 'train.epochs': 20, 'train.lr': 0.0015, 'train.weight_decay': 1e-05},  # embed-a4/39
+    'c_a4_100': {'model.description': True, 'loss.click_weight': 1.0, 'model.dim': 64, 'model.hidden': 128, 'model.history_dropout': 0.5, 'model.history_len': 35, 'model.id_dropout': 0.25, 'model.pooling': 'recency', 'model.slot': 'fixed', 'organic.weight': 1.0, 'train.batch_size': 4096, 'train.epochs': 30, 'train.lr': 0.001, 'train.weight_decay': 0.0001},  # embed-a4/100
+    'c_a4_36': {'model.description': True, 'loss.click_weight': 0.6, 'model.dim': 32, 'model.hidden': 128, 'model.history_dropout': 0.3, 'model.history_len': 50, 'model.id_dropout': 0.25, 'model.pooling': 'recency', 'model.slot': 'fixed', 'organic.weight': 0.7, 'train.batch_size': 4096, 'train.epochs': 40, 'train.lr': 0.0005, 'train.weight_decay': 0.0},  # embed-a4/36
+    'c_a4_25': {'model.description': True, 'loss.click_weight': 0.3, 'model.dim': 64, 'model.hidden': 128, 'model.history_dropout': 0.3, 'model.history_len': 50, 'model.id_dropout': 0.4, 'model.pooling': 'recency', 'model.slot': 'learned', 'organic.weight': 1.0, 'train.batch_size': 2048, 'train.epochs': 15, 'train.lr': 0.001, 'train.weight_decay': 0.0},  # embed-a4/25
+})
+
 
 def apply_preset(cfg: DictConfig) -> DictConfig:
     name = str(cfg.get("preset", "default"))
