@@ -1,6 +1,7 @@
 # Two-tower embedding model (python -m training.train). See docs/EMBED_SWEEPS_FINAL.md.
 defaults:
   - default
+  - sweep: a4   # the search space of `ivan sweep training.train` (conf/sweep/)
   - _self_
 
 preset: default  # named one-axis variant (training/embed/presets.py); applied on top of the settings below
@@ -57,25 +58,3 @@ hydra:
   job:
     chdir: false
 
-sweep:
-  # Phase A4 (refined random search around the phase A winners). Phase A2's space is in git history (f9085ed^).
-  method: random
-  run_cap: 150
-  seed: 23
-  metric: {name: objective, goal: maximize}
-  hypothesis: "A refined search around the phase A winners (description on, ID dropout >= 0.25) finds configurations above 3.9 that also rank new products correctly"
-  parameters:
-    model.description: {value: true}
-    model.dim: {values: [32, 48, 64]}
-    model.hidden: {values: [128, 192]}
-    model.id_dropout: {values: [0.25, 0.4, 0.5, 0.75]}
-    model.history_dropout: {values: [0.3, 0.5]}
-    model.history_len: {values: [20, 35, 50]}
-    model.pooling: {values: [recency, mean]}
-    model.slot: {values: [learned, fixed]}
-    loss.click_weight: {values: [0.3, 0.6, 1.0]}
-    organic.weight: {values: [0.7, 1.0, 1.5]}
-    train.lr: {values: [0.0005, 0.0007, 0.001, 0.0015]}
-    train.weight_decay: {values: [0.0, 1.0e-5, 1.0e-4, 3.0e-4]}
-    train.batch_size: {values: [2048, 4096]}
-    train.epochs: {values: [15, 20, 30, 40]}

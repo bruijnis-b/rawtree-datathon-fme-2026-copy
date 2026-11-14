@@ -124,9 +124,9 @@ class FineTuner:
         if train:
             # practice-round products drop their ID vector more often (ft.new_id_dropout), so the content path and
             # the no-ID bias learn how the live simulator treats products without history
-            p = torch.full_like(mask, float(self.bcfg.model.id_dropout))
-            p[self.P0:] = float(self.cfg.ft.get("new_id_dropout", self.bcfg.model.id_dropout))
-            mask = mask * (torch.rand_like(mask) >= p).float()
+            drop = torch.full_like(mask, float(self.bcfg.model.id_dropout))
+            drop[self.P0:] = float(self.cfg.ft.get("new_id_dropout", self.bcfg.model.id_dropout))
+            mask = mask * (torch.rand_like(mask) >= drop).float()
         return m.products(p["cat"], p["sub"], p["brand"], p["price"], p["tokens"], mask)
 
     def users(self, V, part, idx, page=None, train=True, no_hist=None):
