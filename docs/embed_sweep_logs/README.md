@@ -47,6 +47,34 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Long-term history at serving time (Sat 23:53, v1, live hold-out) (IMPORTANT for Bas)
+
+New evaluation in every fine-tune run (`history_modes` records): held-out live purchases scored with no long-term
+history, a snapshot (history + live events up to the start of the 2-hour hold-out window, like a `user_vectors.npz`
+exported then), or dynamic (every event of the user before the purchase, like Bas passing `events=`), at 10/20/50/100
+events. Events on the purchased product itself are left out (same rule as the recent context).
+
+| History at scoring time | All | New users | Cold |
+|---|---|---|---|
+| none (brand-new user) | 2.05 | 2.13 | 1.97 |
+| snapshot 10 | 2.53 | 2.60 | 2.38 |
+| snapshot 20 (v1 export today) | 2.69 | 2.73 | 2.50 |
+| snapshot 50 | 2.79 | 2.78 | 2.54 |
+| snapshot 100 | 2.82 | 2.79 | 2.54 |
+| dynamic 50 (`events=`) | 2.81 | 2.81 | 2.57 |
+| dynamic 100 | 2.83 | 2.81 | 2.56 |
+
+- Long-term history is worth **+0.6 to +0.8** on live data.
+- Serving with 50 events instead of the trained 20 adds ≈ +0.1 without retraining; little gain beyond 50.
+- Snapshot ≈ dynamic here only because this snapshot is at most 2 h old. In the final round, new shoppers have no
+  snapshot, so for them the choice is **none (2.13) vs dynamic (2.81)**: Bas passing each user's live events is worth
+  ≈ +0.7 lift for new users.
+- Note: the standard `live_objective` (2.32 for v1) scores the 20 % held-out users without any history, the
+  pessimistic case.
+- Follow-up running: `embed-hl` (training history length 0/10/20/35/50/100 × 2 seeds on b_a2_43, then fine-tuned).
+  `embed-a4` cancelled at 91/150 runs at 23:55: history-only scores do not predict live, so the remaining runs had
+  less value than the live experiments queued behind them.
+
 ### L1c and v1 (Sat 23:27–23:31)
 
 `embed-l1c`: recipes on base `b_a2_43` (live objective before tuning 2.16). IVAN stopped the sweep after 17 of 80
