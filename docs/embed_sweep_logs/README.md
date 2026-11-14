@@ -47,6 +47,35 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### History length at training time, base screen, recipe grid (Sun 00:07–00:25)
+
+**Recipe grid `embed-l1d`** (48 runs, b_a2_43): every recipe scores 2.27–2.30 live; the recipe has plateaued (seed
+SE 0.001–0.018). v1's 2.32 was the lucky end of its recipe (mean 2.29). **Phase C recipe:** 2 epochs, 50 % history
+batches, lr 0.3×, new-product ID dropout 0.5, all weights, no feedback (2.295, both seeds pass all checks,
+calibration 0.16, history 3.72).
+
+**History length at training time `embed-hl` + `embed-hlf`** (b_a2_43, 2 seeds, each fine-tuned with that recipe):
+
+| N | 0 | 10 | 20 (v1) | 35 | 50 | 100 |
+|---|---|---|---|---|---|---|
+| Live objective (held-out users without history) | 2.02 | 2.25 | 2.31 | 2.36 | 2.36 | **2.41** |
+| Live, snapshot history 100 events at serving | 2.04 | 2.70 | 2.80 | 2.86 | 2.88 | **2.91** |
+| Live, new users with their last 50 live events | 2.12 | 2.75 | 2.81 | 2.81 | 2.82 | 2.83 |
+| History objective | 2.87 | 3.54 | 3.70 | 3.85 | 3.92 | **4.11** |
+| Calibration max error | 0.31 | 0.30 | 0.20 | 0.12 | 0.17 | **0.12** |
+
+Longer is better on history *and* live, up to 100 so far; N = 100 passes calibration and ranks new products at their
+purchase share (1.20 % vs 1.15 %). `embed-hl2` tests 150 and 200.
+
+**Base screen `embed-s4`**: the 102 A4 configurations in the new-product band, each fine-tuned with the phase C
+recipe. Live 2.16–2.40 (v1's base: 2.29). Within this refined space history and live agree (rank correlation +0.52).
+What drives live: recency pooling 2.35 vs mean 2.24; history 35/50 2.32 vs 20 2.25; dim 32/48 ≥ 64; ID dropout
+0.25–0.75 barely matters. Best passing all checks: `a4/39` 2.41, `a4/100` 2.40, `a4/36` 2.39, `a4/25` 2.38.
+
+**Phase B2 (00:30)**: those 4 configurations × {own history length, 100} × 3 folds × 2 seeds (`embed-b2`,
+`embed-b2h`, 96 runs), then each fine-tuned and scored live. (A first launch with an invalid override was cancelled
+and deleted within a minute.)
+
 ### Long-term history at serving time (Sat 23:53, v1, live hold-out) (IMPORTANT for Bas)
 
 New evaluation in every fine-tune run (`history_modes` records): held-out live purchases scored with no long-term
