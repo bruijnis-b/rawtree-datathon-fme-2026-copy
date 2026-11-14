@@ -57,7 +57,7 @@ request go unanswered or late because of the policy:
 | `catalog.py` | `LiveCatalog`: the current catalogue in memory, kept in sync with `shop.catalog_updates` |
 | `trends.py` | `TrendDetector`: which subcategories are trending right now, from `shop.events` |
 | `popularity.py` | `Popularity`: best-seller rankings from history plus the last hour of live purchases, with new products included |
-| `profiles.py` | `Profiles`: per shopper, the categories viewed, the cart and the purchases, from `shop.events` |
+| `profiles.py` | `Profiles`: per shopper, the categories viewed, the cart and the purchases, from `shop.events` and `shop.history_events` |
 | `guard.py` | Exactly 10 distinct, active IDs; pads from the fallback; reports what it fixed |
 | `model_registry.py` | Opaque public `model_version` IDs and the private log of what they mean |
 | `features.py` | Signals computed in RawTree SQL: purchase counts, rankings, co-views |
@@ -123,8 +123,17 @@ product, average 0.076%:
 | In a category the shopper never viewed | 0.03% |
 | Already bought by the shopper that day | 0.03% |
 
-The last viewed product is in the shopper's most viewed category only 25% of the time. With the live
-profile known, the shopper's 60-day history profile added almost nothing.
+The last viewed product is in the shopper's most viewed category only 25% of the time.
+
+A second thread loads the same from the 60 days of `shop.history_events`, once (~35 s, 60,000 shoppers);
+`get()` returns history and live together. This part does not depend on the live stream, so it is there
+from the first minute of the final round. Checked on the practice day's live feedback:
+
+- Products the shopper bought in the history: bought again 3 times in 39,000 showings (0.008%). The old
+  carousel log (`history_sessions`) says the opposite (1.47%): for repeat purchases the live shop behaves
+  differently from the history, so check such findings on live feedback. `category_pop` spends ~9% of
+  its slots on these products.
+- History cart-not-bought products: 0.44%. History view shares predict as well as the live ones.
 
 ### Trend detection
 
@@ -154,6 +163,7 @@ real end, 0 false alarms. Tuned on these 4 events only: the final round's trends
 | `category_pop` | Best sellers in the category of the last viewed product; overall best sellers without views. "Best sellers" = shared popularity (below); `live_weight` 0 + `new_prior` false = history only, as in v1 |
 | `coview` | Products viewed in the same sessions as the recent views (recent views weigh more), then `category_pop`. Live on the practice day it sold ~40% less than `category_pop` and less than the baseline: co-viewed products are mostly alternatives people look at, not what they buy |
 | `shopper_profile` | Cart-not-bought and recently viewed products first, then best sellers from the categories the shopper views most (below); `category_pop` for shoppers we know nothing about |
+| `shopper_score` | Every product scored as popularity x fit with the shopper (categories viewed, cart, recent views, new product); bought-before products left out (below) |
 | `trend_boost` | Wraps another policy (`base`, default `category_pop`); while a subcategory is trending, mixes in its best sellers (below) |
 | `discount_boost` | Wraps another policy; pushes products that are on sale up, and pulls in discounted best sellers from the shopper's category (below) |
 
@@ -167,10 +177,32 @@ real end, 0 false alarms. Tuned on these 4 events only: the final round's trends
 | `sub_boost` (1.0) | Within a category, a product scores x (1 + `sub_boost` x its subcategory's share of the views) |
 | `base` (`category_pop`) | Filler after those, and the whole answer without profile and views |
 
-Products the shopper bought that day are left out. Not yet tested live. A model fitted on the practice
-feedback puts it at ~4x the purchases of `category_pop`, nearly all from the cart and recently viewed
-products; that is far outside what we have shown so far, so expect less. Composes with the wrappers:
-`discount_boost:base=shopper_profile`.
+Products the shopper bought before are left out. Live on the practice day (2 hours, 4 arms, v1 without
+history): official conversion 1.15 against 0.89 for `category_pop`. All of the gain came from shoppers with
+products in the cart. Its weak spots, from its rows:
+
+- Recently viewed products in positions 2-5 sold 0.13%, less than best sellers of the top category there
+  (0.2%): a viewed product only sells when it is also popular.
+- Products from categories with under 30% of the views: 0 purchases in 12,900 showings.
+
+`shopper_score` addresses both. Composes with the wrappers: `discount_boost:base=shopper_profile`.
+
+### Shopper score: tunable settings
+
+One score per in-stock product, the 30 highest returned. The defaults are the coefficients of a logistic
+regression on the practice day's live feedback (684,000 shown products, 648 purchases), not yet tested live.
+
+| Setting (default) | Factor |
+|---|---|
+| `alpha` (1.2) | popularity ^ `alpha` (the shared live popularity) |
+| `w_cat` (3.0), `w_sub` (1.0) | x exp(`w_cat` x category share + `w_sub` x subcategory share) of the shopper's views, history + live |
+| `ctx` (1.5) | x this, in the category of the last viewed product |
+| `recent` (4.5) | x this, for the request's recent views |
+| `cart` (6.0) | x this, in the cart and not bought (history or live) |
+| `new` (2.5) | x this, for products added during the event (they sold 0.26% against 0.09% when shown) |
+| `prior` (5) | views added to the denominator of every share |
+
+Bought-before products score 0. Subclasses can add a factor per product (`multiplier`).
 
 ### Trend boost: tunable settings
 
