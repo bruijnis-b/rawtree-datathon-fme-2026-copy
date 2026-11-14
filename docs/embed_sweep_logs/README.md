@@ -47,6 +47,39 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Phase B2 and the phase C configuration (Sun 00:30–01:05)
+
+`embed-b2` / `embed-b2h`: the 4 best A4 configurations by live score, at their own history length and at 100,
+3 folds × 2 seeds; `embed-b2f`: each run fine-tuned with the phase C recipe and scored on the live hold-out.
+Tables: `phase_b2_history.md` (history side).
+
+| Config | Live (mean ± SE, 6 runs) | New users: no history / last 50 live events | Calibration | History | Checks passed |
+|---|---|---|---|---|---|
+| c_a4_39 + history 100 | **2.440 ± 0.004** | 2.11 / 2.85 | 0.23 | 4.13 | 19/24 |
+| **c_a4_25 + history 100** | 2.428 ± 0.006 | 2.07 / 2.83 | **0.13** | 4.16 | **23/24** |
+| c_a4_36 + history 100 | 2.424 ± 0.005 | 2.10 / 2.81 | 0.23 | 4.30 | 20/24 |
+| c_a4_100 + history 100 | 2.421 ± 0.010 | 2.09 / 2.83 | 0.21 | 4.12 | 20/24 |
+| (own history length 35/50) | 2.37–2.41 | | | 3.85–3.98 | |
+| b_a2_43 + history 150 / 200 | 2.41 / 2.40 | | | 4.10 / 4.12 | |
+
+- History 100 helps every configuration on history (+0.15 to +0.25) and on live (+0.02 to +0.05); 150 and 200
+  add nothing over 100.
+- **Phase C configuration: `c_a4_25` + history 100** (dim 64, hidden 128, ID dropout 0.4, history dropout 0.3,
+  recency pooling, slot learned, click weight 0.3, organic weight 1.0, batch 2048, 15 epochs, lr 1e-3, wd 0): within
+  2 SE of the top live score, the only top configuration that passes calibration reliably, most checks passed, new
+  products at their purchase share (1.20 % vs 1.15 %). Live +0.14 over v1's recipe, +0.38 over v0.
+
+**Parity for fine-tuned models** (acceptance check 5): fine-tune exports now check numpy vs torch on product vectors
+(from the raw catalogue, incl. new products) and 300 live requests, plus latency. On v1: 1.1e-5, p99 1.1 ms. The test
+first showed 0.71: organic contexts had gaps where the purchased (or a held-out) product was removed, and recency
+pooling counts positions; a real request never has gaps, so the scorer compacts. **Fix:** contexts are compacted in
+training and evaluation too (`features.compact`, `RAWTREE_COMPACT=1` default). Being checked on the phase C
+configuration (`embed-cmp`, fold 0, 2 seeds) against the B2 runs before phase C uses it.
+
+**Incident:** commit `ca7f915` included `docs/NIGHT_LOOP.md`, a file written by someone else in the shared
+checkout (a plan for live A/B arms overnight on a `night` branch). Removed from `embed-sweeps` in the next commit;
+the file is left on disk, untouched. Commits now stage files by path.
+
 ### History length at training time, base screen, recipe grid (Sun 00:07–00:25)
 
 **Recipe grid `embed-l1d`** (48 runs, b_a2_43): every recipe scores 2.27–2.30 live; the recipe has plateaued (seed
