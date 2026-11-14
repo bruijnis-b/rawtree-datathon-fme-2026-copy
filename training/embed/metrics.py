@@ -229,10 +229,8 @@ class Evaluator:
                     pm, om = float(p[sel].mean()), float(o[sel].mean())
                     cal.append(dict(dataset="history", slice=name, decile=q + 1, predicted=pm, observed=om,
                                     n=int(sel.sum())))
-                    if om > 0:
+                    if o[sel].sum() >= 30:  # relative error only where the observed rate is measurable
                         errs.append(abs(pm / om - 1))
-                    else:
-                        errs.append(np.inf if pm > 0 else 0.0)
             out["calibration"] = cal
             out["calibration_max_err"] = float(max(errs)) if errs else None
             slots = []

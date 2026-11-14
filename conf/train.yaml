@@ -35,7 +35,7 @@ train:
   lr: 0.002
   weight_decay: 1.0e-5
   batch_size: 2048
-  epochs: 6
+  epochs: 20
   epoch_fraction: 1.0
   seed: 0
 

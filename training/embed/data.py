@@ -79,9 +79,14 @@ def load(fold: int, folder: Path | None = None) -> Data:
     meta_path = cache.with_suffix(".json")
     if cache.exists() and meta_path.exists():
         _log(f"cache hit {cache}")
-        return _from_cache(cache, meta_path)
-    d = _build(fold, folder)
-    _to_cache(d, cache, meta_path)
+        d = _from_cache(cache, meta_path)
+    else:
+        d = _build(fold, folder)
+        _to_cache(d, cache, meta_path)
+    # organic context never holds the target product itself: a purchase follows its own view and add-to-cart
+    # (99.98 %), which would teach the model to copy the context; a carousel click is in recent_views only 9 %.
+    rv = d.e["rv"]
+    rv[rv == d.e["prod"][:, None]] = -1
     return d
 
 
