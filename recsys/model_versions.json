@@ -300,5 +300,29 @@
     "git_commit": "f3e82a4+dirty",
     "first_live_utc": "2026-11-14T19:04:12+00:00",
     "fingerprint": "c2b0079fc50697c8"
+  },
+  {
+    "public_id": "m1fe3f6",
+    "internal": "shopper_profile-v1",
+    "params": {
+      "base": "category_pop",
+      "context": 0.3,
+      "inner": {
+        "policy": "category_pop-v3",
+        "live_weight": 0.5,
+        "new_prior": true,
+        "top_n": 30
+      },
+      "live_weight": 0.5,
+      "n_cart": 3,
+      "n_recent": 3,
+      "prior": 5.0,
+      "sub_boost": 1.0,
+      "top_n": 30
+    },
+    "description": "Best sellers from the categories this shopper looks at, with cart and recently viewed products first.",
+    "git_commit": "f0ab6db",
+    "first_live_utc": "2026-11-14T19:17:51+00:00",
+    "fingerprint": "af1b9c04d2ce4f7d"
   }
 ]
