@@ -485,6 +485,8 @@ def main(cfg: DictConfig) -> None:
         f"trained: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
         + "\n".join(f"{k}: {v}" for k, v in summary.items())
         + "\n\nUse: from training.export.scorer import load; model = load(<this folder>)\n")
+    from training.export.describe import write as describe
+    describe(out, name=os.environ.get("IVAN_EXPERIMENT", "local"))
     log("summary: " + json.dumps(summary))
 
 

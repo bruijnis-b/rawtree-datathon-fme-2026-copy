@@ -497,6 +497,8 @@ def main(cfg: DictConfig) -> None:
         f"fold: {cfg.data.fold} (all data: {cfg.data.all}); preset: {cfg.preset}\n\n"
         + "\n".join(f"{k}: {v:.4f}" if isinstance(v, float) else f"{k}: {v}" for k, v in summary.items())
         + "\n\nUse: from training.export.scorer import load; model = load(<this folder>)\n")
+    from training.export.describe import write as describe
+    describe(out, name=exp)
     log("summary: " + json.dumps(summary))
 
 
