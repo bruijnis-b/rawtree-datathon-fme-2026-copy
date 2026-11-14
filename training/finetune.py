@@ -69,8 +69,13 @@ class FineTuner:
         self.tr = tr = Trainer(bcfg)
         self.dev = tr.dev
         m = tr.model
-        missing = m.load_state_dict(torch.load(bdir / "model.pt", map_location=tr.dev), strict=False)
-        log(f"base weights loaded; missing {missing.missing_keys}")
+        sd = torch.load(bdir / "model.pt", map_location=tr.dev)
+        if "disc_beta" in sd:
+            m.disc_beta = torch.nn.Parameter(torch.tensor(0.0, device=tr.dev))
+        if sd["e_id.weight"].shape[0] == m.e_id.weight.shape[0]:
+            missing = m.load_state_dict(sd, strict=False)
+            log(f"base weights loaded; missing {missing.missing_keys}")
+            sd = None
         self.live = lv = L.build(tr.data, live_folder(cfg), holdout=bool(cfg.ft.holdout))
         P0, P = lv.n_hist_products, len(lv.product_ids)
         # extend the ID tables to the new products
@@ -82,7 +87,12 @@ class FineTuner:
             e_id.weight[:P0] = m.e_id.weight
             b_id.weight[:P0] = m.b_id.weight
         m.e_id, m.b_id = e_id, b_id
-        m.disc_beta = torch.nn.Parameter(torch.tensor(0.0, device=self.dev))  # live-only discount weight
+        if not hasattr(m, "disc_beta"):
+            m.disc_beta = torch.nn.Parameter(torch.tensor(0.0, device=self.dev))  # live-only discount weight
+        if sd is not None:  # the base is itself a fine-tuned model: its ID tables already cover the live products
+            assert sd["e_id.weight"].shape[0] == P, (sd["e_id.weight"].shape, P)
+            missing = m.load_state_dict(sd, strict=False)
+            log(f"fine-tuned base weights loaded; missing {missing.missing_keys}")
         t = tr.t
         self.P0, self.P = P0, P
         self.prod = {k: t(v) for k, v in lv.prod.items()}
@@ -284,6 +294,66 @@ class FineTuner:
                 "live_share_purchases_heldout_new": float(self.live.heldout_products[self.live.e["prod"][self.vidx]].mean())}
 
     @torch.no_grad()
+    def history_modes(self, lengths=(10, 20, 50, 100), B=300):
+        """Held-out live purchases scored with three kinds of long-term history, at several lengths:
+        none (a brand-new user); snapshot (history + live events up to the start of the hold-out window, as a
+        user_vectors.npz exported then); dynamic (every event of the user before the purchase, as Bas passing
+        `events=`). Events on the purchased product itself are left out (as in the recent context)."""
+        lv, m, dev = self.live, self.tr.model, self.dev
+        if not len(self.vidx) or lv.t_holdout > lv.t_end:
+            return []
+        hh, e = self.tr.data.h, lv.e
+        user = np.concatenate([hh["user"], e["user"]])
+        ts = np.concatenate([hh["ts"], e["ts"]])
+        prod = np.concatenate([hh["prod"], e["prod"]])
+        typ = np.concatenate([hh["type"], e["type"]])
+        o = np.lexsort((ts, user))
+        user, ts, prod, typ = user[o], ts[o], prod[o], typ[o]
+        from training.embed.data import KEY
+        key = user * KEY + ts
+        vu, vt, vp = e["user"][self.vidx], e["ts"][self.vidx], e["prod"][self.vidx]
+        lo = np.searchsorted(key, vu * KEY)
+        ends = {"snapshot": np.searchsorted(key, vu * KEY + np.minimum(vt, lv.t_holdout)),
+                "dynamic": np.searchsorted(key, vu * KEY + vt)}
+        tp, tt = torch.as_tensor(prod, device=dev), torch.as_tensor(typ, device=dev)
+        m.eval()
+        V, b = self.product_matrix(False)
+        E = self.E
+        base = np.isin(vp, self.best).astype(np.float32)
+        masks = {k: v.astype(np.float32) for k, v in self.slices.items()}
+        n_hist = {}
+        rows = []
+        for mode, L in [("none", 0)] + [(md, L) for md in ("snapshot", "dynamic") for L in lengths]:
+            hit = np.zeros(len(self.vidx), np.float32)
+            nh = np.zeros(len(self.vidx), np.float32)
+            for a in range(0, len(self.vidx), 4096):
+                sl = slice(a, a + 4096)
+                idx = self.tr.t(self.vidx[sl])
+                ctx = m.context(E["device"][idx], E["region"][idx], torch.full_like(idx, self.page_org), E["hour"][idx])
+                rec, rh = m.pool_recent(V, E["rv"][idx], ctx)
+                if L == 0:
+                    hist, hh_ = torch.zeros_like(rec), torch.zeros_like(rh)
+                else:
+                    end = torch.as_tensor(ends[mode][sl], device=dev)
+                    lo_t = torch.as_tensor(lo[sl], device=dev)
+                    # walk back up to 2L positions, keep at most L events that are not the purchased product
+                    pos = end[:, None] - 1 - torch.arange(2 * L, device=dev)[None]
+                    ok = (pos >= lo_t[:, None]) & (tp[pos.clamp(min=0)] != E["prod"][idx][:, None])
+                    ok = ok & (ok.long().cumsum(1) <= L)
+                    hist, hh_ = m.pool_history(V, tp[pos.clamp(min=0)], tt[pos.clamp(min=0)], ok.float())
+                    nh[sl] = ok.float().sum(1).cpu().numpy()
+                u = m.users(ctx, rec, rh, hist, hh_, E["is_new"][idx])
+                top = m.score_from_x(u @ V.T + b).topk(10, dim=1).indices
+                hit[sl] = (top == E["prod"][idx][:, None]).any(1).float().cpu().numpy()
+            res, _ = boot_lift(hit, base, masks, B)
+            for s, v in res.items():
+                rows.append(dict(mode=mode, length=L, slice=s, value=v["value"], baseline=v["baseline"],
+                                 lift=v["lift"], lift_lo=v["lift_lo"], lift_hi=v["lift_hi"], n=v["n"],
+                                 mean_events=float(nh[self.slices[s]].mean()) if L else 0.0))
+        m.train()
+        return rows
+
+    @torch.no_grad()
     def history_check(self):
         from training.embed.metrics import Evaluator
         tr = self.tr
@@ -343,6 +413,9 @@ def main(cfg: DictConfig) -> None:
     ref = ft.evaluate(B=200) if int(cfg.ft.epochs) > 0 else None
     ft.fit()
     r = ft.evaluate(B=1000)
+    hm = ft.history_modes() if cfg.ft.get("history_modes", True) else []
+    if hm:
+        ivan.log_records("history_modes", hm)
     hc = ft.history_check() if not ft.bcfg.data.all else None
     # recalibrate the delivered score after tuning: fit on half of the history validation week (check on the other
     # half), or use fixed values (ft.score_affine) when the base saw all history
@@ -361,7 +434,9 @@ def main(cfg: DictConfig) -> None:
     out = run_dir() / "export"
     ft.export(out)
     torch.save(ft.tr.model.state_dict(), out / "model.pt")
-    summary = {**recal, "live_share_purchases_heldout_new": r.get("live_share_purchases_heldout_new"),
+    hm_summary = {f"hm_{h['mode']}_{h['length']}_{h['slice']}": h["lift"] for h in hm
+                  if h["slice"] in ("all", "cold", "new_user")}
+    summary = {**recal, **hm_summary, "live_share_purchases_heldout_new": r.get("live_share_purchases_heldout_new"),
                "calibration_max_err": hc.get("calibration_max_err") if hc else None,
                "live_objective": r["live_objective"], "live_objective_se": r["live_objective_se"],
                "live_lift_all": r["live_lift_all"], "live_lift_cold": r["live_lift_cold"],

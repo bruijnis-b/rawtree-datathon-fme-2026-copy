@@ -66,6 +66,14 @@ def apply_preset(cfg: DictConfig) -> DictConfig:
         else:
             raise KeyError(f"unknown preset {name!r}")
     OmegaConf.set_struct(cfg, False)
+    # settings given on the command line win over the preset (e.g. preset=b_a2_43 model.history_len=50)
+    explicit = set()
+    try:
+        from hydra.core.hydra_config import HydraConfig
+        explicit = {o.split("=", 1)[0].lstrip("+~") for o in HydraConfig.get().overrides.task}
+    except Exception:  # noqa: BLE001  (not under @hydra.main)
+        pass
     for k, v in extra.items():
-        OmegaConf.update(cfg, k, v, merge=False)
+        if k not in explicit:
+            OmegaConf.update(cfg, k, v, merge=False)
     return cfg
