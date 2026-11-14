@@ -1,0 +1,10 @@
+# Hydra config for Jules's training code (python -m training.<module>). IVAN reads the datasets from ${ivan:...}.
+wandb:
+  project: rawtree
+  entity: null
+
+data:
+  dataset: rawtree_history
+  version: null  # null: the version pinned in ivan.yaml, else the latest
+
+history: ${ivan:${data.dataset},${data.version}}  # folder of the historical Parquet dataset
