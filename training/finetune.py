@@ -121,8 +121,12 @@ class FineTuner:
     def product_matrix(self, train):
         m, p = self.tr.model, self.prod
         mask = self.has_id
-        if train and self.bcfg.model.id_dropout > 0:
-            mask = mask * (torch.rand_like(mask) >= self.bcfg.model.id_dropout).float()
+        if train:
+            # practice-round products drop their ID vector more often (ft.new_id_dropout), so the content path and
+            # the no-ID bias learn how the live simulator treats products without history
+            p = torch.full_like(mask, float(self.bcfg.model.id_dropout))
+            p[self.P0:] = float(self.cfg.ft.get("new_id_dropout", self.bcfg.model.id_dropout))
+            mask = mask * (torch.rand_like(mask) >= p).float()
         return m.products(p["cat"], p["sub"], p["brand"], p["price"], p["tokens"], mask)
 
     def users(self, V, part, idx, page=None, train=True, no_hist=None):
@@ -179,7 +183,7 @@ class FineTuner:
         if what == "new_parts":
             for p in m.parameters():
                 p.requires_grad_(False)
-            for p in (m.w_new, m.e_id.weight, m.b_id.weight, m.p_bias.weight, m.p_bias.bias, m.disc_beta):
+            for p in (m.w_new, m.e_id.weight, m.b_id.weight, m.p_bias.weight, m.p_bias.bias, m.disc_beta, m.no_id):
                 p.requires_grad_(True)
         if what in ("new_parts", "freeze_hist_ids"):
             def hook(g):
@@ -276,7 +280,8 @@ class FineTuner:
         m.train()
         return {"live": res, "live_objective": float(obj), "live_objective_se": float(np.nanstd(od)),
                 "live_lift_all": res["all"]["lift"], "live_lift_cold": res["cold"]["lift"],
-                "live_share_top10_heldout_new": top_new / max(n * 10, 1)}
+                "live_share_top10_heldout_new": top_new / max(n * 10, 1),
+                "live_share_purchases_heldout_new": float(self.live.heldout_products[self.live.e["prod"][self.vidx]].mean())}
 
     @torch.no_grad()
     def history_check(self):
@@ -285,7 +290,7 @@ class FineTuner:
         ev = Evaluator(tr.data, tr.dev, tr.log_theta, max_organic=20000)
         V, b = tr.product_matrix(train=False)
         tr.model.eval()
-        return ev.run(tr.model, V, b, B=1000, full=False)
+        return ev.run(tr.model, V, b, B=1000, full=True)
 
     def export(self, out: Path):
         from training.export.scorer import load as load_scorer
@@ -339,10 +344,26 @@ def main(cfg: DictConfig) -> None:
     ft.fit()
     r = ft.evaluate(B=1000)
     hc = ft.history_check() if not ft.bcfg.data.all else None
+    # recalibrate the delivered score after tuning: fit on half of the history validation week (check on the other
+    # half), or use fixed values (ft.score_affine) when the base saw all history
+    from training.train import recalibrate
+    fixed = cfg.ft.get("score_affine")
+    rc = OmegaConf.create({"train": {"score_affine": list(fixed) if fixed else None}})
+    if hc is not None:
+        recal = recalibrate(ft.tr.model, hc, rc)
+    elif fixed:
+        with torch.no_grad():
+            ft.tr.model.score_a.fill_(float(fixed[0]))
+            ft.tr.model.score_c.fill_(float(fixed[1]))
+        recal = {"score_a": float(fixed[0]), "score_c": float(fixed[1])}
+    else:
+        recal = {}
     out = run_dir() / "export"
     ft.export(out)
     torch.save(ft.tr.model.state_dict(), out / "model.pt")
-    summary = {"live_objective": r["live_objective"], "live_objective_se": r["live_objective_se"],
+    summary = {**recal, "live_share_purchases_heldout_new": r.get("live_share_purchases_heldout_new"),
+               "calibration_max_err": hc.get("calibration_max_err") if hc else None,
+               "live_objective": r["live_objective"], "live_objective_se": r["live_objective_se"],
                "live_lift_all": r["live_lift_all"], "live_lift_cold": r["live_lift_cold"],
                "live_share_top10_heldout_new": r["live_share_top10_heldout_new"],
                "disc_beta": float(ft.tr.model.disc_beta.item()), "minutes": (time.time() - t0) / 60}
@@ -360,6 +381,24 @@ def main(cfg: DictConfig) -> None:
                 recs.append(dict(dataset="history", slice=sl, metric=metric, value=v["value"], baseline=v["baseline"],
                                  lift=v["lift"], lift_lo=v["lift_lo"], lift_hi=v["lift_hi"], n=v["n"]))
     ivan.log_records("metrics", recs)
+    checks = []
+    if r.get("live"):
+        st, sp = r["live_share_top10_heldout_new"], r["live_share_purchases_heldout_new"]
+        checks.append(dict(check="live: held-out new products' top-10 share within 0.5x-2x of their purchase share",
+                           value=f"{st:.4f} vs {sp:.4f}", needed="0.5x-2x", passed=bool(0.5 * sp <= st <= 2 * sp)))
+        checks.append(dict(check="live: lift_cold > 0", value=f"{r['live_lift_cold']:+.3f}", needed="> 0",
+                           passed=bool(r["live_lift_cold"] > 0)))
+        if ref is not None:
+            checks.append(dict(check="live: beats the model without fine-tuning",
+                               value=f"{r['live_objective']:.3f} vs {ref['live_objective']:.3f}", needed=">",
+                               passed=bool(r["live_objective"] > ref["live_objective"])))
+    if hc is not None:
+        cal = hc.get("calibration_max_err")
+        checks.append(dict(check="calibration within 20 % per decile (history, after recalibration)",
+                           value=f"{cal:.3f}" if cal is not None else "n/a", needed="<= 0.20",
+                           passed=bool(cal is not None and cal <= 0.2)))
+        ivan.log_records("calibration", hc.get("calibration", []))
+    ivan.log_records("checks", checks)
     ivan.log_summary(summary)
     (out / "metrics.json").write_text(json.dumps({"summary": summary, "metrics": recs}, indent=1))
     (out / "config.yaml").write_text(OmegaConf.to_yaml(ft.bcfg))

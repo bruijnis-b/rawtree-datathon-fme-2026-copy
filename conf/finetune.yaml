@@ -16,12 +16,14 @@ ft:
   epochs: 2
   history_share: 0.5
   feedback: true
+  new_id_dropout: 0.25 # ID dropout for practice-round products during fine-tuning
   half_life_h: 0     # 0 = no recency weighting of live events
+  score_affine: null # [a, c] fixed score recalibration (bases trained on all history); null = refit on history week
 
 sweep:
   method: random
-  run_cap: 40
-  seed: 11
+  run_cap: 80
+  seed: 13
   metric: {name: live_objective, goal: maximize}
   hypothesis: "A fine-tuning recipe on the live stream beats the history-only model on the live hold-out without forgetting the history"
   parameters:
@@ -31,3 +33,4 @@ sweep:
     ft.history_share: {values: [0.0, 0.5, 0.8]}
     ft.feedback: {values: [true, false]}
     ft.half_life_h: {values: [0, 6]}
+    ft.new_id_dropout: {values: [0.25, 0.5, 0.75, 1.0]}
