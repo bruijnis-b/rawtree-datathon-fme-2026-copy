@@ -15,7 +15,6 @@ its own public model ID).
 """
 from __future__ import annotations
 
-from .. import features
 from .base import Policy, Request
 
 
@@ -27,19 +26,13 @@ class DiscountBoost(Policy):
     inject = 0.5           # weight of discounted best sellers from the shopper's category (0 = re-rank only)
     n_candidates = 10      # how many discounted best sellers to consider per request
     min_discount = 0.05    # at least 5% off to count as discounted
+    live_weight = 0.5      # candidate ranking: weight of live purchases vs history (see popularity.py)
 
     def fit(self) -> None:
         from . import REGISTRY  # late import: the registry imports this module
-        self.inner = REGISTRY[self.base](self.catalog, self.trends)
+        self.inner = REGISTRY[self.base](self.catalog, self.trends, self._popularity)
         self.inner.fit()
-        counts = features.purchase_counts()
-
-        def category(pid: str) -> str | None:
-            p = self.catalog.get(pid)
-            return p.category if p else None
-
-        self.best = features.rank(counts)
-        self.best_by_category = features.rank_by_group(counts, category)
+        self.popularity()
 
     def discounted(self, ranked: list[str]) -> list[str]:
         """The first n_candidates products of `ranked` that are in stock and discounted enough."""
@@ -59,7 +52,8 @@ class DiscountBoost(Policy):
             score.setdefault(pid, 1 / (r + 1))  # first position counts (base lists may repeat a product)
         if self.inject > 0:
             last = self.catalog.get(req.last_view) if req.last_view else None
-            pool = self.best_by_category.get(last.category, []) if last else self.best
+            pool = (self.popularity().ranked("category", self.live_weight).get(last.category, []) if last
+                    else self.popularity().ranked("all", self.live_weight).get("", []))
             for t, pid in enumerate(self.discounted(pool)):
                 score[pid] = score.get(pid, 0.0) + self.inject / (t + 1)
         for pid in score:

@@ -21,7 +21,7 @@ class Coview(Policy):
 
     def fit(self) -> None:
         self.covisit = features.coviews(self.top_k)
-        self.fallback = CategoryPop(self.catalog)
+        self.fallback = CategoryPop(self.catalog, self.trends, self._popularity)
         self.fallback.fit()
 
     def recommend(self, req: Request) -> list[str]:
