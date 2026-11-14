@@ -53,6 +53,14 @@ def load_official(bucket: int) -> dict | None:
     return snap
 
 
+@st.cache_data(ttl=55, max_entries=2, show_spinner=False)
+def load_board(bucket: int) -> tuple[pd.DataFrame, pd.DataFrame] | None:
+    try:
+        return data.all_teams()
+    except Exception:
+        return None
+
+
 @st.cache_data(ttl=25, max_entries=4, show_spinner=False)
 def load_store(bucket: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict]:
     return (data.trending_subcategories(), data.events_per_minute(60), data.catalog_changes(60),
@@ -267,6 +275,78 @@ def leaderboard_view(t0: float, t1: float, label: str, official: dict | None) ->
                 x=alt.X("hour:T", title=None), y=alt.Y("score:Q", title="Score"),
                 tooltip=[alt.Tooltip("hour:T", format="%a %H:%M"), alt.Tooltip("score:Q", format=".2f")])
             st.altair_chart(chart, alt="Our official hourly score from the leaderboard")
+
+    score_comparison()
+
+
+def score_comparison() -> None:
+    """Every team's score out of 100 next to ours."""
+    st.subheader("Score vs the other teams")
+    got = load_board(int(time.time() // 55))
+    if got is None or got[0].empty:
+        st.info("Leaderboard unreachable or empty right now.", icon=":material/cloud_off:")
+        return
+    board, hourly = got
+    us = board[board["is_us"]]
+    n = len(board)
+    st.caption(f"{n} teams over the leaderboard's current window. **Score now** is our estimate from each "
+               "team's expected conversions (same formula as the model table, ~0.2-1 pt off the official); "
+               "**last hour** is the newest official hourly score.")
+    if not us.empty:
+        r = us.iloc[0]
+        above = board[board["rank"] == r["rank"] - 1]
+        with st.container(horizontal=True):
+            st.metric("Our rank", f"{int(r['rank'])} / {n}", border=True)
+            st.metric("Our score now", fmt(r["score_est"], 1), border=True,
+                      delta=f"{r['score_est'] - board['score_est'].median():+.1f} vs median")
+            st.metric("Gap to #1", fmt(board["score_est"].iloc[0] - r["score_est"], 1), border=True,
+                      help=f"#1 is {board['team'].iloc[0]}")
+            st.metric("Gap to next team up", fmt(above["score_est"].iloc[0] - r["score_est"], 1)
+                      if not above.empty else "–", border=True,
+                      help=f"{above['team'].iloc[0]}" if not above.empty else "We are first")
+            st.metric("Our last official hour", fmt(r["last_hour_score"], 1), border=True)
+
+    c1, c2 = st.columns(2)
+    with c1, st.container(border=True):
+        st.markdown("**Score now** (estimated, out of 100)")
+        chart = alt.Chart(board).mark_bar().encode(
+            y=alt.Y("team:N", sort="-x", title=None, axis=alt.Axis(labelOverlap=False, labelFontSize=10)),
+            x=alt.X("score_est:Q", title="Score", scale=alt.Scale(domain=[0, 100])),
+            color=alt.condition("datum.is_us", alt.value("#e4572e"), alt.value("#9aa5b1")),
+            tooltip=["rank:Q", "team:N", alt.Tooltip("score_est:Q", format=".1f", title="score now"),
+                     alt.Tooltip("last_hour_score:Q", format=".1f", title="last official hour")],
+        ).properties(height=max(300, 16 * n))
+        st.altair_chart(chart, alt="Estimated score of every team, ours highlighted")
+    with c2, st.container(border=True):
+        st.markdown("**Official score per hour**")
+        top = board["team"].head(5).tolist()
+        default = top + ([TEAM] if TEAM not in top else [])
+        picked = st.multiselect("Teams", sorted(board["team"]), default=default, key="compare_teams",
+                                label_visibility="collapsed")
+        h = hourly[hourly["team"].isin(picked)].copy()
+        if h.empty:
+            st.caption("No hourly scores for these teams.")
+        else:
+            h["hour"] = naive(pd.to_datetime(h["hour"], unit="s", utc=True).dt.tz_convert(data.TZ))
+            h["us"] = h["team"] == TEAM
+            chart = alt.Chart(h).mark_line(point=True).encode(
+                x=alt.X("hour:T", title=None), y=alt.Y("score:Q", title="Score", scale=alt.Scale(domain=[0, 100])),
+                color=alt.Color("team:N", title=None),
+                strokeWidth=alt.condition("datum.us", alt.value(4), alt.value(1.5)),
+                tooltip=["team:N", alt.Tooltip("hour:T", format="%a %H:%M"), alt.Tooltip("score:Q", format=".1f")])
+            st.altair_chart(chart, alt="Official hourly score of the chosen teams, ours thicker")
+
+    with st.expander("All teams"):
+        st.dataframe(
+            board.drop(columns=["is_us", "last_hour"]),
+            hide_index=True, width="stretch",
+            column_config={
+                "score_est": st.column_config.ProgressColumn("Score now", min_value=0, max_value=100, format="%.1f"),
+                "last_hour_score": st.column_config.NumberColumn("Last official hour", format="%.1f"),
+                "conversion": st.column_config.NumberColumn("Conversion %", format="%.3f"),
+                "cold_conversion": st.column_config.NumberColumn("Cold %", format="%.3f"),
+                "on_time": st.column_config.NumberColumn("On time %", format="%.1f"),
+            })
 
 
 def health_view(t0: float, t1: float, label: str) -> None:
