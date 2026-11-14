@@ -499,5 +499,29 @@
     "git_commit": "1763b1f+dirty",
     "first_live_utc": "2026-11-14T22:09:01+00:00",
     "fingerprint": "e18cff27a27b251c"
+  },
+  {
+    "public_id": "mdfdc72",
+    "internal": "combined-v1",
+    "params": {
+      "alpha": 1.2,
+      "boost": 6.0,
+      "cart": 6.0,
+      "ctx": 1.5,
+      "floor": 0.12,
+      "live_weight": 0.5,
+      "new": 2.5,
+      "prior": 5.0,
+      "recent": 4.5,
+      "rel_price": 0.6,
+      "top_n": 30,
+      "trend": 8.0,
+      "w_cat": 3.0,
+      "w_sub": 1.0
+    },
+    "description": "Everything we have in one policy: shopper_score x the sale lift x a lift for trending subcategories.",
+    "git_commit": "d5f72fa",
+    "first_live_utc": "2026-11-14T22:19:20+00:00",
+    "fingerprint": "a53974f31c113381"
   }
 ]
