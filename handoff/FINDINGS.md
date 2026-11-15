@@ -16,6 +16,42 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 07:10: the two cold gaps, and the newness multipliers
+
+Logged answers after 00:59 UTC (unseen by v3 and v4), score = mean of v3 and v4: 65,581 answers, 1,381 purchases.
+Lifts are fitted on top of that score with list position held constant; ranges are 5–95% from a bootstrap over
+answers. Offline fits on shown products only, so treat them as leads, not proof.
+
+| Segment | Share of answers | Conversion | Purchases |
+|---|---|---|---|
+| Viewed a new product | 17.4% | 2.29% | 261 |
+| New shopper, no recent views (all on the home page) | 6.1% | 1.00% | 40 |
+| New shopper with views | 18.9% | 3.26% | 404 |
+| Warm | 57.6% | 1.79% | 676 |
+
+**Requests that viewed a new product:** new products sell **x3.3 (1.8–4.2)** more than the model expects; on
+all other requests x2.3 (1.2–2.7). The viewed new product itself gets nothing extra (x1.1, 0.4–1.7), nor does its
+subcategory (x0.85). So `new` (all new products) is supported offline; `new_view` (extra on these requests) is not
+separately: x3.3 against x2.3 overlap.
+
+**New shoppers without recent views:** 40 purchases, too few to support any change. Popularity adds nothing on top
+of the model; cart x4 (1.6–8.6) is already covered by the default x6.
+
+**Evidence behind `new` and `new_view` so far:**
+
+| Setting | Where the value came from | Live |
+|---|---|---|
+| `new` = 2.5 in `combined` | Logistic fit on the practice day, policy without a model | `combined` lost to every model arm |
+| `new` = 1 in `embed_score` | Assumption: "the model scores new products from their fields" | All default arms |
+| `new` on top of a model | Offline: v1/v2 x2.7 (1.8–4.1); v3/v4 x1.4 (0.6–3.9, 01:00); v3+v4 x2.3 (1.2–2.7, now) | Only inside `m8277ec` (1.5), mixed with five other changes |
+| `new_view` = 3 (`cold_combined`), 6 (`cold_embed`) | 17 purchases, practice day, policy without a model | `cold_combined` lost: −10% conversion, −17% cold |
+
+**Caveat that matters for the final round:** v3, v4, v10 and v11 all know the practice new products by ID (they
+were fine-tuned on them) and still under-score them. The 300 products of the final round are unseen by every model.
+Nothing measured tonight is on unseen products. **Trainer:** please give, for v10 and v11, the share of top-10
+slots that products held out completely (content only) get, against their share of purchases. That is the only
+evidence that can set `new` for the final round.
+
 ## 2026-11-15 06:50: correction: the route arm's cold side was not chosen on evidence
 
 At 06:27 I sent cold requests to the v2+v3 average because it had the highest cold conversion. Paired per quarter
