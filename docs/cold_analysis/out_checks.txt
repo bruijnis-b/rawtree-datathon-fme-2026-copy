@@ -1,0 +1,70 @@
+
+## fallback carousels only (same popular list for everyone): rate per carousel by own live purchases
+nw | live_purchases | carousels | clicks | purchases | click_per_1000_impr | purchase_per_1000_impr
+0 | a 0 | 9234 | 158 | 31 | 1.71 | 0.34
+0 | b 1-2 | 5726 | 120 | 25 | 2.1 | 0.44
+0 | c 3+ | 3349 | 76 | 20 | 2.27 | 0.6
+1 | a 0 | 4599 | 101 | 36 | 2.2 | 0.78
+1 | b 1-2 | 2682 | 114 | 48 | 4.25 | 1.79
+1 | c 3+ | 589 | 61 | 38 | 10.36 | 6.45
+
+## fallback carousels only: purchases per click by class
+nw | clicks | purchases | cvr
+0 | 354 | 76 | 0.215
+1 | 276 | 122 | 0.442
+
+## fallback carousels only, impressions where the user has NO own event in the product's category (no personal match): new vs known
+nw | impressions | clicks | purchases | click_per_1000 | purchase_per_1000
+0 | 11714 | 7 | 1 | 0.6 | 0.09
+1 | 48495 | 93 | 30 | 1.92 | 0.62
+
+## all carousels, by own-category share bucket: new/known ratio left after matching on affinity
+own_cat_share | new_purch_per_1000 | known_purch_per_1000
+a 0 | 0.58 | 0.17
+b <10% | 1.07 | 0.09
+c 10-30% | 1.4 | 0.59
+d 30%+ | 6.24 | 2.39
+
+## live events available per request: up to the request vs up to the start of the hour
+nw | mean_now | mean_hour_cut | any_now_pct | any_hour_cut_pct | six_plus_now_pct | six_plus_hour_cut_pct
+False | 48.9 | 45 | 93.7 | 92.5 | 85.9 | 84
+True | 23 | 21.1 | 97.7 | 96.6 | 91.4 | 88.7
+
+## in-cart impressions: at request time (for known users this includes carts from the 60-day history) vs live carts seen with the hour cut; compare the new-user row only
+nw | in_cart_now | in_cart_hour_cut
+0 | 24558 | 3631
+1 | 920 | 834
+
+## slots spent per carousel (mean number of the 10 shown) by our own policy
+nw | already_bought | in_cart | in_recent_views
+0 | 0.76 | 0.56 | 0.16
+1 | 0.06 | 0.06 | 0.17
+
+## available per request from live events: distinct carted and bought products
+nw | carted_products | bought_products | has_open_cart_pct
+False | 4.01 | 2.1 | 56.5
+True | 2.04 | 1.03 | 50.1
+
+## in-cart impressions by slot group: click and purchase per 1,000
+nw | slots | n | click | purchase
+0 | slot 1-3 | 9471 | 15.4 | 5.1
+0 | slot 4-10 | 15087 | 6.2 | 2.1
+1 | slot 1-3 | 386 | 106.2 | 69.9
+1 | slot 4-10 | 534 | 28.1 | 15
+
+## new-user requests (all requests of the exploration split, also unanswered ones) by hour: own live events before the request
+hour_utc | requests | k0_pct | k1_5_pct | k6plus_pct | median_k | no_recent_views_pct
+9 | 2628 | 69.6 | 16.8 | 13.5 | 0 | 20.7
+10 | 2532 | 33.2 | 28.5 | 38.3 | 4 | 18.7
+11 | 2625 | 15.8 | 22.7 | 61.5 | 8 | 18.7
+12 | 2555 | 7 | 15 | 78 | 12 | 20.2
+13 | 2577 | 3.6 | 10.8 | 85.5 | 15 | 20.1
+14 | 2634 | 1.6 | 6.7 | 91.8 | 18 | 17.8
+15 | 2553 | 1.1 | 3 | 95.8 | 22 | 19.7
+16 | 2565 | 0.2 | 2.5 | 97.3 | 25 | 20.7
+17 | 2615 | 0 | 1.3 | 98.6 | 29 | 20.5
+18 | 2504 | 0.1 | 0.9 | 99 | 33 | 21
+
+## are a request's recent_views in shop.events? (3,000 requests; same user and product within 5 s)
+recent_views | found_in_events
+6271 | 0

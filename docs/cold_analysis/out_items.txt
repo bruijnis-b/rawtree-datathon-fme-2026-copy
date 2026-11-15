@@ -1,0 +1,371 @@
+
+## impressions
+nw | impressions | carousels | clicks | purchases
+0 | 439920 | 43992 | 931 | 211
+1 | 186740 | 18674 | 647 | 257
+
+## what we showed (share of impressions)
+served_by | nw | top50 | in_rv | rv_sub | rv_brand | own_viewed | in_cart | new_product
+fallback | 0 | 1 | 0.003 | 0.024 | 0.035 | 0.232 | 0.055 | 0
+fallback | 1 | 1 | 0.003 | 0.023 | 0.035 | 0.013 | 0.004 | 0
+team | 0 | 0.488 | 0.016 | 0.359 | 0.205 | 0.285 | 0.056 | 0.0041
+team | 1 | 0.489 | 0.017 | 0.358 | 0.205 | 0.028 | 0.006 | 0.004
+
+## slot   (per 1,000 impressions, 95 % interval)
+                     1 known n=  43992  click   6.00 [ 5.32,  6.77]  purchase  1.32 [ 1.02, 1.70]  (264/58)
+                     1 new   n=  18674  click  11.19 [ 9.78, 12.80]  purchase  5.57 [ 4.60, 6.74]  (209/104)
+                     2 known n=  43992  click   2.89 [ 2.43,  3.43]  purchase  0.75 [ 0.53, 1.05]  (127/33)
+                     2 new   n=  18674  click   5.41 [ 4.45,  6.57]  purchase  2.36 [ 1.76, 3.16]  (101/44)
+                     3 known n=  43992  click   2.61 [ 2.18,  3.14]  purchase  0.52 [ 0.35, 0.78]  (115/23)
+                     3 new   n=  18674  click   4.12 [ 3.30,  5.15]  purchase  1.34 [ 0.91, 1.98]  (77/25)
+                     4 known n=  43992  click   2.30 [ 1.89,  2.79]  purchase  0.55 [ 0.37, 0.81]  (101/24)
+                     4 new   n=  18674  click   3.37 [ 2.64,  4.31]  purchase  1.23 [ 0.82, 1.85]  (63/23)
+                     5 known n=  43992  click   1.93 [ 1.56,  2.39]  purchase  0.43 [ 0.28, 0.67]  (85/19)
+                     5 new   n=  18674  click   1.98 [ 1.44,  2.73]  purchase  0.59 [ 0.33, 1.05]  (37/11)
+                     6 known n=  43992  click   1.05 [ 0.78,  1.39]  purchase  0.30 [ 0.17, 0.51]  (46/13)
+                     6 new   n=  18674  click   1.34 [ 0.91,  1.98]  purchase  0.43 [ 0.22, 0.85]  (25/8)
+                     7 known n=  43992  click   1.48 [ 1.16,  1.88]  purchase  0.43 [ 0.28, 0.67]  (65/19)
+                     7 new   n=  18674  click   2.09 [ 1.53,  2.85]  purchase  0.43 [ 0.22, 0.85]  (39/8)
+                     8 known n=  43992  click   1.14 [ 0.86,  1.50]  purchase  0.25 [ 0.14, 0.45]  (50/11)
+                     8 new   n=  18674  click   1.82 [ 1.30,  2.54]  purchase  0.64 [ 0.37, 1.12]  (34/12)
+                     9 known n=  43992  click   0.82 [ 0.59,  1.13]  purchase  0.09 [ 0.04, 0.23]  (36/4)
+                     9 new   n=  18674  click   1.66 [ 1.17,  2.36]  purchase  0.70 [ 0.41, 1.19]  (31/13)
+                    10 known n=  43992  click   0.95 [ 0.71,  1.29]  purchase  0.16 [ 0.08, 0.33]  (42/7)
+                    10 new   n=  18674  click   1.66 [ 1.17,  2.36]  purchase  0.48 [ 0.25, 0.92]  (31/9)
+
+## organic popularity rank of the shown product   (per 1,000 impressions, 95 % interval)
+              a top 10 known n= 160975  click   2.45 [ 2.22,  2.70]  purchase  0.63 [ 0.52, 0.76]  (394/101)
+              a top 10 new   n=  68839  click   4.75 [ 4.26,  5.29]  purchase  2.12 [ 1.80, 2.49]  (327/146)
+               b 11-50 known n= 147526  click   2.34 [ 2.10,  2.60]  purchase  0.49 [ 0.39, 0.62]  (345/73)
+               b 11-50 new   n=  62646  click   3.50 [ 3.06,  3.99]  purchase  1.37 [ 1.11, 1.69]  (219/86)
+              c 51-100 known n=  32534  click   2.52 [ 2.03,  3.13]  purchase  0.65 [ 0.42, 0.99]  (82/21)
+              c 51-100 new   n=  13478  click   3.19 [ 2.37,  4.29]  purchase  0.96 [ 0.56, 1.65]  (43/13)
+             d 101-500 known n=  61142  click   1.41 [ 1.14,  1.74]  purchase  0.23 [ 0.14, 0.38]  (86/14)
+             d 101-500 new   n=  25891  click   1.78 [ 1.33,  2.37]  purchase  0.46 [ 0.27, 0.81]  (46/12)
+                e 500+ known n=  37743  click   0.64 [ 0.43,  0.95]  purchase  0.05 [ 0.01, 0.19]  (24/2)
+                e 500+ new   n=  15886  click   0.76 [ 0.43,  1.32]  purchase  0.00 [ 0.00, 0.24]  (12/0)
+
+## category   (per 1,000 impressions, 95 % interval)
+       Beauty & Health known n=  42155  click   0.69 [ 0.48,  0.99]  purchase  0.12 [ 0.05, 0.28]  (29/5)
+       Beauty & Health new   n=  18145  click   1.98 [ 1.43,  2.75]  purchase  0.55 [ 0.30, 1.01]  (36/10)
+         Books & Media known n=  85316  click   3.36 [ 3.00,  3.78]  purchase  0.73 [ 0.57, 0.93]  (287/62)
+         Books & Media new   n=  36151  click   5.95 [ 5.21,  6.79]  purchase  3.15 [ 2.63, 3.79]  (215/114)
+    Computers & Gaming known n=  37948  click   2.50 [ 2.05,  3.06]  purchase  0.47 [ 0.30, 0.75]  (95/18)
+    Computers & Gaming new   n=  15756  click   2.54 [ 1.87,  3.45]  purchase  0.95 [ 0.58, 1.57]  (40/15)
+           Electronics known n=  65958  click   1.58 [ 1.30,  1.91]  purchase  0.29 [ 0.18, 0.45]  (104/19)
+           Electronics new   n=  28667  click   2.41 [ 1.90,  3.04]  purchase  0.70 [ 0.45, 1.08]  (69/20)
+               Fashion known n=  36047  click   2.30 [ 1.86,  2.85]  purchase  0.64 [ 0.43, 0.96]  (83/23)
+               Fashion new   n=  14910  click   5.03 [ 4.02,  6.30]  purchase  2.01 [ 1.41, 2.87]  (75/30)
+         Home & Garden known n=  15581  click   0.83 [ 0.49,  1.43]  purchase  0.13 [ 0.04, 0.47]  (13/2)
+         Home & Garden new   n=   6838  click   1.46 [ 0.79,  2.69]  purchase  0.44 [ 0.15, 1.29]  (10/3)
+        Home & Kitchen known n=  30584  click   1.24 [ 0.91,  1.70]  purchase  0.20 [ 0.09, 0.43]  (38/6)
+        Home & Kitchen new   n=  12689  click   1.81 [ 1.21,  2.72]  purchase  0.95 [ 0.54, 1.65]  (23/12)
+                  Pets known n=  18012  click   1.05 [ 0.68,  1.65]  purchase  0.06 [ 0.01, 0.31]  (19/1)
+                  Pets new   n=   7318  click   0.82 [ 0.38,  1.79]  purchase  0.00 [ 0.00, 0.52]  (6/0)
+     Sports & Outdoors known n=  21497  click   2.33 [ 1.76,  3.06]  purchase  0.60 [ 0.35, 1.03]  (50/13)
+     Sports & Outdoors new   n=   9486  click   4.53 [ 3.37,  6.10]  purchase  1.58 [ 0.96, 2.61]  (43/15)
+           Toys & Baby known n=  86822  click   2.45 [ 2.15,  2.81]  purchase  0.71 [ 0.56, 0.92]  (213/62)
+           Toys & Baby new   n=  36780  click   3.53 [ 2.98,  4.20]  purchase  1.03 [ 0.75, 1.42]  (130/38)
+
+## reference price   (per 1,000 impressions, 95 % interval)
+                 a <15 known n= 223942  click   2.34 [ 2.15,  2.55]  purchase  0.54 [ 0.45, 0.65]  (524/121)
+                 a <15 new   n=  95260  click   3.96 [ 3.58,  4.38]  purchase  1.71 [ 1.47, 1.99]  (377/163)
+               b 15-40 known n= 134506  click   1.97 [ 1.75,  2.22]  purchase  0.43 [ 0.33, 0.56]  (265/58)
+               b 15-40 new   n=  56796  click   3.13 [ 2.71,  3.63]  purchase  1.13 [ 0.88, 1.44]  (178/64)
+              c 40-100 known n=  36640  click   1.97 [ 1.56,  2.47]  purchase  0.44 [ 0.27, 0.71]  (72/16)
+              c 40-100 new   n=  15436  click   2.20 [ 1.58,  3.08]  purchase  0.45 [ 0.22, 0.94]  (34/7)
+                d 100+ known n=  44832  click   1.56 [ 1.24,  1.97]  purchase  0.36 [ 0.22, 0.58]  (70/16)
+                d 100+ new   n=  19248  click   3.01 [ 2.33,  3.89]  purchase  1.19 [ 0.80, 1.79]  (58/23)
+
+## discount now (context only)   (per 1,000 impressions, 95 % interval)
+          at reference known n= 425419  click   2.12 [ 1.99,  2.27]  purchase  0.48 [ 0.42, 0.55]  (903/203)
+          at reference new   n= 180125  click   3.41 [ 3.15,  3.69]  purchase  1.37 [ 1.21, 1.55]  (614/247)
+            discounted known n=  14501  click   1.93 [ 1.34,  2.79]  purchase  0.55 [ 0.28, 1.09]  (28/8)
+            discounted new   n=   6615  click   4.99 [ 3.55,  7.00]  purchase  1.51 [ 0.82, 2.78]  (33/10)
+
+## practice-round new product   (per 1,000 impressions, 95 % interval)
+                     0 known n= 438868  click   2.10 [ 1.97,  2.24]  purchase  0.47 [ 0.41, 0.54]  (922/205)
+                     0 new   n= 186307  click   3.45 [ 3.20,  3.73]  purchase  1.37 [ 1.21, 1.55]  (643/255)
+                     1 known n=   1052  click   8.56 [ 4.51, 16.18]  purchase  5.70 [ 2.62,12.39]  (9/6)
+                     1 new   n=    433  click   9.24 [ 3.60, 23.51]  purchase  4.62 [ 1.27,16.68]  (4/2)
+
+## shown product is one of the recent_views   (per 1,000 impressions, 95 % interval)
+                     0 known n= 346762  click   2.24 [ 2.09,  2.41]  purchase  0.51 [ 0.44, 0.59]  (778/177)
+                     0 new   n= 147437  click   3.66 [ 3.36,  3.98]  purchase  1.38 [ 1.21, 1.59]  (539/204)
+                     1 known n=   4748  click   9.06 [ 6.73, 12.18]  purchase  3.79 [ 2.40, 5.99]  (43/18)
+                     1 new   n=   2023  click  24.22 [18.37, 31.88]  purchase 15.32 [10.82,21.67]  (49/31)
+
+## same subcategory as a recent view (not the product itself)   (per 1,000 impressions, 95 % interval)
+                     0 known n= 254835  click   2.19 [ 2.02,  2.38]  purchase  0.49 [ 0.41, 0.58]  (559/124)
+                     0 new   n= 109004  click   3.66 [ 3.32,  4.04]  purchase  1.46 [ 1.25, 1.70]  (399/159)
+                     1 known n=  91927  click   2.38 [ 2.09,  2.72]  purchase  0.58 [ 0.44, 0.75]  (219/53)
+                     1 new   n=  38433  click   3.64 [ 3.09,  4.30]  purchase  1.17 [ 0.88, 1.57]  (140/45)
+
+## same brand as a recent view (not the product itself)   (per 1,000 impressions, 95 % interval)
+                     0 known n= 292501  click   2.12 [ 1.96,  2.30]  purchase  0.44 [ 0.37, 0.52]  (621/129)
+                     0 new   n= 124500  click   3.45 [ 3.14,  3.80]  purchase  1.30 [ 1.12, 1.52]  (430/162)
+                     1 known n=  54261  click   2.89 [ 2.48,  3.38]  purchase  0.88 [ 0.67, 1.17]  (157/48)
+                     1 new   n=  22937  click   4.75 [ 3.94,  5.73]  purchase  1.83 [ 1.36, 2.47]  (109/42)
+
+## same category, other subcategory   (per 1,000 impressions, 95 % interval)
+                     0 known n= 135458  click   1.58 [ 1.38,  1.81]  purchase  0.27 [ 0.20, 0.38]  (214/37)
+                     0 new   n=  58606  click   2.37 [ 2.01,  2.80]  purchase  0.89 [ 0.68, 1.16]  (139/52)
+                     1 known n= 119377  click   2.89 [ 2.60,  3.21]  purchase  0.73 [ 0.59, 0.90]  (345/87)
+                     1 new   n=  50398  click   5.16 [ 4.57,  5.82]  purchase  2.12 [ 1.76, 2.56]  (260/107)
+
+## user viewed the product organically before (not in recent_views)   (per 1,000 impressions, 95 % interval)
+                     0 known n= 321514  click   1.60 [ 1.47,  1.75]  purchase  0.31 [ 0.26, 0.38]  (515/101)
+                     0 new   n= 180883  click   2.97 [ 2.73,  3.23]  purchase  1.08 [ 0.94, 1.24]  (537/195)
+                     1 known n= 113658  click   3.28 [ 2.97,  3.63]  purchase  0.81 [ 0.66, 0.99]  (373/92)
+                     1 new   n=   3834  click  15.91 [12.41, 20.38]  purchase  8.09 [ 5.70,11.45]  (61/31)
+
+## product is in the user's cart (carted, not bought since)   (per 1,000 impressions, 95 % interval)
+                     0 known n= 415362  click   1.66 [ 1.54,  1.79]  purchase  0.32 [ 0.27, 0.37]  (691/131)
+                     0 new   n= 185820  click   3.18 [ 2.93,  3.45]  purchase  1.19 [ 1.05, 1.36]  (591/222)
+                     1 known n=  24558  click   9.77 [ 8.62, 11.08]  purchase  3.26 [ 2.62, 4.05]  (240/80)
+                     1 new   n=    920  click  60.87 [47.17, 78.22]  purchase 38.04 [27.48,52.45]  (56/35)
+
+## user bought the product before   (per 1,000 impressions, 95 % interval)
+                     0 known n= 406706  click   2.23 [ 2.09,  2.38]  purchase  0.51 [ 0.45, 0.59]  (908/208)
+                     0 new   n= 185775  click   3.48 [ 3.22,  3.76]  purchase  1.38 [ 1.22, 1.56]  (646/256)
+                     1 known n=  33214  click   0.69 [ 0.46,  1.04]  purchase  0.09 [ 0.03, 0.27]  (23/3)
+                     1 new   n=    965  click   1.04 [ 0.18,  5.85]  purchase  1.04 [ 0.18, 5.85]  (1/1)
+
+## user's organic events in the product's subcategory   (per 1,000 impressions, 95 % interval)
+                   a 0 known n= 126795  click   0.84 [ 0.70,  1.02]  purchase  0.17 [ 0.11, 0.25]  (107/21)
+                   a 0 new   n= 148733  click   2.40 [ 2.16,  2.66]  purchase  0.87 [ 0.73, 1.03]  (357/129)
+                 b 1-2 known n=  51421  click   1.24 [ 0.97,  1.59]  purchase  0.23 [ 0.13, 0.41]  (64/12)
+                 b 1-2 new   n=  14618  click   6.16 [ 5.01,  7.56]  purchase  2.67 [ 1.95, 3.64]  (90/39)
+                 c 3-9 known n= 106657  click   2.40 [ 2.12,  2.71]  purchase  0.53 [ 0.40, 0.68]  (256/56)
+                 c 3-9 new   n=  16683  click   8.81 [ 7.50, 10.35]  purchase  3.78 [ 2.95, 4.83]  (147/63)
+                 d 10+ known n= 154977  click   3.25 [ 2.97,  3.54]  purchase  0.79 [ 0.66, 0.94]  (503/122)
+                 d 10+ new   n=   2326  click  20.21 [15.23, 26.77]  purchase 10.75 [ 7.29,15.82]  (47/25)
+
+## user's organic events on the product's brand   (per 1,000 impressions, 95 % interval)
+                   a 0 known n=  68737  click   0.73 [ 0.55,  0.96]  purchase  0.23 [ 0.14, 0.38]  (50/16)
+                   a 0 new   n= 130415  click   2.26 [ 2.02,  2.53]  purchase  0.78 [ 0.64, 0.95]  (295/102)
+                 b 1-2 known n=  80194  click   1.25 [ 1.03,  1.52]  purchase  0.20 [ 0.12, 0.32]  (100/16)
+                 b 1-2 new   n=  36194  click   4.78 [ 4.12,  5.54]  purchase  1.60 [ 1.24, 2.07]  (173/58)
+                 c 3-9 known n= 132784  click   2.16 [ 1.93,  2.43]  purchase  0.46 [ 0.36, 0.59]  (287/61)
+                 c 3-9 new   n=  15091  click  10.47 [ 8.97, 12.22]  purchase  5.57 [ 4.50, 6.89]  (158/84)
+                 d 10+ known n= 158135  click   3.12 [ 2.85,  3.40]  purchase  0.75 [ 0.62, 0.89]  (493/118)
+                 d 10+ new   n=    660  click  22.73 [13.82, 37.16]  purchase 18.18 [10.43,31.51]  (15/12)
+
+## share of the user's organic events in the product's category   (per 1,000 impressions, 95 % interval)
+                   a 0 known n=  20212  click   0.64 [ 0.38,  1.10]  purchase  0.15 [ 0.05, 0.44]  (13/3)
+                   a 0 new   n=  73506  click   1.46 [ 1.20,  1.76]  purchase  0.45 [ 0.32, 0.63]  (107/33)
+                b <10% known n= 193091  click   0.73 [ 0.62,  0.86]  purchase  0.07 [ 0.04, 0.12]  (141/14)
+                b <10% new   n=  22647  click   2.38 [ 1.83,  3.11]  purchase  0.71 [ 0.43, 1.15]  (54/16)
+              c 10-30% known n= 155965  click   2.33 [ 2.10,  2.58]  purchase  0.44 [ 0.35, 0.56]  (363/69)
+              c 10-30% new   n=  42369  click   2.90 [ 2.43,  3.46]  purchase  0.90 [ 0.65, 1.23]  (123/38)
+                d 30%+ known n=  70452  click   5.86 [ 5.32,  6.45]  purchase  1.77 [ 1.49, 2.11]  (413/125)
+                d 30%+ new   n=  35538  click   9.17 [ 8.23, 10.22]  purchase  4.42 [ 3.78, 5.16]  (326/157)
+
+## new users: carousels by number of own live events before the request (k)
+k | carousels | click_pct | purchase_pct
+k=0 | 438 | 1.37 | 0.23
+k=1-2 | 258 | 3.1 | 0.78
+k=3-5 | 914 | 3.28 | 1.53
+k=6-10 | 2127 | 2.73 | 0.99
+k=11-20 | 5487 | 3.37 | 1.24
+k=21+ | 9450 | 3.81 | 1.6
+
+## new users: click / purchase lift of 'own subcategory' match by k (rate with match / rate without)
+k | share_matching | clicks_match | click_lift | purch_match | purchase_lift
+k=1-2 | 0.019 | 2 | 16.87 | 0 | 0
+k=3-5 | 0.039 | 1 | 0.86 | 1 | 1.91
+k=6-10 | 0.074 | 14 | 3.97 | 5 | 3.9
+k=11-20 | 0.133 | 60 | 3.13 | 27 | 4.29
+k=21+ | 0.258 | 207 | 3.9 | 94 | 4.75
+
+## new users: click / purchase lift of 'own brand' match by k (rate with match / rate without)
+k | share_matching | clicks_match | click_lift | purch_match | purchase_lift
+k=1-2 | 0.026 | 0 | 0 | 0 | 0
+k=3-5 | 0.059 | 5 | 3.19 | 4 | 6.38
+k=6-10 | 0.115 | 15 | 2.69 | 5 | 2.41
+k=11-20 | 0.212 | 85 | 3.15 | 35 | 3.94
+k=21+ | 0.394 | 241 | 3.11 | 110 | 4.12
+
+## new users: click / purchase lift of 'own category share >= 20 %' match by k (rate with match / rate without)
+k | share_matching | clicks_match | click_lift | purch_match | purchase_lift
+k=1-2 | 0.108 | 2 | 2.76 | 0 | 0
+k=3-5 | 0.196 | 10 | 2.05 | 5 | 2.28
+k=6-10 | 0.258 | 31 | 3.31 | 14 | 5.76
+k=11-20 | 0.285 | 111 | 3.77 | 48 | 6.03
+k=21+ | 0.335 | 249 | 4.45 | 111 | 5.5
+
+## per carousel: own live events before the request
+             a 0 known n=  2772  click  2.74 % [2.20, 3.42]  purchase  0.94 % [0.64, 1.37]
+             a 0 new   n=   438  click  1.37 % [0.63, 2.96]  purchase  0.23 % [0.04, 1.28]
+           b 1-5 known n=  3445  click  2.12 % [1.69, 2.66]  purchase  0.67 % [0.45, 1.00]
+           b 1-5 new   n=  1172  click  3.24 % [2.37, 4.42]  purchase  1.37 % [0.84, 2.21]
+          c 6-20 known n= 11711  click  2.52 % [2.25, 2.82]  purchase  0.54 % [0.42, 0.69]
+          c 6-20 new   n=  7614  click  3.19 % [2.82, 3.61]  purchase  1.17 % [0.95, 1.44]
+           d 21+ known n= 26064  click  1.87 % [1.71, 2.04]  purchase  0.38 % [0.31, 0.46]
+           d 21+ new   n=  9450  click  3.81 % [3.44, 4.21]  purchase  1.60 % [1.36, 1.87]
+
+## per carousel: own live purchases before the request
+             a 0 known n= 16090  click  1.55 % [1.37, 1.75]  purchase  0.29 % [0.22, 0.39]
+             a 0 new   n=  8758  click  2.02 % [1.75, 2.34]  purchase  0.55 % [0.41, 0.73]
+           b 1-2 known n= 14230  click  2.28 % [2.05, 2.54]  purchase  0.46 % [0.36, 0.58]
+           b 1-2 new   n=  7039  click  3.71 % [3.29, 4.18]  purchase  1.43 % [1.18, 1.74]
+            c 3+ known n= 10900  click  2.58 % [2.30, 2.89]  purchase  0.67 % [0.53, 0.84]
+            c 3+ new   n=  2439  click  8.32 % [7.29, 9.49]  purchase  4.39 % [3.64, 5.27]
+
+## per carousel: own live add-to-carts before the request
+             a 0 known n= 10203  click  1.25 % [1.06, 1.49]  purchase  0.20 % [0.13, 0.30]
+             a 0 new   n=  5563  click  1.42 % [1.14, 1.77]  purchase  0.32 % [0.20, 0.51]
+           b 1-2 known n= 12970  click  1.97 % [1.74, 2.22]  purchase  0.40 % [0.31, 0.53]
+           b 1-2 new   n=  7147  click  2.66 % [2.31, 3.06]  purchase  0.81 % [0.63, 1.05]
+            c 3+ known n= 18047  click  2.62 % [2.39, 2.86]  purchase  0.63 % [0.52, 0.75]
+            c 3+ new   n=  5526  click  6.73 % [6.10, 7.42]  purchase  3.26 % [2.82, 3.76]
+
+## per carousel: minutes since the user's last organic event
+           a <10 known n=  8753  click  1.77 % [1.51, 2.07]  purchase  0.27 % [0.18, 0.41]
+           a <10 new   n=  2226  click  4.22 % [3.46, 5.14]  purchase  1.57 % [1.13, 2.18]
+         b 10-60 known n= 18060  click  1.89 % [1.70, 2.10]  purchase  0.39 % [0.31, 0.50]
+         b 10-60 new   n=  7498  click  3.19 % [2.81, 3.61]  purchase  1.28 % [1.05, 1.56]
+           c 60+ known n= 14407  click  2.49 % [2.25, 2.76]  purchase  0.62 % [0.51, 0.77]
+           c 60+ new   n=  8512  click  3.62 % [3.24, 4.04]  purchase  1.47 % [1.23, 1.75]
+
+## per carousel: minutes since the user's first live event
+           a <60 known n=  1092  click  1.83 % [1.19, 2.81]  purchase  0.82 % [0.43, 1.56]
+           a <60 new   n=   450  click  4.22 % [2.72, 6.50]  purchase  2.22 % [1.21, 4.04]
+        b 60-240 known n= 12003  click  2.15 % [1.90, 2.42]  purchase  0.45 % [0.34, 0.59]
+        b 60-240 new   n=  5781  click  3.55 % [3.10, 4.05]  purchase  1.50 % [1.22, 1.85]
+          c 240+ known n= 28125  click  2.05 % [1.89, 2.22]  purchase  0.43 % [0.36, 0.52]
+          c 240+ new   n= 12005  click  3.47 % [3.16, 3.82]  purchase  1.32 % [1.13, 1.55]
+
+## per carousel: distinct subcategories among recent_views (2+ views)
+               1 known n= 12470  click  2.37 % [2.11, 2.65]  purchase  0.55 % [0.44, 0.70]
+               1 new   n=  5231  click  3.73 % [3.25, 4.28]  purchase  1.47 % [1.18, 1.84]
+               2 known n=  8967  click  2.10 % [1.82, 2.41]  purchase  0.55 % [0.41, 0.72]
+               2 new   n=  3927  click  4.07 % [3.50, 4.74]  purchase  1.48 % [1.14, 1.90]
+               3 known n=  2773  click  1.84 % [1.40, 2.41]  purchase  0.32 % [0.17, 0.62]
+               3 new   n=  1197  click  3.51 % [2.61, 4.71]  purchase  1.75 % [1.15, 2.67]
+
+## per carousel: a product repeated in recent_views (2+ views)
+               0 known n= 22881  click  2.20 % [2.02, 2.40]  purchase  0.52 % [0.44, 0.63]
+               0 new   n=  9789  click  3.89 % [3.53, 4.29]  purchase  1.51 % [1.29, 1.77]
+               1 known n=  1329  click  2.26 % [1.59, 3.20]  purchase  0.53 % [0.26, 1.08]
+               1 new   n=   566  click  2.83 % [1.75, 4.54]  purchase  1.41 % [0.72, 2.76]
+
+## logistic regression: click per impression  (n=626660, positives=1578)
+                 feature   coef    se     z   odds-ratio
+                   const  -8.44  0.41  -20.4    0.00
+                log_slot  -0.54  0.05  -10.8    0.58
+               page_home  -0.20  0.12   -1.8    0.81
+           page_category  -0.05  0.06   -0.9    0.95
+                 log_pop   0.51  0.06    8.5    1.66
+           log_ref_price  -0.09  0.03   -2.9    0.91
+       discount(1-ratio)  -1.45  1.17   -1.2    0.24
+             new_product   1.09  0.29    3.8    2.97
+             books_media  -0.20  0.08   -2.4    0.82
+        rv: same product   1.01  0.19    5.4    2.74
+    rv: same subcategory   0.09  0.09    1.0    1.10
+       rv: same category   0.66  0.08    8.2    1.93
+          rv: same brand  -0.03  0.09   -0.3    0.97
+     own: viewed product  -0.03  0.10   -0.3    0.97
+    own: product in cart   1.19  0.10   11.9    3.27
+     own: bought product  -2.81  0.21  -13.2    0.06
+   own: log1p sub events   0.18  0.04    4.4    1.19
+ own: log1p brand events  -0.08  0.05   -1.6    0.92
+     own: category share   2.86  0.21   13.5   17.46
+ user: log1p live events  -0.36  0.04   -8.8    0.70
+  user: log1p live purch   0.44  0.06    7.3    1.56
+                  is_new  -1.45  0.70   -2.1    0.23
+       is_new x log_slot   0.03  0.08    0.4    1.03
+      is_new x page_home  -0.41  0.18   -2.3    0.66
+        is_new x log_pop   0.31  0.10    3.1    1.36
+  is_new x log_ref_price   0.03  0.05    0.6    1.03
+is_new x discount(1-ratio)   4.21  1.62    2.6   67.29
+    is_new x books_media   0.13  0.13    1.1    1.14
+is_new x rv: same product   0.25  0.27    0.9    1.29
+is_new x rv: same subcategory   0.12  0.15    0.8    1.13
+ is_new x rv: same brand   0.06  0.14    0.4    1.07
+is_new x own: viewed product   0.31  0.18    1.7    1.36
+is_new x own: log1p sub events  -0.00  0.07   -0.0    1.00
+is_new x own: log1p brand events   0.11  0.10    1.1    1.11
+is_new x own: category share  -1.17  0.27   -4.3    0.31
+is_new x user: log1p live events   0.04  0.08    0.5    1.04
+is_new x user: log1p live purch   0.33  0.10    3.2    1.39
+
+## logistic regression: purchase per click  (n=1578, positives=468)
+                 feature   coef    se     z   odds-ratio
+                   const  -2.12  0.69   -3.1    0.12
+                log_slot   0.05  0.12    0.4    1.05
+               page_home  -0.37  0.30   -1.2    0.69
+           page_category   0.18  0.14    1.3    1.20
+                 log_pop   0.21  0.10    2.0    1.23
+           log_ref_price  -0.01  0.08   -0.2    0.99
+       discount(1-ratio)  -0.17  0.89   -0.2    0.84
+             new_product   1.26  0.52    2.4    3.52
+             books_media  -0.47  0.20   -2.3    0.62
+        rv: same product   0.51  0.36    1.4    1.66
+    rv: same subcategory   0.01  0.20    0.0    1.01
+       rv: same category   0.22  0.18    1.2    1.24
+          rv: same brand   0.29  0.21    1.4    1.33
+     own: viewed product  -0.07  0.25   -0.3    0.93
+    own: product in cart   0.83  0.25    3.3    2.29
+     own: bought product  -0.98  0.49   -2.0    0.38
+   own: log1p sub events  -0.02  0.10   -0.3    0.98
+ own: log1p brand events  -0.20  0.12   -1.6    0.82
+     own: category share   1.80  0.41    4.4    6.08
+ user: log1p live events  -0.45  0.11   -4.2    0.64
+  user: log1p live purch   0.67  0.16    4.1    1.96
+                  is_new  -0.37  0.84   -0.4    0.69
+       is_new x log_slot  -0.13  0.17   -0.8    0.88
+      is_new x page_home   0.36  0.39    0.9    1.43
+        is_new x log_pop   0.17  0.13    1.3    1.19
+  is_new x log_ref_price  -0.04  0.11   -0.4    0.96
+is_new x discount(1-ratio)  -0.14  0.94   -0.1    0.87
+    is_new x books_media   0.78  0.28    2.8    2.17
+is_new x rv: same product   0.67  0.49    1.4    1.96
+is_new x rv: same subcategory  -0.34  0.29   -1.2    0.71
+ is_new x rv: same brand  -0.38  0.30   -1.3    0.68
+is_new x own: viewed product   0.06  0.35    0.2    1.07
+is_new x own: log1p sub events  -0.08  0.16   -0.5    0.92
+is_new x own: log1p brand events   0.18  0.20    0.9    1.20
+is_new x own: category share  -0.62  0.50   -1.2    0.54
+is_new x user: log1p live events  -0.03  0.19   -0.2    0.97
+is_new x user: log1p live purch   0.26  0.24    1.1    1.30
+
+## logistic regression: purchase per impression  (n=626660, positives=468)
+                 feature   coef    se     z   odds-ratio
+                   const  -8.03  0.57  -14.2    0.00
+                log_slot  -0.62  0.10   -6.4    0.54
+               page_home  -0.48  0.26   -1.8    0.62
+           page_category   0.02  0.11    0.2    1.02
+                 log_pop   0.32  0.08    3.8    1.37
+           log_ref_price  -0.18  0.07   -2.7    0.84
+       discount(1-ratio)  -0.06  0.84   -0.1    0.94
+             new_product   1.69  0.39    4.4    5.44
+             books_media  -0.46  0.17   -2.7    0.63
+        rv: same product   1.23  0.28    4.3    3.42
+    rv: same subcategory  -0.03  0.17   -0.2    0.97
+       rv: same category   0.66  0.14    4.6    1.94
+          rv: same brand   0.27  0.17    1.6    1.31
+     own: viewed product  -0.16  0.23   -0.7    0.85
+    own: product in cart   1.82  0.21    8.7    6.19
+     own: bought product  -2.77  0.37   -7.4    0.06
+   own: log1p sub events   0.20  0.08    2.4    1.22
+ own: log1p brand events  -0.26  0.10   -2.5    0.77
+     own: category share   3.44  0.34   10.0   31.14
+ user: log1p live events  -0.68  0.08   -8.6    0.50
+  user: log1p live purch   0.96  0.14    7.1    2.62
+                  is_new  -2.05  0.74   -2.8    0.13
+       is_new x log_slot  -0.06  0.13   -0.5    0.94
+      is_new x page_home  -0.12  0.33   -0.4    0.89
+        is_new x log_pop   0.43  0.11    3.8    1.54
+  is_new x log_ref_price   0.05  0.09    0.6    1.05
+is_new x discount(1-ratio)   0.27  0.92    0.3    1.31
+    is_new x books_media   0.53  0.22    2.4    1.70
+is_new x rv: same product   0.60  0.37    1.6    1.81
+is_new x rv: same subcategory  -0.04  0.24   -0.2    0.96
+ is_new x rv: same brand  -0.25  0.24   -1.1    0.78
+is_new x own: viewed product   0.13  0.27    0.5    1.14
+is_new x own: log1p sub events  -0.11  0.12   -0.9    0.89
+is_new x own: log1p brand events   0.29  0.16    1.9    1.34
+is_new x own: category share  -1.24  0.40   -3.1    0.29
+is_new x user: log1p live events   0.13  0.13    1.0    1.14
+is_new x user: log1p live purch   0.30  0.19    1.6    1.34

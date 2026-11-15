@@ -1,0 +1,153 @@
+
+## user classes (all live users): in history x flagged is_new_user in a request
+in_hist | flagged | has_rq | users | held_out
+False | False | False | 2883 | 572
+False | False | True | 4 | 1
+False | True | True | 17122 | 3405
+True | False | False | 20242 | 4092
+True | False | True | 35760 | 7105
+True | True | True | 1 | 0
+
+## when users are first seen in the live stream (users per hour, UTC)
+h | cold | known
+9 | 10485 | 21449
+10 | 5055 | 10378
+11 | 2381 | 6344
+12 | 1108 | 4215
+13 | 518 | 3150
+14 | 244 | 2392
+15 | 120 | 1793
+16 | 45 | 1436
+17 | 22 | 1158
+18 | 12 | 943
+19 | 8 | 761
+20 | 4 | 664
+
+## session length: events and seconds (all sessions)
+events | seconds
+[2.0, 4.0, 9.0] | [0.015, 0.05800000000000001]
+
+## organic, per class
+ cold: 16014 users, 7.50 sessions/user, 4.81 events/session
+       purchases per event      4.58 % [ 4.53,  4.64] (n=577096)
+       sessions with a cart    32.26 % [31.99, 32.52] (n=120101)
+       sessions with purchase  18.63 % [18.41, 18.85] (n=120101)
+       purchases per add-to-cart 0.502
+known: 42602 users, 6.58 sessions/user, 4.79 events/session
+       purchases per event      4.52 % [ 4.49,  4.56] (n=1341831)
+       sessions with a cart    32.03 % [31.86, 32.20] (n=280208)
+       sessions with purchase  18.39 % [18.25, 18.54] (n=280208)
+       purchases per add-to-cart 0.499
+
+## organic: session purchase rate by the user's n-th live session (session phase)
+sess_no | cold_pct | n_cold | known_pct | n_known
+1 | 18.57 | 16014 | 18.44 | 42602
+2 | 18.34 | 15944 | 18.33 | 35869
+3 | 18.34 | 15678 | 18.43 | 29420
+4 | 18.58 | 15057 | 18.47 | 24113
+5 | 19.2 | 13911 | 18.07 | 19802
+6 | 18.66 | 12189 | 17.86 | 16348
+7 | 18.29 | 9929 | 17.79 | 13705
+8 | 18.67 | 7575 | 18.22 | 11554
+9 | 19.18 | 5334 | 18.16 | 9762
+10 | 18.94 | 8470 | 18.72 | 77033
+
+## organic: session purchase rate by device
+device | cold_pct | known_pct | n
+ios | 18.84 | 18.55 | 134222
+web | 19.04 | 18.63 | 133146
+android | 18.02 | 18 | 132941
+
+## organic: session purchase rate by region
+region | cold_pct | known_pct | n
+Andalucía | 19.9 | 19.64 | 85257
+Catalunya | 17.99 | 18.32 | 75401
+Madrid | 18.3 | 18.04 | 65648
+Comunitat Valenciana | 17.46 | 17.6 | 51065
+Galicia | 17.44 | 17.54 | 27858
+Castilla y León | 18.7 | 17.42 | 24574
+País Vasco | 17.72 | 17.24 | 23307
+Canarias | 20.67 | 20.2 | 19217
+
+## organic: known users by history size (events in 60 days)
+hist | users | sess_per_user | purchase_pct
+a <50 | 5881 | 1.77 | 16.94
+b 50-199 | 21719 | 3.57 | 17.05
+c 200+ | 15002 | 12.81 | 19.02
+
+## organic: add-to-cart -> purchase of the same product (same session / same or a later session)
+cls | carts | same_session_pct | ever_pct
+cold | 52689 | 50.98 | 51.95
+known | 121544 | 50.69 | 52.23
+
+## organic: first purchase of a user (users first seen before 12:00 UTC; minutes and session number)
+cls | users | bought_pct | minutes_q | session_q
+cold | 14367 | 66.5 | [0.0, 103.50300833333333, 267.10881666666666] | [1.0, 3.0, 5.0]
+known | 30589 | 59.1 | [0.0, 78.59104166666667, 243.58527083333334] | [1.0, 2.0, 4.0]
+
+## carousels (exploration split), is_new_user vs not
+known: click   2.12 % [ 1.99,  2.26] (n=43992)  purchase   0.48 % [ 0.42,  0.55] (n=43992)  cvr 0.227
+new  : click   3.46 % [ 3.21,  3.74] (n=18674)  purchase   1.38 % [ 1.22,  1.55] (n=18674)  cvr 0.397
+ratio new/known (bootstrap over users): click 1.64x [1.49, 1.82]  purchase 2.87x [2.38, 3.51]
+
+## carousels by served_by:  click rate | purchase rate | purchases per click
+  fallback known click   1.93 % [ 1.74,  2.14] (n=18309)  purchase   0.42 % [ 0.33,  0.52] (n=18309)  cvr 0.21
+  fallback new   click   3.51 % [ 3.12,  3.94] (n=7870)  purchase   1.55 % [ 1.30,  1.85] (n=7870)  cvr 0.44
+      team known click   2.25 % [ 2.07,  2.44] (n=25683)  purchase   0.53 % [ 0.44,  0.62] (n=25683)  cvr 0.23
+      team new   click   3.43 % [ 3.11,  3.79] (n=10804)  purchase   1.25 % [ 1.06,  1.48] (n=10804)  cvr 0.36
+
+## carousels by page:  click rate | purchase rate | purchases per click
+  category known click   2.30 % [ 2.03,  2.60] (n=10577)  purchase   0.60 % [ 0.47,  0.76] (n=10577)  cvr 0.26
+  category new   click   3.65 % [ 3.14,  4.23] (n=4551)  purchase   1.54 % [ 1.22,  1.94] (n=4551)  cvr 0.42
+      home known click   1.24 % [ 1.03,  1.50] (n=8841)  purchase   0.18 % [ 0.11,  0.29] (n=8841)  cvr 0.15
+      home new   click   1.58 % [ 1.23,  2.04] (n=3728)  purchase   0.59 % [ 0.39,  0.89] (n=3728)  cvr 0.37
+   product known click   2.35 % [ 2.17,  2.55] (n=24574)  purchase   0.54 % [ 0.45,  0.64] (n=24574)  cvr 0.23
+   product new   click   4.06 % [ 3.70,  4.46] (n=10395)  purchase   1.59 % [ 1.36,  1.85] (n=10395)  cvr 0.39
+
+## carousels by device:  click rate | purchase rate | purchases per click
+   android known click   2.43 % [ 2.20,  2.70] (n=14670)  purchase   0.52 % [ 0.42,  0.66] (n=14670)  cvr 0.22
+   android new   click   3.50 % [ 3.07,  3.98] (n=6344)  purchase   1.61 % [ 1.33,  1.95] (n=6344)  cvr 0.46
+       ios known click   1.73 % [ 1.53,  1.96] (n=14616)  purchase   0.45 % [ 0.36,  0.57] (n=14616)  cvr 0.26
+       ios new   click   2.92 % [ 2.54,  3.37] (n=6325)  purchase   0.95 % [ 0.74,  1.22] (n=6325)  cvr 0.32
+       web known click   2.18 % [ 1.96,  2.43] (n=14706)  purchase   0.46 % [ 0.36,  0.59] (n=14706)  cvr 0.21
+       web new   click   4.00 % [ 3.53,  4.52] (n=6005)  purchase   1.58 % [ 1.30,  1.93] (n=6005)  cvr 0.40
+
+## carousels by number of recent views:  click rate | purchase rate | purchases per click
+         0 known click   1.24 % [ 1.03,  1.50] (n=8841)  purchase   0.18 % [ 0.11,  0.29] (n=8841)  cvr 0.15
+         0 new   click   1.58 % [ 1.23,  2.04] (n=3728)  purchase   0.59 % [ 0.39,  0.89] (n=3728)  cvr 0.37
+         1 known click   2.62 % [ 2.34,  2.94] (n=10941)  purchase   0.62 % [ 0.49,  0.79] (n=10941)  cvr 0.24
+         1 new   click   4.16 % [ 3.62,  4.78] (n=4591)  purchase   1.72 % [ 1.38,  2.14] (n=4591)  cvr 0.41
+         2 known click   2.41 % [ 2.11,  2.75] (n=8846)  purchase   0.68 % [ 0.53,  0.87] (n=8846)  cvr 0.28
+         2 new   click   3.80 % [ 3.23,  4.45] (n=3768)  purchase   1.41 % [ 1.08,  1.84] (n=3768)  cvr 0.37
+         3 known click   2.27 % [ 1.94,  2.67] (n=6507)  purchase   0.49 % [ 0.35,  0.69] (n=6507)  cvr 0.22
+         3 new   click   3.85 % [ 3.19,  4.64] (n=2726)  purchase   1.54 % [ 1.14,  2.08] (n=2726)  cvr 0.40
+         4 known click   1.95 % [ 1.69,  2.26] (n=8857)  purchase   0.40 % [ 0.28,  0.55] (n=8857)  cvr 0.20
+         4 new   click   3.86 % [ 3.30,  4.51] (n=3861)  purchase   1.58 % [ 1.23,  2.02] (n=3861)  cvr 0.41
+
+## carousels by the user's n-th request:  click rate | purchase rate | purchases per click
+         1 known click   2.35 % [ 2.16,  2.56] (n=22390)  purchase   0.61 % [ 0.52,  0.72] (n=22390)  cvr 0.26
+         1 new   click   3.49 % [ 3.16,  3.85] (n=11027)  purchase   1.38 % [ 1.18,  1.61] (n=11027)  cvr 0.39
+         2 known click   2.07 % [ 1.81,  2.37] (n=10000)  purchase   0.42 % [ 0.31,  0.57] (n=10000)  cvr 0.20
+         2 new   click   3.52 % [ 3.06,  4.05] (n=5254)  purchase   1.45 % [ 1.16,  1.81] (n=5254)  cvr 0.41
+         3 known click   2.16 % [ 1.79,  2.61] (n=4853)  purchase   0.37 % [ 0.23,  0.59] (n=4853)  cvr 0.17
+         3 new   click   2.86 % [ 2.17,  3.74] (n=1751)  purchase   1.03 % [ 0.65,  1.62] (n=1751)  cvr 0.36
+         4 known click   1.36 % [ 1.11,  1.67] (n=6749)  purchase   0.21 % [ 0.12,  0.35] (n=6749)  cvr 0.15
+         4 new   click   4.21 % [ 2.91,  6.05] (n=642)  purchase   1.71 % [ 0.96,  3.04] (n=642)  cvr 0.41
+
+## carousels by hour (UTC):  click rate | purchase rate | purchases per click
+        11 known click   1.84 % [ 1.28,  2.65] (n=1520)  purchase   0.33 % [ 0.14,  0.77] (n=1520)  cvr 0.18
+        11 new   click   2.97 % [ 1.93,  4.54] (n=674)  purchase   1.04 % [ 0.50,  2.13] (n=674)  cvr 0.35
+        12 known click   1.99 % [ 1.67,  2.38] (n=6069)  purchase   0.54 % [ 0.39,  0.76] (n=6069)  cvr 0.27
+        12 new   click   3.95 % [ 3.26,  4.78] (n=2555)  purchase   1.76 % [ 1.32,  2.35] (n=2555)  cvr 0.45
+        13 known click   2.08 % [ 1.75,  2.47] (n=6056)  purchase   0.38 % [ 0.25,  0.57] (n=6056)  cvr 0.18
+        13 new   click   3.49 % [ 2.85,  4.27] (n=2577)  purchase   1.51 % [ 1.11,  2.06] (n=2577)  cvr 0.43
+        14 known click   1.90 % [ 1.58,  2.27] (n=6008)  purchase   0.37 % [ 0.24,  0.55] (n=6008)  cvr 0.19
+        14 new   click   3.11 % [ 2.52,  3.85] (n=2634)  purchase   1.37 % [ 0.99,  1.89] (n=2634)  cvr 0.44
+        15 known click   2.53 % [ 2.17,  2.96] (n=6115)  purchase   0.69 % [ 0.51,  0.93] (n=6115)  cvr 0.27
+        15 new   click   3.76 % [ 3.09,  4.58] (n=2550)  purchase   1.49 % [ 1.09,  2.04] (n=2550)  cvr 0.40
+        16 known click   1.62 % [ 1.33,  1.97] (n=6038)  purchase   0.28 % [ 0.18,  0.45] (n=6038)  cvr 0.17
+        16 new   click   2.53 % [ 1.99,  3.22] (n=2565)  purchase   0.78 % [ 0.51,  1.20] (n=2565)  cvr 0.31
+        17 known click   2.02 % [ 1.70,  2.41] (n=6032)  purchase   0.50 % [ 0.35,  0.71] (n=6032)  cvr 0.25
+        17 new   click   3.63 % [ 2.98,  4.42] (n=2615)  purchase   1.41 % [ 1.03,  1.94] (n=2615)  cvr 0.39
+        18 known click   2.71 % [ 2.34,  3.15] (n=6154)  purchase   0.63 % [ 0.46,  0.87] (n=6154)  cvr 0.23
+        18 new   click   3.91 % [ 3.22,  4.75] (n=2504)  purchase   1.40 % [ 1.01,  1.94] (n=2504)  cvr 0.36

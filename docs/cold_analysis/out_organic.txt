@@ -1,0 +1,100 @@
+
+## organic purchases: concentration (share on the overall top-N products) and price
+cls | purchases | top10_pct | top50_pct | top100_pct | top500_pct | ref_price_q | new_product_pct | discounted_pct
+cold | 26458 | 5.5 | 16.9 | 25.7 | 59.6 | [11.99, 22.99, 45.99] | 3.62 | 4.8
+known | 60684 | 5.5 | 17 | 25.9 | 59.9 | [11.99, 22.99, 46.99] | 3.64 | 4.9
+
+## organic purchases: category shares (%)
+category | cold_pct | known_pct
+Books & Media | 23.05 | 23.82
+Toys & Baby | 12.72 | 13.19
+Sports & Outdoors | 11.22 | 10.88
+Electronics | 11.08 | 10.58
+Fashion | 10.41 | 10.09
+Computers & Gaming | 9.48 | 9.27
+Beauty & Health | 6.73 | 6.73
+Home & Kitchen | 6.09 | 5.96
+Pets | 5.61 | 5.8
+Home & Garden | 3.62 | 3.67
+
+## organic views: category shares (%)
+category | cold_pct | known_pct
+Books & Media | 14.69 | 14.98
+Electronics | 12.33 | 12.23
+Toys & Baby | 11.59 | 11.59
+Sports & Outdoors | 9.69 | 9.45
+Pets | 9.64 | 9.76
+Computers & Gaming | 9.61 | 9.62
+Fashion | 8.68 | 8.69
+Home & Kitchen | 8.45 | 8.34
+Home & Garden | 8.33 | 8.34
+Beauty & Health | 6.99 | 7
+
+## new products: share of organic events after 10:00 UTC, by class
+cls | event_type | n | on_new_products_pct
+cold | add_to_cart | 47477 | 4.01
+known | add_to_cart | 109003 | 4.04
+cold | purchase | 23875 | 4.01
+known | purchase | 54478 | 4.06
+cold | view | 448816 | 3.5
+known | view | 1042597 | 3.52
+
+## rank correlation check: top-20 products by cold purchases, with their rank among known users
+product_id | category | cold_n | cold_rank | known_rank
+p_adc3e6 | Books & Media | 214 | 1 | 1
+p_69d40e | Fashion | 203 | 2 | 2
+p_548697 | Fashion | 153 | 3 | 10
+p_2c88d5 | Electronics | 152 | 4 | 5
+p_0210c5 | Toys & Baby | 147 | 5 | 4
+p_1036d3 | Toys & Baby | 141 | 6 | 3
+p_07b81b | Books & Media | 118 | 7 | 9
+p_40ec57 | Beauty & Health | 118 | 7 | 8
+p_09a938 | Books & Media | 116 | 9 | 11
+p_8ca8ed | Electronics | 112 | 10 | 7
+p_c46e14 | Books & Media | 107 | 11 | 12
+p_5733ef | Home & Kitchen | 107 | 11 | 21
+p_5969fa | Beauty & Health | 106 | 13 | 6
+p_0c3c0c | Beauty & Health | 103 | 14 | 22
+p_55ab57 | Toys & Baby | 96 | 15 | 13
+p_032d24 | Books & Media | 95 | 16 | 17
+p_989e85 | Books & Media | 92 | 17 | 16
+p_e2454f | Computers & Gaming | 92 | 17 | 19
+p_b49b85 | Toys & Baby | 92 | 17 | 25
+p_050730 | Books & Media | 89 | 20 | 19
+
+catalogue: 10 categories, 89 subcategories, 80 brands
+
+## cold users: organic purchase vs own live events in earlier sessions (k = number of such events); 'x_chance' = share expected if subcategories/brands were picked at random among those seen
+k | purchases | seen_product_pct | carted_pct | rebuy_pct | same_sub_pct | sub_chance | same_brand_pct | brand_chance | same_cat_pct | cat_chance | mean_cat_share_pct
+k=0 | 3479 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+k=1-2 | 640 | 0.2 | 0 | 0 | 5.6 | 1.4 | 6.7 | 2.4 | 29.5 | 12 | 24.7
+k=3-5 | 1849 | 1.2 | 0.7 | 0.2 | 11.8 | 2 | 11.8 | 3.8 | 41.3 | 15.5 | 30.1
+k=6-10 | 3197 | 1.9 | 1.1 | 0.5 | 19.8 | 3.5 | 21.9 | 6.9 | 58.9 | 23.7 | 32
+k=11-20 | 6060 | 4.5 | 3 | 1.5 | 29.9 | 5.9 | 36.4 | 11.9 | 74.7 | 34.9 | 32.9
+k=21-50 | 9587 | 7.9 | 5.3 | 2.8 | 47.7 | 10.3 | 56.9 | 20.2 | 87.5 | 48.7 | 35.6
+k=51+ | 1436 | 17.1 | 13.2 | 6.7 | 67.7 | 14.9 | 76.8 | 27.9 | 95.3 | 57.2 | 42.6
+
+## known users: organic purchase vs own live events in earlier sessions (k = number of such events); 'x_chance' = share expected if subcategories/brands were picked at random among those seen
+k | purchases | seen_product_pct | carted_pct | rebuy_pct | same_sub_pct | sub_chance | same_brand_pct | brand_chance | same_cat_pct | cat_chance | mean_cat_share_pct
+k=0 | 9225 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0
+k=1-2 | 1405 | 0.1 | 0 | 0 | 5.9 | 1.4 | 7.1 | 2.3 | 29.7 | 11.9 | 25.1
+k=3-5 | 4175 | 1 | 0.5 | 0.2 | 10.9 | 2 | 11.4 | 3.8 | 42.7 | 15.4 | 31.1
+k=6-10 | 6085 | 1.9 | 1.2 | 0.5 | 18.7 | 3.4 | 23.1 | 6.8 | 60.1 | 23.4 | 33
+k=11-20 | 9634 | 3.9 | 2.6 | 1.3 | 29.5 | 5.7 | 36 | 11.7 | 74.2 | 34.3 | 33.3
+k=21-50 | 14832 | 8 | 5.1 | 2.7 | 47.8 | 10.8 | 58.4 | 21.1 | 88.7 | 50.5 | 34.7
+k=51+ | 14887 | 21.6 | 14.6 | 8.7 | 75.8 | 24.9 | 84.8 | 43.1 | 97.4 | 73.9 | 36.1
+
+## category focus of a user's live events (users with 20+ events): share of events in the top category
+cls | users | top_category_share_q
+cold | 13870 | [0.3137254901960784, 0.39655172413793105, 0.5208333333333334]
+known | 21372 | [0.3090909090909091, 0.4, 0.5238095238095238]
+
+## carts left open (carted, not bought in that session, before 15:00): bought in a later session?
+cls | open_carts | bought_later_pct | viewed_later_pct
+cold | 15366 | 2.7 | 7.04
+known | 35728 | 4.27 | 11.23
+
+## for comparison, products only viewed in a session (before 15:00): bought in a later session?
+cls | viewed_products | bought_later_pct
+cold | 259522 | 0.15
+known | 599757 | 0.26
