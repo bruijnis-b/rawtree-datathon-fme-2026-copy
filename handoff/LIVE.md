@@ -11,6 +11,20 @@ from logistic fits on our logged answers, mostly on v2; nothing was searched or 
 | 25% | m655200 | `embed_blend`: average of v10 and v11, default settings | Reference for the cart change: md363d5 minus m655200 is the effect of cart 2.5 | 06:40 |
 | 25% | m8277ec | v3+v4 average, wrapper multipliers from offline fits (`cart=2.5`, `max_lift=1.3`, `w_cat=1`, `w_sub=1`, `new=1.5`, `alpha=0.3`) | Led the final setup by +7.4 ± 3.8 (06:45–07:30) | 06:02 |
 
+## Final report before the final round (08:30 UTC)
+
+Official score since 07:45 UTC (3,560 / 1,755 / 1,711 requests):
+
+| Arm | Score | Conversion | Cold | Warm |
+|---|---|---|---|---|
+| md363d5, v10+v11 average, `cart=2.5` (final setup) | 66.5 | 2.26% | 2.68% | 1.93% |
+| m8277ec, v3+v4 average, multipliers from offline fits | 63.1 | 2.17% | 2.38% | 2.01% |
+| m655200, v10+v11 average, default settings | 57.7 | 2.02% | 2.50% | 1.65% |
+
+Paired per quarter hour (07:45 and 08:00, only two): final setup minus v10+v11 default +8.1 ± 5.8 (the cart
+effect); final setup minus v3+v4 offline-fit +3.9 ± 2.1. Neither is two standard errors. Nothing shows the final
+setup behind another arm. The final round starts 09:00 UTC with these three arms unless `arms.txt` changes.
+
 `arms.txt` is the file the process reads. Read with `handoff/tools/board.py`.
 
 Pruned at 07:52: `mbcf961` (v10+v11 average with `new=2`): `new=2` withdrawn, unseen products get no premium
