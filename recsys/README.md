@@ -186,8 +186,9 @@ policies do not change. A folder path also works as `embed_model` for trying a m
 
 ### Final setup (15 Nov)
 
-`arms.final.txt` (repo root): `embed_blend` = the **average of embedding models v10 and v11**, default settings
-except **`cart=2.5`**. Start it with `python -m recsys.main --arms arms.final.txt`. Live as `md363d5` since 07:45 UTC.
+`recsys/arms.final.txt`: `embed_blend` = the **average of embedding models v10 and v11**, default settings
+except **`cart=2.5`**. Start it from the repo root with `python -m recsys.main --arms recsys/arms.final.txt`.
+Live as `md363d5` since 07:45 UTC.
 
 On top of the model scores (unchanged defaults): discount lift, trend x8 for a subcategory the live detector
 flags, cart x2.5; bought products are never shown; every answer is 10 distinct active products.

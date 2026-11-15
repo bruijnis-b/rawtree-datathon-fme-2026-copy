@@ -1,28 +1,28 @@
-# RawTree Challenge · Datathon FME 2026
+# RawTree Challenge · Datathon FME 2026 (finished)
 
 Real-time recommender: for each row in `shop.requests`, insert 10 ranked, distinct, active product IDs into
 `team_NN.submissions` within 3 s of the request `ts`. Full rules: `CHALLENGE_README.md` (the organisers' README);
-our own overview: `README.md`. Scored only Sun 15 Nov 10:00–12:00 CET.
+our own overview and result: `README.md`.
 
-## Final round: what changes (IMPORTANT, design for it)
+**The event is over.** It was scored only on Sun 15 Nov 2026, 10:00–12:00 CET. This repo is now a record: do not
+start a live server, and expect the RawTree database to be read-only or gone.
 
-- **300 new products** are added at 10:00 (`new_product` in `shop.catalog_updates`). Each arrives with only its
-  catalogue fields: no ID history, no sales. Every model must score them from content alone.
-- **New trend(s)** start in the final round. The 60-day history has none: category shares are flat from week to week.
-  So the trends can only be picked up from the live stream (Bas's trend layer).
-- **New shoppers:** expect many users that are not in the history (in the practice stream, a third of users are not in it).
-- **Cold start is 10 of the 70 automatic points** (about 14 of 100 on the leaderboard). A request is cold when
-  `is_new_user` is set, or when its `recent_views` contain a product added during the event. With 300 new products,
-  many requests will be cold: validate every model on held-out products and on users without a history, not only on
-  the overall history score.
+## What the final round asked for (context for reading the code)
 
-## Never leak our approach (IMPORTANT)
+- **300 new products** were added at 10:00 (`new_product` in `shop.catalog_updates`), each with only its
+  catalogue fields: no ID history, no sales. Every model had to score them from content alone.
+- **New trends** started in the final round and could only be picked up from the live stream (the trend layer).
+- **New shoppers:** in the practice stream, a third of users were not in the 60-day history.
+- **Cold start was 10 of the 70 automatic points.** A request was cold when `is_new_user` was set, or when its
+  `recent_views` contained a product added during the event.
+- What ran in the final and why: `recsys/README.md`, "Final setup (15 Nov)"; arms file `recsys/arms.final.txt`.
 
-- The `model_version` field of every submission must be an **opaque random ID** (e.g. `m3f9a2c`) that reveals
-  nothing: no policy or algorithm names, parameters or version counts. Other teams may be able to read it.
-- Get it from `recsys.model_registry.public_id(policy)`; its meaning lives only in our private
-  `recsys/model_versions.json`. Never send `Policy.internal_version` or any descriptive string.
-- The same goes for anything else we write to a table others might read.
+## Opaque model IDs
+
+- Every submission's `model_version` was an opaque random ID (e.g. `m3f9a2c`) from
+  `recsys.model_registry.public_id(policy)`, so other teams could not read our approach from it. Its meaning
+  lives in `recsys/model_versions.json`.
+- Keep this repo private: it holds the mapping and our evidence.
 
 ## Repo layout
 
@@ -35,7 +35,7 @@ our own overview: `README.md`. Scored only Sun 15 Nov 10:00–12:00 CET.
 
 ## Plan & tools
 
-- **Read `docs/POA.md` first**: the general approach (product × user embeddings, live steering) and who does what
+- **`docs/POA.md`**: the general approach (product × user embeddings, live steering) and who does what
   (Jules: the model, which returns scores; Bas: the framework, live adjustments, serving).
 - **IVAN** (Team Epoch's GPU scheduler) runs training and sweeps. CLI reference: `ivan-cli.md` in
   `TeamEpochGithub/ivan` (Jules's laptop: `C:\Users\jules\Projects\ivan\ivan-cli.md`).
