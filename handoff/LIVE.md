@@ -18,6 +18,15 @@ default: see `FINDINGS.md`.
 `arms.txt` is the file the process reads. Read with `handoff/tools/board.py` (official expected conversion).
 Numbers are written here at 03:20, 04:20 and 05:20 UTC without changing the arms.
 
+## Official scores since 02:30 UTC (`board.py`; four frozen arms)
+
+| Read at (UTC) | v2 (med6134) | v2+v3 average (m09c26e) | v4 (mab651f) | v2, recent views x2 (mac2638) | Requests per arm | Leader |
+|---|---|---|---|---|---|---|
+| 03:07 | 57.2 (cold 2.80%) | 53.4 (cold 2.46%) | 58.7 (cold 2.53%) | 51.4 (cold 2.07%) | 1,530–1,620 | team_06 60.9; us 55.1, 4th |
+
+03:07: nothing separates yet (1,500 requests per arm; 3,000+ needed). The average's early 70+ was noise. The
+recent-views arm is behind v2 on cold requests so far (2.07% against 2.80%, about 500 cold requests each).
+
 ## Official scores, 01:11 – 02:31 UTC (`board.py`; score out of 100, expected conversion)
 
 | Arm | Score | Conversion | Cold conversion | Requests |
