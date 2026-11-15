@@ -1,17 +1,17 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 07:52 UTC. Naming (Bas, 06:38): "offline-fitted multipliers" means six wrapper settings taken
+Updated: 2026-11-15 07:47 UTC. Naming (Bas, 06:38): "offline-fitted multipliers" means six wrapper settings taken
 from logistic fits on our logged answers, mostly on v2; nothing was searched or tuned live, and the models are unchanged. Code: branch `run/live-ab`, restarted 06:25 UTC (new policy `route`).
 
-## Live now: two arms
+## Live now: three arms
 
 | Share | Public ID | Arm | Question | Live since |
 |---|---|---|---|---|
-| 67% | m655200 | `embed_blend`: average of **v10 and v11** (fresh: live data to 06:24), default settings | **The final submission** since 07:40 (PR #20). Fresh pair: better than v3+v4 with default settings (m9f6fa4)? | 06:40 |
-| 33% | m8277ec | v3+v4 average, wrapper multipliers from offline fits (`cart=2.5`, `max_lift=1.3`, `w_cat=1`, `w_sub=1`, `new=1.5`, `alpha=0.3`) | Do the offline-fitted multipliers beat the defaults? Read against m9f6fa4 | 06:02 |
+| 50% | md363d5 | `embed_blend`: average of v10 and v11, default settings except **`cart=2.5`** | **The final submission** since 07:45 (PR #20) | 07:45 |
+| 25% | m655200 | `embed_blend`: average of v10 and v11, default settings | Reference for the cart change: md363d5 minus m655200 is the effect of cart 2.5 | 06:40 |
+| 25% | m8277ec | v3+v4 average, wrapper multipliers from offline fits (`cart=2.5`, `max_lift=1.3`, `w_cat=1`, `w_sub=1`, `new=1.5`, `alpha=0.3`) | Led the final setup by +7.4 ± 3.8 (06:45–07:30) | 06:02 |
 
-`arms.txt` is the file the process reads. Read with `handoff/tools/board.py`; cold and warm conversion per arm
-come from `cold_requests` in the per-model view. A fresh model from the trainer replaces the weakest arm.
+`arms.txt` is the file the process reads. Read with `handoff/tools/board.py`.
 
 Pruned at 07:52: `mbcf961` (v10+v11 average with `new=2`): `new=2` withdrawn, unseen products get no premium
 (`FINDINGS.md`, 07:50). Not replaced (Bas: no new test runs); its share went to the final setup.

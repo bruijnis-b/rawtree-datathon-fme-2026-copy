@@ -16,6 +16,17 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 07:47: cart=2.5 added to the final setup
+
+The v3+v4 arm with offline-fitted multipliers led the final setup (v10+v11, default settings), paired per quarter
+hour 06:45–07:30: +7.4 ± 3.8 (cold conversion +0.54 ± 0.16), and v3+v4 with default settings by +20.3 ± 8.3. It
+wins despite older models, so the multipliers carry it. What the arms show (realised, since 06:41): with cart x6,
+cart products fill 36% of warm slots (19 purchases); with x2.5, 21% (17 purchases). Offline fits on top of the model
+gave x2.0–3.4, and the trainer named cart as the one setting with support. `new=1.5` in that arm spent 6% of slots on
+fresh products (1 purchase) and stays out.
+
+Final setup now: v10+v11 average, default settings except `cart=2.5` (`md363d5`, live since 07:45 at 50%).
+
 ## 2026-11-15 07:50: own check confirms dropping `new=2`
 
 200 products were released after 00:59 UTC, so v3 and v4 never saw them: the final round's case. Lift on top of
