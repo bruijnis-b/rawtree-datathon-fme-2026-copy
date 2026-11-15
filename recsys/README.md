@@ -47,7 +47,8 @@ request go unanswered or late because of the policy:
   right away instead of waiting ~0.3-0.5 s for the insert; pulls run every 0.1 s (`POLL_S`). A failed or
   slow (>3 s, `PUSH_TIMEOUT_S`) insert is retried on the next pull while the request is still fresh.
 - **Policy crash:** that request gets the fallback.
-- **Guard:** every answer is padded from the fallback to exactly 10 distinct, active products.
+- **Guard:** every answer is padded from the fallback to exactly 10 distinct, active products, and never holds a
+  product the shopper already bought (history, live organic, or through our own carousel), whatever the policy.
 
 ## Layout
 
@@ -130,6 +131,14 @@ A second thread loads the same from the 60 days of `shop.history_events`, once (
 `get()` returns history and live together. This part does not depend on the live stream, so it is there
 from the first minute of the final round. Checked on the practice day's live feedback:
 
+- **Already bought = never show (the guard drops them from every answer).** The simulator scores a product
+  the shopper bought before (in `shop.history_events`, `shop.events` or through our carousel) as much less likely
+  to be bought again; the organic data was generated without this, so do not learn repeat buying from it. Our
+  feedback (127,000 answers) agrees: bought again 0 times in 206 showings after a carousel sale, 6 in 9,840 after a
+  live organic purchase, 1 in 39,651 after a history purchase, against 0.104% for the rest. It is only the exact
+  product: others from the same subcategory sell more (x3.7 after a live purchase), not less.
+- Our carousel sales are not in `shop.events` (1 of 940), so `Profiles` reads them from `team_NN.feedback`
+  every 5 s (last 12 h at startup); `get()` and `bought()` include them.
 - Products the shopper bought in the history: bought again 3 times in 39,000 showings (0.008%). The old
   carousel log (`history_sessions`) says the opposite (1.47%): for repeat purchases the live shop behaves
   differently from the history, so check such findings on live feedback. `category_pop` spends ~9% of

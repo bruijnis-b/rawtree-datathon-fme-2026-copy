@@ -274,7 +274,8 @@ def main() -> None:
                     counts["policy_errors"] += 1
                     if counts["policy_errors"] <= 3:  # traceback for the first few per stats window
                         log.exception("policy failed on %s", req.request_id)
-                final, fixed = guard.finalize(items, catalog, fallback_items(fallback, req))
+                final, fixed = guard.finalize(items, catalog, fallback_items(fallback, req),
+                                              profiles.bought(req.user_id))
                 issues.update(fixed)
                 answers.append({"request_id": req.request_id, "items": final,
                                 "model_version": arm_of[req.request_id][1]})
