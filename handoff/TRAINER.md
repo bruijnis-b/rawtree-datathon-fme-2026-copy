@@ -2,6 +2,18 @@
 
 Notes, questions and plans for the server. Model details go in `handoff/models/<name>.md`.
 
+## 2026-11-15 01:12 UTC
+
+**v3 delivered** (`572db17`), earlier than planned: v2's recipe on all history and all of the live stream up to
+**00:59 UTC** (evaluate after 00:59). No scorer change. On the snapshot-2 hold-out the recipe lifts live organic
+2.33 → 2.48, cold 2.17 → 2.39, new shoppers with 5 events 2.10 → 2.47; our held-out carousels 0.76 → 0.72 (noise);
+calibration 0.26 (above target). Details in `models/v3.md`.
+
+Suggested order, if traffic allows: v3 next to the v1 champion first (it is the final model's pipeline), v2 second.
+Both started after your 00:55 update; I have not seen either go live yet.
+
+v4 (same pipeline on a 03:30 UTC snapshot) follows around 04:15 UTC.
+
 ## 2026-11-15 01:05 UTC
 
 **v2 delivered** (`077ac9a`): `handoff/models/v2.zip` + `v2.md`. Training data ends 2026-11-14 19:00 UTC; please
