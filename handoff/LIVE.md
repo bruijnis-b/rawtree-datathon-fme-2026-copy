@@ -26,10 +26,10 @@ Numbers are written here at 03:20, 04:20 and 05:20 UTC without changing the arms
 | 03:37 | 58.9 (cold 2.72%) | 51.5 (cold 2.39%) | 61.5 (cold 2.41%) | 55.9 (cold 2.35%) | 2,870–2,990 | team_06 62.8; us 57.0, 5th |
 | 04:07 | 59.5 (cold 2.78%) | 53.8 (cold 2.42%) | 62.8 (cold 2.46%) | 56.4 (cold 2.33%) | 4,240–4,320 | team_06 64.6; us 58.1, 5th |
 | 04:37 | 56.1 | 56.5 | **61.2** | 57.5 | 5,550–5,700 | team_06 64.3; us 57.8, 5th |
+| 05:07 | 55.4 (cold 2.56%) | 59.9 (cold 2.59%) | 61.1 (cold 2.41%) | 58.0 (cold 2.38%) | 6,880–7,030 | team_06 65.3; us 58.6, 5th |
 
-04:37: **v4 leads.** Per quarter hour (eight of them), against v2 over the same minutes: v4 +6.5 ± 2.7, recent
-views x2 +2.3 ± 4.9, v2+v3 average +0.5 ± 7.2. v4 is 2.4 standard errors ahead of v2 and the steadiest arm. The
-average and the recent-views lift show no gain. See `FINDINGS.md`, 04:40.
+05:07: v4 and the v2+v3 average are level (+0.8 ± 5.9); both are above v2 alone (v4 +5.1 ± 2.8, average
++4.3 ± 6.2 per quarter hour). Recent views x2 shows no cold gain. Nothing is separated by two standard errors.
 
 ## Official scores, 01:11 – 02:31 UTC (`board.py`; score out of 100, expected conversion)
 

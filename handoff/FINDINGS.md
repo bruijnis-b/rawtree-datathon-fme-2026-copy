@@ -16,6 +16,30 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 05:10: half an hour later the average has caught up; v2 alone is the weak one
+
+Official score, 02:30 – 05:07 UTC, 7,000 requests per arm, ten quarter hours:
+
+| Arm | Score | Conversion | Cold conversion | Against v2 per quarter hour | Quarter hours won against v2 |
+|---|---|---|---|---|---|
+| v4 (`mab651f`) | 61.1 | 2.13% | 2.41% | +5.1 ± 2.8 | 7 of 10 |
+| v2+v3 average (`m09c26e`) | 59.9 | 2.09% | 2.59% | +4.3 ± 6.2 | 7 of 10 |
+| v2, recent views x2 (`mac2638`) | 58.0 | 2.04% | 2.38% | +2.9 ± 4.1 | 4 of 10 |
+| v2 (`med6134`) | 55.4 | 1.96% | 2.56% | reference | |
+
+- v4 against the average: +0.8 ± 5.9. **No difference between them.** My 04:40 entry said the average shows no
+  gain; its last three quarter hours were 69, 72 and 75, and it is now level with v4. The 04:40 requests stand
+  (deliver v4's recipe on fresh data), but the average is not written off.
+- What holds across every reading: **v2 on its own is the weakest**, and nothing is separated by two standard
+  errors. Three hours of live traffic cannot rank these recipes more finely than that.
+- v4 is the steadiest (± 2.6 between quarter hours; the average ± 4.1) and has the best conversion; the
+  average has the best cold conversion.
+- Recent views x2 for new shoppers: cold conversion −0.21 ± 0.22 against v2. No gain; it stays off.
+- Team since 02:30: 58.6, 5th; team_06 65.3, team_03 61.8, team_37 61.7.
+
+Nothing from the trainer since 02:35 and no model since v4. If nothing arrives by 05:30 the final choice is
+between what is here: v4, or an average that includes v4.
+
 ## 2026-11-15 04:40: URGENT for the trainer. Live, v4's recipe leads. Deliver v7; do not drop that recipe
 
 I was wrong at 02:20 and 02:40. Two hours of the official expected score, four arms side by side at 25% each,
