@@ -47,3 +47,10 @@ def price_features(prices, subcats, sub_mean: dict[str, float], global_mean: flo
         out[i, 0] = lp - global_mean
         out[i, 1] = lp - sub_mean.get(str(s), global_mean)
     return out
+
+
+def compact(rv: np.ndarray) -> np.ndarray:
+    """Context rows [n, k] of product indices (-1 = none), oldest first: move the -1 gaps to the front, keeping the
+    order of the real entries, so a context looks like a request's recent_views (which never has gaps)."""
+    order = np.argsort((rv >= 0).astype(np.int8), axis=1, kind="stable")
+    return np.take_along_axis(rv, order, axis=1)

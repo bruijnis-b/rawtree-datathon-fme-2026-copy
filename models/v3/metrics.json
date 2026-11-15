@@ -1,0 +1,23 @@
+{
+ "summary": {
+  "score_a": 1.0168,
+  "score_c": -0.0031,
+  "parity_max_abs": 1.1444091796875e-05,
+  "product_parity_max_abs": 9.5367431640625e-07,
+  "latency_p50_ms": 0.2692205016501248,
+  "latency_p99_ms": 0.41768112452700734,
+  "cart_beta": 0.0,
+  "live_share_purchases_heldout_new": null,
+  "calibration_max_err": null,
+  "live_objective": NaN,
+  "live_objective_se": NaN,
+  "live_lift_all": NaN,
+  "live_lift_cold": NaN,
+  "live_share_top10_heldout_new": NaN,
+  "disc_beta": -0.014982686378061771,
+  "new_gain": 0.0,
+  "minutes": 2.0013564904530843,
+  "live_objective_before": NaN
+ },
+ "metrics": []
+}

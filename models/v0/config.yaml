@@ -1,0 +1,121 @@
+wandb:
+  project: rawtree
+  entity: null
+data:
+  dataset: rawtree_history
+  version: null
+  fold: 0
+  all: false
+history: ${ivan:${data.dataset},${data.version}}
+preset: default
+model:
+  dim: 64
+  hidden: 128
+  id_dropout: 0.25
+  history_dropout: 0.3
+  history_len: 20
+  pooling: recency
+  recency_decay: 0.7
+  slot: learned
+  description: false
+  price: true
+organic:
+  mode: joint
+  weight: 1.0
+  logq: true
+  type_weights:
+  - 1.0
+  - 3.0
+  - 6.0
+loss:
+  propensity_clip: 0.0
+  click_weight: 1.0
+train:
+  lr: 0.002
+  weight_decay: 1.0e-05
+  batch_size: 2048
+  epochs: 20
+  epoch_fraction: 1.0
+  seed: 0
+eval:
+  every_epoch: true
+  bootstrap: 1000
+  max_organic: 40000
+export:
+  user_vectors: true
+sweep:
+  method: random
+  run_cap: 45
+  seed: 7
+  metric:
+    name: objective
+    goal: maximize
+  hypothesis: Random combinations of the phase-A axes find a better configuration
+    than any one-axis change
+  parameters:
+    model.dim:
+      values:
+      - 32
+      - 64
+      - 128
+    model.id_dropout:
+      values:
+      - 0.0
+      - 0.25
+      - 0.5
+    model.history_dropout:
+      values:
+      - 0.0
+      - 0.3
+      - 0.5
+    model.history_len:
+      values:
+      - 0
+      - 20
+      - 50
+    model.pooling:
+      values:
+      - recency
+      - mean
+      - attention
+    organic.mode:
+      values:
+      - joint
+      - staged
+    organic.weight:
+      values:
+      - 0.3
+      - 1.0
+    loss.propensity_clip:
+      values:
+      - 0.0
+      - 0.05
+      - 0.01
+    loss.click_weight:
+      values:
+      - 0.3
+      - 1.0
+      - 3.0
+    model.slot:
+      values:
+      - learned
+      - fixed
+    model.description:
+      values:
+      - false
+      - true
+    train.lr:
+      values:
+      - 0.0007
+      - 0.002
+      - 0.005
+    train.weight_decay:
+      values:
+      - 0.0
+      - 1.0e-05
+      - 0.0001
+    train.batch_size:
+      values:
+      - 1024
+      - 2048
+      - 4096

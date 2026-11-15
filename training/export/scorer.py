@@ -70,11 +70,20 @@ class Model:
         self.type_w = self.w["type_w"]
         self.user_index: dict = {}
         self.user_vecs = np.zeros((0, self.d), dtype=np.float32)
+        self.user_counts = None
+        self.user_carts = None
         uv = folder / "user_vectors.npz"
         if uv.exists():
             u = np.load(uv, allow_pickle=False)
             self.user_index = {k: i for i, k in enumerate(u["user_ids"].tolist())}
             self.user_vecs = u["vectors"].astype(np.float32)
+            self.user_counts = u["counts"] if "counts" in u.files else None
+            if "cart_ids" in u.files:  # open cart at export time, per user row
+                ids, off = u["cart_ids"].tolist(), u["cart_off"]
+                self.user_carts = [ids[off[i]:off[i + 1]] for i in range(len(off) - 1)]
+        # a history shorter than this is ignored (a very short history scores worse than none)
+        self.min_hist = int(meta.get("min_history_events", 0))
+        self.cart_window = int(meta.get("cart_window", 50))
 
     # ---------------- products ----------------
     def embed_products(self, rows, base: ProductMatrix | None = None) -> ProductMatrix:
@@ -118,7 +127,7 @@ class Model:
     def user_vector(self, events, pm: ProductMatrix):
         """Pooled vector of a user's events [(product_id, event_type), ...], oldest first; None if none usable."""
         n = int(self.meta["history_len"])
-        if n <= 0 or not events:
+        if n <= 0 or not events or len(events) < self.min_hist:
             return None
         rows = [(pm.index.get(str(p)), F.EVENT_TYPES.get(str(t), 0)) for p, t in list(events)[-n:]]
         rows = [(i, t) for i, t in rows if i is not None]
@@ -158,19 +167,46 @@ class Model:
                 hist = self.user_vector(events, pm)
             if hist is None:
                 j = self.user_index.get(str(_get(request, "user_id")))
-                if j is not None:
+                if j is not None and (self.user_counts is None or self.user_counts[j] >= self.min_hist):
                     hist = self.user_vecs[j]
         hist_has = 1.0 if hist is not None else 0.0
         hist = hist if hist is not None else np.zeros(self.d, dtype=np.float32)
         x = np.concatenate([ctx, rec, [rec_has], hist * hist_has, [hist_has]]).astype(np.float32)
         h = x @ w["u1.weight"].T + w["u1.bias"] + float(bool(_get(request, "is_new_user"))) * w["w_new"]
-        return _relu(h) @ w["u2.weight"].T + w["u2.bias"]
+        u = _relu(h) @ w["u2.weight"].T + w["u2.bias"]
+        cart = self.open_cart(request, pm, events)
+        if "cart_w.weight" in w and cart:
+            vec = pm.vecs[np.array(cart)].mean(0)
+            u = u + w["cart_w.weight"] @ np.concatenate([vec, [1.0]]).astype(np.float32)
+        return u, cart
+
+    def open_cart(self, request, pm: ProductMatrix, events=None) -> list:
+        """Row indices in pm of the user's open cart: added to cart and not bought since, within the last
+        cart_window events. From `events` when given, else the cart saved at export time."""
+        if "cart_w.weight" not in self.w:
+            return []
+        if events:
+            out, bought, seen = [], set(), set()
+            for p, t in reversed(list(events)[-self.cart_window:]):
+                p, t = str(p), str(t)
+                if t == "purchase":
+                    bought.add(p)
+                elif t == "add_to_cart" and p not in bought and p not in seen:
+                    seen.add(p)
+                    out.append(p)
+        else:
+            j = self.user_index.get(str(_get(request, "user_id")))
+            out = self.user_carts[j] if (j is not None and self.user_carts is not None) else []
+        return [pm.index[p] for p in out if p in pm.index]
 
     # ---------------- score ----------------
     def score(self, request, pm: ProductMatrix, events=None, hist=None) -> np.ndarray:
-        u = self._user(request, pm, events, hist)
-        x = pm.vecs @ u + pm.bias
+        u, cart = self._user(request, pm, events, hist)
+        gain = float(self.w["new_gain"]) if "new_gain" in self.w else 0.0
+        x = pm.vecs @ u + pm.bias * (1.0 + gain * float(bool(_get(request, "is_new_user"))))
         w = self.w
+        if cart and "cart_beta" in w:
+            x[np.array(cart)] += float(w["cart_beta"])
         lc = _log_sigmoid(x + w["c_click"]) + _log_sigmoid(w["alpha"] * x + w["c_purchase"])
         sc = lc - np.log1p(-np.minimum(np.exp(lc), 1 - 1e-7))
         return (float(w.get("score_a", 1.0)) * sc + float(w.get("score_c", 0.0))).astype(np.float32)

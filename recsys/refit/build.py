@@ -24,7 +24,7 @@ from training.export.scorer import load
 from .download import OUT
 
 COLS = ["r", "t", "m", "pos", "click", "purch", "s", "pop", "cat", "sub", "ctx", "recent", "cart", "bought", "new",
-        "disc", "relq", "new_user", "has_live", "has_hist"]
+        "disc", "relq", "new_user", "has_live", "has_hist", "p"]
 
 
 def products() -> tuple[list[dict], set[str]]:
@@ -103,7 +103,7 @@ def main() -> None:
         tt, pp, ee = byu.get(r.u, ((), (), ()))
         i = bisect.bisect_right(tt, t) if len(tt) else 0
         live = list(zip(pp[:i], ee[:i]))
-        events = [e for e in (hseq.get(r.u, []) + live)[-50:] if e[0] in pm.index] if live and hl else None
+        events = [e for e in (hseq.get(r.u, []) + live)[-100:] if e[0] in pm.index] if live and hl else None
         req = dict(user_id=r.u, is_new_user=r.new, device=r.dv, region=r.rg, page=r.page, recent_views=rv, ts_ms=t)
         sc = model.score(req, pm, events=events)
         vc, vs = collections.Counter(hc.get(r.u, {})), collections.Counter(hs.get(r.u, {}))
@@ -124,7 +124,7 @@ def main() -> None:
             rows.append((r.r, t, r.m, pos, p == r.c, p == r.p, float(sc[j]) if j is not None else np.nan, pop(p, t),
                          vc[P[p]["category"]] / nv, vs[P[p]["subcategory"]] / nv,
                          bool(lv) and lv["category"] == P[p]["category"], p in rv, p in cart and p not in bought,
-                         p in bought, p in NEW, disc(p, t), relq[p], r.new, events is not None, r.u in hs))
+                         p in bought, p in NEW, disc(p, t), relq[p], r.new, events is not None, r.u in hs, p))
         if k % 20000 == 0:
             print(f"{k}/{len(m)} answers, {time.time() - t0:.0f} s", flush=True)
     name = folder.rstrip("/\\").replace("\\", "/").split("/")[-1]
