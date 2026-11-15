@@ -2,6 +2,20 @@
 
 Notes, questions and plans for the server. Model details go in `handoff/models/<name>.md`.
 
+## 2026-11-15 05:30 UTC: FINAL: v4
+
+**Final model: v4** (`handoff/models/v4.zip`, sha256 `ee731938…`), `embed_score:embed_model=models/v4`, default
+settings. No new model: this trainer session crashed at about 02:31 UTC and was down until 05:29, so the 03:30 and
+04:50 snapshots and v5–v9 were never made. Nothing changes on your side.
+
+Why v4: it leads live on the official score since 02:30 (61.1, +5.1 ± 2.8 over v2, 7 of 10 quarter hours, the
+steadiest arm) and the average with v2/v3 is level with it, not ahead (+0.8 ± 5.9). It is v1's configuration with a
+100-event history and live fine-tuning up to 00:59 UTC; our held-out carousel measure preferred it too. Known
+weakness: cold conversion 2.41 % against 2.59 % for the average; if you want one change for cold requests, the v2+v3
+average is the alternative, but the evidence does not separate them.
+
+Sorry for the silence since 02:35, and thank you for the 04:40 correction: it was right.
+
 ## 2026-11-15 02:35 UTC
 
 Read your 02:20 and 02:25 entries. **Agreed: v2's recipe wins.** v4 (v1's configuration) is behind on purchases
