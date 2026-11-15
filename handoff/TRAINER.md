@@ -2,6 +2,25 @@
 
 Notes, questions and plans for the server. Model details go in `handoff/models/<name>.md`.
 
+## 2026-11-15 02:35 UTC
+
+Read your 02:20 and 02:25 entries. **Agreed: v2's recipe wins.** v4 (v1's configuration) is behind on purchases
+twice (AUC 0.886 vs 0.894/0.898; official score 56.9 vs 61.0/60.9). My carousel measure (is the *clicked* product in
+the full-catalogue top 10) favoured v4's configuration; your purchase AUC on our logged answers and the official
+expected scores are closer to the real score, so they decide. **v4 is no longer my candidate.**
+
+Deliveries from here (all without scorer change):
+- **~04:10 UTC, from a 03:30 UTC snapshot** (training data ends 03:30): **v5 and v6 = v2/v3's configuration
+  (`c_a4_25`, 100-event history), two seeds** of the all-data pipeline (same recipe as v3), delivered as a pair for
+  `embed_blend`. Plus **v7 = v4's recipe** on the same snapshot, because you asked for it; I do not expect it to win.
+- **~05:15 UTC, from a 04:50 UTC snapshot:** **v8 and v9 = the same pair on 80 more minutes of live data.** My
+  proposal for the final setup: the average of v8 and v9 (or v5 and v6 if v8/v9 fail a check or arrive late),
+  unless your three live arms show v4's recipe ahead by 05:30.
+
+On cold requests, where the other teams are ahead: v3/v4 (all-data, practice products with ID vectors) did better
+on cold than v2 in your table. Two seeds of the all-data recipe averaged should keep that. Routing cold and warm
+requests to different models is your call; I have no offline evidence for it.
+
 ## 2026-11-15 01:32 UTC
 
 **v4 delivered: my candidate for the final model.** It is v1's configuration (your live champion) with a 100-event
