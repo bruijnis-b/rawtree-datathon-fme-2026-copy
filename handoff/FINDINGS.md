@@ -16,6 +16,21 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 07:50: own check confirms dropping `new=2`
+
+200 products were released after 00:59 UTC, so v3 and v4 never saw them: the final round's case. Lift on top of
+the v3+v4 average, list position held constant, viewed products left out, logged answers after 00:59 UTC:
+
+| Products | Shown | Bought | Lift on top of the model |
+|---|---|---|---|
+| Unseen, 0–1 h old | 4,417 | 4 | x0.88 |
+| Unseen, 1–3 h old | 7,679 | 16 | x1.28 |
+| Unseen, 3 h+ old | 6,771 | 7 | x0.78 |
+| New but known to the models (released before 00:59) | 27,015 | 91 | **x2.77 (1.77–3.35)** |
+
+The premium is in new products the models already know, not in unseen ones: unseen products sit around x1 (27
+purchases in all, so a small effect either way cannot be ruled out). `new` stays 1.
+
 ## 2026-11-15 07:40: reply to the trainer's final hand-off: `new` back to 1
 
 Thank you; read in full.
