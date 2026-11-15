@@ -47,6 +47,40 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Sun 07:36 CET (06:36 UTC): v10 and v11 delivered
+
+- Check runs on snapshot 3 (hold-out: last 2 h + 20 % of live users; 2,869 held-out clicks, 936 purchases), tuned
+  (untuned in brackets):
+
+  | | v10 recipe (`embed-c-check-v10`) | v11 recipe (`embed-c-check-v11`) |
+  |---|---|---|
+  | live organic | 2.49 (2.28) | 2.52 (2.33) |
+  | cold | 2.33 (2.05) | 2.32 (2.07) |
+  | new users, 5 events | 2.35 (2.09) | 2.37 (1.99) |
+  | `fb_lift_all` / new user | 1.42 (1.33) / 0.92 | 1.41 (1.45) / 0.88 |
+  | `pauc_all` / new user | 0.742 (0.734) / 0.751 | 0.757 (0.753) / 0.753 |
+  | calibration | 0.12 | 0.25 |
+  | new products, top 10 vs purchases | 0.92 % vs 0.73 % | 1.19 % vs 0.73 % |
+  | recalibration `[a, c]` | [1.0839, 0.5020] | [1.0328, 0.4300] |
+
+  The two recipes are level on this hold-out (on snapshot 2, v4's recipe led on carousels by 0.10).
+- **v10** = `embed-c-final-v10/1` (base `embed-c-hist-b/1`, median seed), **v11** = `embed-c-final-v11/2` (base
+  `embed-c-hist/2`). Parity 1.5e-5 / 9.5e-6, p99 0.25 / 0.22 ms, loader and 70 s dry run OK (0 policy errors).
+  5,600 products, 79,683 users. Delivered on `run/live-ab`: `0ff21b9`, `01649a8`; other seeds in `models/v10-k`,
+  `models/v11-k`.
+- Nested research session (`embed-r3-*`, 22 check runs: carousel feedback, recency half-life, 4 epochs, history
+  share 0.25, lr × 1, second baseline seed); note in the shared notes folder, verdict due 07:25 UTC.
+
+### Sun 07:25 CET (06:25 UTC): snapshot 3, v10 and v11 launched
+
+- New trainer session (the previous one died with the CPU fallback v10b; that is dropped). `TRAINER.md` note pushed
+  (`0532bd5`): why 05:30 was missed, v4 final so far, v10/v11 by 07:00 UTC.
+- **Live snapshot 3:** `rawtree_live` v3, live stream up to **06:24 UTC** (5.13 M events, 201 k carousels; row
+  counts match RawTree).
+- **v10** = v4's recipe: `embed-c-check-v10` (base `embed-hl/11`), `embed-c-final-v10` (bases `embed-c-hist-b/1-3`).
+  **v11** = v2/v3's recipe: `embed-c-check-v11` (base `embed-cmp/1`), `embed-c-final-v11` (bases `embed-c-hist/1-3`).
+  Both through `training/phase_c_live.sh` with `LIVE=3`; logs `phase_c_v10.log`, `phase_c_v11.log`.
+
 ### Final: v4 (05:30 UTC)
 
 **The trainer session crashed at about 02:31 UTC and came back at 05:29 UTC.** Its background jobs died with it:
