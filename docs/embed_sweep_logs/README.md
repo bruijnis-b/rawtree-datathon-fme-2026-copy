@@ -47,6 +47,19 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Phase C preparation (Sun 01:28–01:40)
+
+- `embed-c-hist` (c_a4_25 + history 100, all history, seeds 0/1/2): succeeded in 5–6 min each. In-sample objective
+  4.88–4.95 and calibration 0.84–0.97 are not informative (the validation week is in training); the recalibration is
+  the out-of-sample value from phase B2.
+- **Rehearsal of the final step** on snapshot 1 (`embed-c-rehearsal`): the export succeeded but the run failed in
+  `description.md` (NaN/None numbers without a live hold-out). Fixed (`describe._num`). `embed-c-rehearsal2`: passes;
+  parity 9.5e-6, p99 0.24 ms, 79,338 known users, ID vectors for all 5,300 products, dry run 0 policy errors.
+- `training/phase_c.sh` is running in the background: it waits for `rawtree_live` v2 (published by the 04:30 export
+  job), runs `embed-c-check` (fold-0 base with the live hold-out on snapshot 2, untuned vs tuned; gives the
+  recalibration), then `embed-c-final` (the 3 all-history seeds on all of snapshot 2), and copies the exports to
+  `models/final-1..3`.
+
 ### Cart decision, final recipe, v2 (Sun 01:25–01:30)
 
 `embed-cart2` + control `embed-cart2c` (phase C base, 2 seeds each; carousel hold-out = our logged carousels):
