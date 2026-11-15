@@ -938,5 +938,17 @@
     "git_commit": "29d8512",
     "first_live_utc": "2026-11-15T06:02:05+00:00",
     "fingerprint": "85450321b9855b83"
+  },
+  {
+    "public_id": "me5b04d",
+    "internal": "route-v1",
+    "params": {
+      "cold": "embed_blend;embed_model=models/v2;embed_model2=models/v3",
+      "warm": "embed_blend;embed_model=models/v3;embed_model2=models/v4;cart=2.5;max_lift=1.3;w_cat=1;w_sub=1;new=1.5;alpha=0.3"
+    },
+    "description": "Two policies in one arm: one answers cold requests, the other the rest.",
+    "git_commit": "d8e397d+dirty",
+    "first_live_utc": "2026-11-15T06:24:44+00:00",
+    "fingerprint": "c1181781fe490af7"
   }
 ]

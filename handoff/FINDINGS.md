@@ -16,6 +16,33 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 06:27: cold routing live
+
+Every team above us beats us on cold requests by 0.2–1.3 points of conversion, not on warm ones. Two teams send
+cold requests to a separate model. New policy `route` (`recsys/policies/route.py`): a cold request (new shopper,
+or a recent view of a product added during the event, the official definition) goes to one policy, the rest to
+another. Live since 06:25 UTC as `me5b04d`:
+
+| Side | Policy | Why |
+|---|---|---|
+| Cold | v2+v3 average | Best cold conversion on the most data: 2.66% over 3,722 cold requests (v4 2.44%, v3+v4 2.47%) |
+| Warm | v3+v4 average, tuned layer | Best warm conversion so far: 2.27% (797 requests), v3+v4 default 1.96% |
+
+Per-arm cold and warm conversion since 03:22 UTC (official, expected; ± one Bernoulli standard error, which
+overstates the noise of expected conversion):
+
+| Arm | Cold requests | Cold conversion | Warm conversion |
+|---|---|---|---|
+| v2+v3 | 3,722 | 2.66% ± 0.26 | 1.78% ± 0.19 |
+| v2 | 2,493 | 2.56% ± 0.32 | 1.47% ± 0.21 |
+| v3+v4 | 1,138 | 2.47% ± 0.46 | 1.96% ± 0.35 |
+| v4 | 3,603 | 2.44% ± 0.26 | 1.75% ± 0.19 |
+| v2, recent views x2 | 2,461 | 2.42% ± 0.31 | 1.75% ± 0.23 |
+| v3+v4 tuned | 346 | 2.28% ± 0.80 | 2.27% ± 0.70 |
+
+Honest caveat: the cold differences between our arms are within noise. Routing can only gain where the two
+halves really differ; the large gap to the other teams on cold is not explained by any of our arms.
+
 ## 2026-11-15 06:03: the tuned layer is live as one arm
 
 Until now every live arm used the default wrapper settings, which were fitted for a policy without a model. Since

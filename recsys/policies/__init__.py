@@ -8,6 +8,7 @@ from .coview import Coview
 from .discount_boost import DiscountBoost
 from .embed import Embed
 from .embed_blend import EmbedBlend
+from .route import Route
 from .embed_score import EmbedScore
 from .price_discount import PriceDiscount
 from .shopper_discount import ShopperDiscount
@@ -19,6 +20,6 @@ REGISTRY: dict[str, type[Policy]] = {cls.name: cls for cls in (Baseline, Categor
                                                                 DiscountBoost, PriceDiscount, ShopperProfile,
                                                                 ShopperProfileFresh, ShopperScore, ShopperDiscount,
                                                                 Combined, Embed, EmbedScore, ColdCombined, ColdEmbed,
-                                                                EmbedBlend)}
+                                                                EmbedBlend, Route)}
 
 __all__ = ["Policy", "Request", "REGISTRY"]

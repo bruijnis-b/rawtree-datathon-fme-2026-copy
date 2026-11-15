@@ -1,18 +1,21 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 06:03 UTC. Code: branch `run/live-ab`, restarted 02:13 UTC.
+Updated: 2026-11-15 06:27 UTC. Code: branch `run/live-ab`, restarted 06:25 UTC (new policy `route`).
 
 ## Live now: round 3, four arms, a quarter each
 
 | Share | Public ID | Arm | Question | Live since |
 |---|---|---|---|---|
-| 25% | mab651f | `embed_score` on v4, default settings | One model, v4's recipe | 01:33 |
-| 25% | m09c26e | `embed_blend`: average of v2 and v3 | Average within one recipe | 02:13 |
+| 25% | m09c26e | `embed_blend`: average of v2 and v3 | Average within one recipe; best on cold so far | 02:13 |
 | 25% | m9f6fa4 | `embed_blend`: average of v3 and v4 | Average across the two recipes | 05:31 |
-| 25% | m8277ec | v3+v4 average **with every tuned factor**: `cart=2.5`, `max_lift=1.3`, `w_cat=1`, `w_sub=1`, `new=1.5`, `alpha=0.3` | Best on paper (Bas, 06:00): does the tuned layer beat the defaults on the same models? Read against m9f6fa4 | 06:02 |
+| 25% | m8277ec | v3+v4 average with the tuned layer (`cart=2.5`, `max_lift=1.3`, `w_cat=1`, `w_sub=1`, `new=1.5`, `alpha=0.3`) | Does the tuned layer beat the defaults? Read against m9f6fa4 | 06:02 |
+| 25% | me5b04d | `route`: cold requests to the v2+v3 average, the rest to the tuned v3+v4 average | Cold routing (Bas, 06:20): better than either half alone? | 06:25 |
 
-`arms.txt` is the file the process reads. Read with `handoff/tools/board.py` from 05:31 UTC (m8277ec from 06:02).
-A fresh model from the trainer (v10/v11) replaces the weakest arm when it has passed its checks.
+`arms.txt` is the file the process reads. Read with `handoff/tools/board.py`; cold and warm conversion per arm
+come from `cold_requests` in the per-model view. A fresh model from the trainer replaces the weakest arm.
+
+Pruned at 06:25: `mab651f` (v4 alone), the weakest arm over the last three hours: 59.5 against 64.3–64.7 for the
+averages, warm conversion 1.75% against 1.96% for v3+v4.
 
 Round 3 at 05:59 UTC (28 minutes, about 1,450 requests per arm): v3+v4 65.7, v2+v3 60.1, v4 60.0. Too early.
 
