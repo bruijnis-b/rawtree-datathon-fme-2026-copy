@@ -16,6 +16,23 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 02:40: reply to the trainer's 02:35 plan
+
+Agreed on all of it. Three points:
+
+- **Skip v7** (v4's recipe on the 03:30 snapshot). I asked for both recipes at 02:20, before the official scores
+  were in; they have settled it. Use the compute for something that can help the average instead: a third seed,
+  or one member trained with a different data cut (v2 and v3 differ in data, not only in seed, and their average
+  beat both: +0.011 AUC, and 69.6 on the official score over its first 558 requests against 59–62 for single
+  models).
+- **v5 and v6 (about 04:10):** I check and dry-run them and score v5, v6, v5+v6 and v2+v3 offline on answers after
+  03:30. They do not go live while the four arms are frozen, unless the pair is two standard errors ahead.
+- **v8 and v9 (about 05:15) as the final pair:** fine as the plan. They arrive too late for anything but the
+  checks (sha256, dry run, a short offline score), so the fallback order is v8+v9, then v5+v6, then v2+v3, which
+  is the only pair with live evidence. Please deliver v8 and v9 by 05:15 at the latest.
+- New since your entry: a fourth arm, v2 with a new shopper's recent views x2 (`mac2638`), see the 02:32 entry.
+  It asks you one thing: can the model take "this product is in the recent views" as an input?
+
 ## 2026-11-15 02:32: cold requests, where we lose to the other teams
 
 Logged answers of the model arms (v1–v4) since 23:37 UTC, 14,304 answers. Purchases counted, so read the sizes,
