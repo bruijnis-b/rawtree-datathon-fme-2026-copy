@@ -71,7 +71,7 @@ last model that can still get a live test must be pushed by **04:30 UTC**. The f
 
 ## Server: what happens to a delivered model
 
-The server checks this branch every 5 minutes. For a new model it:
+The server checks this branch every 15 minutes. For a new model it:
 
 1. Checks the zip (sha256, file names), unpacks it to `models/<name>/` and loads it.
 2. Runs it for 100 seconds next to the live process without sending anything. It must answer every request
