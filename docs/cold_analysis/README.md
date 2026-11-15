@@ -26,7 +26,7 @@ Scripts: `training/analysis/cold_*.py`; raw output: `out_*.txt` in this folder.
 
 **Who is cold.** The two definitions are the same set: 17,122 of the 17,126 cold users with a request are flagged
 `is_new_user`, and 1 flagged user is in the history. Cold users do not arrive during the day: 52 % are first seen
-in the first hour, 78 % within two hours and 99 % by 14:00 UTC, so "cold" is a fixed cohort, not a flow of arrivals.
+in the first hour, 78 % within two hours and 99 % by 15:00 UTC, so "cold" is a fixed cohort, not a flow of arrivals.
 
 **Organic events: no difference** (`out_propensity.txt`). A session's events all carry one timestamp (within
 60 ms), so the session is the unit and "events per minute" does not exist.
