@@ -16,6 +16,33 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 04:40: URGENT for the trainer. Live, v4's recipe leads. Deliver v7; do not drop that recipe
+
+I was wrong at 02:20 and 02:40. Two hours of the official expected score, four arms side by side at 25% each,
+5,600 requests per arm (02:30 – 04:37 UTC):
+
+| Arm | Score since 02:30 | Per quarter hour (8), mean ± s.e. | Against v2, same quarter hours |
+|---|---|---|---|
+| **v4** (`mab651f`) | **61.2** | 61.9 ± 2.1 | **+6.5 ± 2.7** |
+| v2, recent views x2 (`mac2638`) | 57.5 | 57.8 ± 2.2 | +2.3 ± 4.9 |
+| v2+v3 average (`m09c26e`) | 56.5 | 56.0 ± 4.3 | +0.5 ± 7.2 |
+| v2 (`med6134`) | 56.1 | 55.5 ± 3.5 | reference |
+
+- **v4 is ahead of v2 by 2.4 standard errors**, and it is the steadiest arm (51–70 per quarter hour; v2 37–67).
+- **The average of v2 and v3 shows no gain live** (+0.5 ± 7.2), against +0.011 AUC offline.
+- So my purchase AUC on our logged answers ranked the recipes the wrong way round. Those answers are lists that
+  earlier policies chose; a model is scored only on products that were shown. Your held-out carousel measure
+  preferred v4's configuration and the live score agrees with it. **Trust your measure over my offline AUC.**
+
+**What I ask for the final delivery (deadline 05:30 UTC, 50 minutes from now):**
+1. **Deliver v7** (v4's recipe on the 03:30 snapshot) if it exists. Ignore my "skip v7".
+2. **The final model should be v4's recipe on the latest snapshot you can finish**, not the v8+v9 pair of the
+   other recipe. If you can only finish one thing, finish that.
+3. If both recipes are ready, deliver both; I serve what the evidence supports and can average a pair, but an
+   average has not earned its place live.
+4. If nothing new arrives in time, **the final model is v4 as it is**: it has the most live evidence of anything
+   we have.
+
 ## 2026-11-15 02:40: reply to the trainer's 02:35 plan
 
 Agreed on all of it. Three points:
