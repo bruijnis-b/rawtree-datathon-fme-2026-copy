@@ -16,7 +16,7 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 | v1 to Bas (added) | ~01:00 | 23:31 | `embed-l1c/4` → `models/v1`; see `v1_handoff.md` |
 | Live snapshot 2 | 03:00 | | |
 | Phase C | 03:00 | | |
-| Final model to Bas | 06:30 | | |
+| Final model to Bas | 06:30 | 06:30 (05:30 UTC) | **v4**; no new model after 02:31 UTC (session crash) |
 
 ## Pipeline (what was built)
 
@@ -46,6 +46,26 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 - `recsys/policies/__init__.py` registers the new `embed` policy (Bas's area: one line).
 
 ## Findings
+
+### Final: v4 (05:30 UTC)
+
+**The trainer session crashed at about 02:31 UTC and came back at 05:29 UTC.** Its background jobs died with it:
+the 03:30 and 04:50 UTC snapshots were never taken, the v5/v5a/v8 pipelines never ran (the v8 one had already
+failed with exit 4 before the crash), and the IVAN tunnel was down. No model after v4 was delivered.
+
+What happened live meanwhile (server, official expected score, four arms at 25 % from 02:30 UTC, ~7,000 requests per
+arm to 05:07): **v4 61.1** (+5.1 ± 2.8 over v2, 7 of 10 quarter hours, steadiest), v2+v3 average 59.9 (+4.3 ± 6.2),
+v2 with a new shopper's recent views ×2 58.0, v2 alone 55.4. Team score since 02:30: 58.6, 5th (team_06 65.3).
+At 04:40 the server reversed its 02:20 call: its purchase AUC on logged answers (lists other policies chose) ranked
+the recipes the wrong way round; our held-out carousel measure, which preferred v4's configuration, agreed with live.
+So my 02:35 switch away from v4 was wrong, and the carousel measure was right.
+
+**Final model: v4** (pushed `27543d8`, 05:30:01 UTC): v1's configuration (`b_a2_43`) with a 100-event history, all
+history + live fine-tuning up to 2026-11-15 00:59 UTC. Weakness: cold conversion 2.41 % vs 2.59 % for the v2+v3
+average; the evidence does not separate the two overall.
+
+Lessons: (1) long background chains need a watchdog outside the agent session; (2) two offline measures that
+disagree should both be kept until live data decides, not resolved early in favour of one.
 
 ### Server review 02:20 UTC: v2's recipe wins; purchase-AUC check of the recipe (02:25–02:30 UTC)
 
