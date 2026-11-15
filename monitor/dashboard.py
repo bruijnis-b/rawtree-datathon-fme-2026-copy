@@ -485,6 +485,29 @@ GROUP_COLS = {
 }
 
 
+BEST_MIN_REQUESTS = 500  # below this a model's score swings 10+ points per quarter hour
+
+
+def best_of_ours(t: pd.DataFrame) -> None:
+    """Which of our models scored best in the window (official estimated score), shown above the model table."""
+    scored = t.dropna(subset=["score_est"])
+    big = scored[scored["requests"] >= BEST_MIN_REQUESTS].sort_values("score_est", ascending=False)
+    if big.empty:
+        st.caption(f"No model has {BEST_MIN_REQUESTS}+ requests with an official score in this window yet.")
+        return
+    best = big.iloc[0]
+    with st.container(horizontal=True):
+        st.metric("Best of our models", best["model"], border=True,
+                  help=f"Highest estimated score among our models with {BEST_MIN_REQUESTS}+ requests in this window. "
+                       f"Settings: {best['settings'] or 'defaults'}")
+        st.metric("Its score (est.)", fmt(best["score_est"], 1), border=True,
+                  delta=f"{best['score_est'] - big['score_est'].iloc[1]:+.1f} vs next" if len(big) > 1 else None,
+                  help=f"Next: {big['model'].iloc[1]}" if len(big) > 1 else None)
+        st.metric("Its requests", f"{int(best['requests']):,}", border=True)
+    st.caption("One window's ranking is not a result: compare models over the same minutes and check the gap "
+               "against its noise (a model's score moves 5–15 points between quarter hours).")
+
+
 def performance_view(t0: float, t1: float, label: str) -> None:
     st.subheader(f"Model performance · {label}")
     df = load_detail(t0, t1)
@@ -505,6 +528,7 @@ def performance_view(t0: float, t1: float, label: str) -> None:
             t = t.merge(official[["model_version", "score_est", "off_conversion", "off_cold"]], on="model_version",
                         how="left").drop(columns="model_version")
             t.insert(2, "score_est", t.pop("score_est"))
+            best_of_ours(t)
         st.dataframe(t, hide_index=True, alt="Conversion and estimated score per model",
                      column_config={**GROUP_COLS, "model": st.column_config.TextColumn("Model (public ID)"),
                                     "settings": st.column_config.TextColumn("Settings"),
