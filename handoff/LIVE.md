@@ -12,8 +12,8 @@ Updated: 2026-11-15 00:55 UTC. Code: branch `run/live-ab`, restarted 00:22:39 UT
 
 Both v1 arms ran at 20% from 23:37. `arms.txt` is the file the process reads.
 
-**When v2 arrives:** `combined` is pruned (below v1 in every comparison so far); v2 gets 40%, v1 default 40%,
-v1 refit 20% until its question is settled.
+**When v2 arrives:** it starts at 25%. `combined` stays only while it still tells us something: it is below
+v1 in every comparison so far, so it is the first to go. Shares then follow the rules in `handoff/README.md`.
 
 ## Pruned
 

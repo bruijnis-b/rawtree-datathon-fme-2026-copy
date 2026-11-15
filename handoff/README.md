@@ -36,7 +36,7 @@ Before every push: `git pull --rebase origin run/live-ab`. Never force-push. Com
 3. Write `handoff/models/<name>.md` from the template below.
 4. Commit both in one commit (`trainer: deliver v2`) and push.
 
-At most one model per hour: every live arm splits the same traffic (see "What live traffic can tell").
+About one model per hour: every live arm splits the same traffic (see "What live traffic can tell").
 The last model that can still get a live test must be pushed by **04:30 UTC**. The final model is due at
 **05:30 UTC**; no model changes after that.
 
@@ -73,12 +73,19 @@ A model that fails step 1 or 2 does not go live; the reason goes to `handoff/FIN
 
 ## Rules for the live arms
 
-- **At most 3 arms.** The best model so far (champion) and the newest model (challenger) get 40% each. The last
-  20% is for one side question, or goes to the champion.
-- **An arm is pruned once its question is answered.** The reason goes to `handoff/LIVE.md`.
-- **When a new model arrives**, the previous challenger is settled first: it becomes champion when its offline
-  AUC on unseen answers is higher and its live conversion is not more than one standard error lower. Otherwise
-  it is pruned and the champion stays.
+There is no fixed number of arms. Traffic follows what we know about each arm.
+
+- **Every arm answers a question**, written in `handoff/LIVE.md`. No question, no arm.
+- **Share follows quality.** The best arm so far (champion) gets the largest share. An arm that looks as good as
+  the champion gets the same share. A new or uncertain arm starts at 15–25%.
+- **No arm below 15%.** Under that it collects fewer than 30 purchases per hour and answers nothing in time.
+- **Pruned when clearly worse:** live conversion more than two standard errors below the champion over the
+  period both ran, or lower on the offline AUC and not better live after an hour. Its share goes to the arms
+  that are left.
+- **Pruned when answered:** an arm that is within noise of another after two hours, with no offline difference,
+  is the same thing twice. The simpler one stays.
+- **Promoted when better:** a model becomes champion when its offline AUC on unseen answers is higher and its
+  live conversion is not more than one standard error lower.
 - Every answer goes through the guard, whatever the arm: 10 distinct, active products, none that the shopper
   already bought.
 
