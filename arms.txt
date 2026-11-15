@@ -1,6 +1,8 @@
 # SHARE POLICY[:NAME=VALUE,...] - shares sum to 100; the running process re-reads this file
-25 embed_score:embed_model=models/v2
-20 embed_score:embed_model=models/v3
-20 embed_score:embed_model=models/v4
-20 embed_score:embed_model=models/v2,cart=2.5
+15 embed_score:embed_model=models/v2
 15 embed_score:embed_model=models/v2,trend=3
+14 embed_score:embed_model=models/v3
+14 embed_score:embed_model=models/v4
+14 embed_score:embed_model=models/v2,cart=2.5
+14 embed_blend:embed_model=models/v2,embed_model2=models/v3
+14 embed_score:embed_model=models/v2,alpha=0.3

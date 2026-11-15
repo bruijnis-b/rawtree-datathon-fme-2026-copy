@@ -247,6 +247,7 @@ real end, 0 false alarms. Tuned on these 4 events only: the final round's trends
 | `discount_boost` | Wraps another policy; pushes products that are on sale up, and pulls in discounted best sellers from the shopper's category (below) |
 | `embed` | The embedding model on its own: the ten highest scores in stock, no corrections (the reference arm) |
 | `embed_score` | `combined` with the embedding model's score as its base: `exp(score_weight x score)` x discount lift x trend lift x cart, bought-before left out. Factors the model covers (`alpha`, `w_cat`, `w_sub`, `ctx`, `recent`, `new`) are off by default. `--set embed_model=NAME` picks the model |
+| `embed_blend` | `embed_score` with `embed_model2` (a second model; the two scores are averaged) and `max_lift` (cap on the discount lift, 0 = off). Its own policy, so `embed_score`'s public IDs do not change. See `policies/embed_blend.py` |
 | `cold_combined`, `cold_embed` | `combined` / `embed_score` with lifts for cold requests: new products x `new_view` (3 / 6) when the recent views include a new product (they sold ~7x old products there, any subcategory), recent views x `recent_new_user` (2) for new shoppers (5x there). Warm requests unchanged. See `policies/cold.py` |
 | `price_discount` | `discount_boost` with the lift fitted to the sales: no lift up to 12% off, and cheap products (within their subcategory) gain more than pricey ones (below) |
 

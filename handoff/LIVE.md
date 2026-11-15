@@ -1,20 +1,23 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 02:05 UTC. Code: branch `run/live-ab`, restarted 01:10:33 UTC (v2's scorer, shopper
-history of 100 events).
+Updated: 2026-11-15 02:15 UTC. Code: branch `run/live-ab`, restarted 02:13 UTC (new policy `embed_blend`).
 
-## Live now
+## Live now: experiment round, seven arms
+
+Bas: the night is for experiments. Arms are below the 15% floor on purpose; each collects about 30 purchases
+per hour, so live only shows large gaps and the offline scores carry most of the decision.
 
 | Share | Public ID | Arm | Question | Live since |
 |---|---|---|---|---|
-| 25% | med6134 | `embed_score` on v2, default settings | Champion since 01:42 | 01:10 (off 01:33 – 01:39) |
-| 20% | m0cba68 | `embed_score` on v3, default settings | v2's recipe on all data: better than v2? | 01:20 |
-| 20% | mab651f | `embed_score` on v4, default settings | The trainer's final candidate: better than v2 and v3? | 01:33 |
-| 20% | mff9f12 | `embed_score` on v2, `cart=2.5` | Cart products take 20% of slots at x6; offline says x2–2.5. Better than med6134? | 02:03 |
-| 15% | m3cb3ff | `embed_score` on v2, `trend=3` | Trend lift 3 against 8: compare with med6134 during trends only | 01:58 |
+| 15% | med6134 | `embed_score` on v2, default settings | Champion; the reference for every v2 variant | 01:10 |
+| 15% | m3cb3ff | v2, `trend=3` | Trend lift 3 against 8: compare with med6134 during trends only (same answers otherwise) | 01:58 |
+| 14% | m0cba68 | v3, default settings | v2's recipe on all data: better than v2? | 01:20 |
+| 14% | mab651f | v4, default settings | The trainer's final candidate | 01:33 |
+| 14% | mff9f12 | v2, `cart=2.5` | Cart products fill 20% of slots at x6; offline says x2–2.5 | 02:03 |
+| 14% | m09c26e | `embed_blend`: average of v2's and v3's scores | Offline the average beats both (see `FINDINGS.md`) | 02:13 |
+| 14% | m76d67a | v2, `alpha=0.3` (live popularity on top of the model) | A second route to catch a surge the trend detector does not see | 02:13 |
 
-`arms.txt` is the file the process reads. Waiting for: live requests (35–45 purchases per arm per hour). Next
-comparison at 02:40 UTC, sooner if a gap of two standard errors shows.
+`arms.txt` is the file the process reads. Waiting for: live requests. Next comparison at 03:15 UTC.
 
 ## Conversion, 01:10:40 – 01:53 UTC
 

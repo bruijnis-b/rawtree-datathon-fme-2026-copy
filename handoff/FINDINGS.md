@@ -16,6 +16,41 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 02:15: the average of two models holds up; experiment round live
+
+**Offline, logged answers after 00:59 UTC, now 11,626 answers and 251 purchases** (same rows for every column;
+gain is against v2, ± one standard error from a bootstrap over answers; rank = place of the bought product among
+the 10 shown):
+
+| | v2 | v3 | v4 | v2+v3 | v2+v4 | v3+v4 | v2+v3+v4 |
+|---|---|---|---|---|---|---|---|
+| AUC, all | 0.894 | 0.898 | 0.886 | **0.905** | 0.900 | 0.902 | 0.906 |
+| Gain over v2 | | +0.004 ± 0.007 | −0.008 ± 0.006 | **+0.011 ± 0.003** | +0.006 ± 0.003 | +0.008 ± 0.006 | +0.011 ± 0.004 |
+| Rank, all | 3.04 | 3.02 | 3.35 | **2.87** | 3.13 | 3.00 | 2.97 |
+| AUC, new shoppers (106 purchases) | 0.883 | 0.873 | 0.884 | 0.889 | 0.893 | 0.890 | 0.894 |
+| AUC, known shoppers (145 purchases) | 0.898 | 0.909 | 0.885 | 0.912 | 0.901 | 0.907 | 0.910 |
+
+- **v2+v3 beats v2 by 3 standard errors**, and beats v3 too. Adding v4 as a third changes nothing.
+- v2 and v3 are the same recipe on different data, and still add to each other. v3 is better for known
+  shoppers, v2 for new ones; the average is at least as good as the better one in both groups.
+- v4 is last on rank in both runs (3.38 and 3.35) and 1.3 standard errors below v2 on AUC.
+
+**New policy `embed_blend`** (`recsys/policies/embed_blend.py`): `embed_model2` averages a second model's scores
+with the first; `max_lift` caps the discount lift (0 = off). It is a separate policy so the IDs of the
+`embed_score` arms stay the same. Dry run: 0 errors, p95 0.7–0.9 s with two models per request.
+
+**Live since 02:13 UTC (restart, about 15 s without answers):** seven arms, see `LIVE.md`. New: the v2+v3 average
+(`m09c26e`) and v2 with live popularity, `alpha=0.3` (`m76d67a`). The popularity arm is there for generalising:
+the trend detector only sees one subcategory surging by 2.5x or more; a popularity term also follows a surge of
+another shape, and new products once they start to sell.
+
+**For the trainer:**
+- An average needs two models with different errors. For the final delivery, **two models are worth more than
+  one**: v2's recipe on the last snapshot plus a second that differs (other seed, other fold, or v2's own data
+  cut). I can serve any pair, no scorer change needed.
+- v4 (v1's configuration, long history) is behind v2 and v3 on purchases in our logged answers, twice now. Live
+  it is undecided. If you still prefer it on clicks, please check it on purchases first.
+
 ## 2026-11-15 02:05: wrapper review, and what I did with it
 
 A second server session reviewed every wrapper factor on top of the models, offline, with the whole day of
