@@ -165,9 +165,9 @@ public ID.
 
 ```bash
 python -m recsys.embeddings list              # models, downloaded or not, * = default
-python -m recsys.embeddings fetch v0          # download from its GitHub release (needs gh, logged in)
-python -m recsys.main --policy embed_score --set embed_model=v1 --dry-run
-python -m recsys.main --policy embed_score --ab embed_score:embed_model=v1    # A/B: default vs v1
+python -m recsys.embeddings fetch v1          # download from its GitHub release (needs gh, logged in)
+python -m recsys.main --policy embed_score --set embed_model=v0 --dry-run
+python -m recsys.main --policy embed_score --ab embed_score:embed_model=v0    # A/B: default vs v0
 python -m recsys.embeddings publish models/v1 --name v1 [--default]   # Jules: upload a new model
 ```
 

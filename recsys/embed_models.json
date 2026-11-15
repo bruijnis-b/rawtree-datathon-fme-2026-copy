@@ -1,9 +1,9 @@
 {
-  "default": "v0",
+  "default": "v1",
   "models": {
     "v0": {
       "release": "embed-v0",
-      "notes": "Sat 22:00 default model, history only (exp-0189); ignores is_new_user",
+      "notes": "Sat 22:00 first model, history only (exp-0189); ignores is_new_user",
       "sha256": {
         "model.npz": "fd0169cebeecfad686bca0ba9fe226c73e3d8138c5220fcb59ea75d82a4d0380",
         "user_vectors.npz": "8f4d0a1eb00848a46defc2130cda0505ee9f3adee79f2510fd899c909fda53b3"

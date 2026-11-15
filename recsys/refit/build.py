@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 from recsys import client
-from recsys.embeddings import MODELS_DIR
+from recsys.embeddings import MODELS_DIR, default_name
 from training.export.scorer import load
 
 from .download import OUT
@@ -40,7 +40,7 @@ def products() -> tuple[list[dict], set[str]]:
 
 
 def main() -> None:
-    folder = sys.argv[1] if len(sys.argv) > 1 else "v0"
+    folder = sys.argv[1] if len(sys.argv) > 1 else default_name()
     if not Path(folder).is_dir():  # a published model's name: its folder under models/
         folder = str(MODELS_DIR / folder)
     model = load(folder)
