@@ -164,6 +164,62 @@ def official_by_model(t0: float, t1: float) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def best_models(t0: float, t1: float, min_requests: int = 1000) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Each team's best single model in [t0, t1] (15 min to 3 h), scored out of 100, plus all of our models.
+
+    From the leaderboard's per-model view, so expected (no-luck) conversions. A team's own score averages every
+    model it ran; this shows what its best one would score on all requests. Models with fewer than
+    `min_requests` requests are left out (one swings 10+ points per quarter hour), and so are models whose
+    conversion equals their cold conversion exactly: they answer only cold requests and are not comparable.
+
+    Returns (best, ours):
+    - best: rank, team, score, conversion, cold_conversion, requests, team_score, models, model, is_us
+    - ours: model, score, conversion, cold_conversion, warm_conversion, requests, cold_requests
+    """
+    t1 = min(t1, time.time())
+    t0 = max(t0, t1 - 10800)
+    if t1 - t0 < 900:
+        t0 = t1 - 900
+    state = leaderboard_state(by="model", **{"from": int(t0), "to": int(t1)})
+    base, ref = state.get("baseline"), state.get("reference")
+    cols = ["rank", "team", "score", "conversion", "cold_conversion", "requests", "team_score", "models", "model",
+            "is_us"]
+    if not base or not ref:
+        return pd.DataFrame(columns=cols), pd.DataFrame()
+    labels = model_labels()
+    rows, ours = [], []
+    for t in state.get("teams", []):
+        versions = t.get("versions", [])
+        scored = []
+        for v in versions:
+            s = estimated_score(v["conversion"], v["cold_conversion"], base, ref)
+            if t["team_id"] == TEAM:
+                n, nc = v["requests"], v.get("cold_requests") or 0
+                ours.append({"model": labels.get(v["model_version"], (v["model_version"],))[0], "score": s,
+                             "conversion": v["conversion"], "cold_conversion": v["cold_conversion"],
+                             "warm_conversion": (v["conversion"] * n - v["cold_conversion"] * nc) / (n - nc)
+                             if n > nc else None, "requests": n, "cold_requests": nc})
+            if v["requests"] >= min_requests and abs(v["conversion"] - v["cold_conversion"]) > 1e-9:
+                scored.append((s, v))
+        if not scored:
+            continue
+        s, v = max(scored, key=lambda x: x[0])
+        rows.append({"team": t["team_id"], "score": s, "conversion": v["conversion"],
+                     "cold_conversion": v["cold_conversion"], "requests": v["requests"],
+                     "team_score": estimated_score(t["conversion"], t["cold_conversion"], base, ref),
+                     "models": len(versions),
+                     "model": labels.get(v["model_version"], (v["model_version"],))[0] if t["team_id"] == TEAM else "",
+                     "is_us": t["team_id"] == TEAM})
+    best = pd.DataFrame(rows, columns=cols[1:])
+    if not best.empty:
+        best = best.sort_values("score", ascending=False).reset_index(drop=True)
+        best.insert(0, "rank", range(1, len(best) + 1))
+    ours_df = pd.DataFrame(ours)
+    if not ours_df.empty:
+        ours_df = ours_df.sort_values("requests", ascending=False).reset_index(drop=True)
+    return best, ours_df
+
+
 def all_teams() -> tuple[pd.DataFrame, pd.DataFrame]:
     """Every team on the public leaderboard, scored out of 100.
 
