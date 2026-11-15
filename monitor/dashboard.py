@@ -61,6 +61,14 @@ def load_board(bucket: int) -> tuple[pd.DataFrame, pd.DataFrame] | None:
         return None
 
 
+@st.cache_data(ttl=55, max_entries=6, show_spinner=False)
+def load_best_models(t0: float, t1: float, min_requests: int) -> tuple[pd.DataFrame, pd.DataFrame] | None:
+    try:
+        return data.best_models(t0, t1, min_requests)
+    except Exception:
+        return None
+
+
 @st.cache_data(ttl=25, max_entries=4, show_spinner=False)
 def load_store(bucket: int) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict]:
     return (data.trending_subcategories(), data.events_per_minute(60), data.catalog_changes(60),
@@ -277,6 +285,7 @@ def leaderboard_view(t0: float, t1: float, label: str, official: dict | None) ->
             st.altair_chart(chart, alt="Our official hourly score from the leaderboard")
 
     score_comparison()
+    best_models_view(t0, t1, label)
 
 
 def score_comparison() -> None:
@@ -346,6 +355,62 @@ def score_comparison() -> None:
                 "conversion": st.column_config.NumberColumn("Conversion %", format="%.3f"),
                 "cold_conversion": st.column_config.NumberColumn("Cold %", format="%.3f"),
                 "on_time": st.column_config.NumberColumn("On time %", format="%.1f"),
+            })
+
+
+def best_models_view(t0: float, t1: float, label: str) -> None:
+    """Each team's best single model next to ours: what a team would score if its best model answered everything."""
+    st.subheader(f"Best single model per team · {label}")
+    min_req = st.segmented_control("Minimum requests per model", [300, 1000, 2500], default=1000,
+                                   key="best_min_req", help="Fewer requests swing 10+ points per quarter hour")
+    bucket = int(time.time() // 55) * 55
+    got = load_best_models(max(t0, t1 - 10800), min(t1, bucket + 55), int(min_req or 1000))
+    if got is None:
+        st.info("Leaderboard unreachable right now.", icon=":material/cloud_off:")
+        return
+    best, ours = got
+    st.caption("Official expected conversions from the leaderboard's per-model view (the window is cut to its "
+               "last 3 h). A team's own score averages all its models; **Best model** is its strongest single "
+               "model scored as if it answered every request. Models that answer only cold requests (conversion "
+               "equal to cold conversion) are left out: they are not comparable.")
+    if best.empty:
+        st.caption("No model has enough requests in this window yet.")
+    else:
+        us = best[best["is_us"]]
+        if not us.empty:
+            r = us.iloc[0]
+            with st.container(horizontal=True):
+                st.metric("Our best model's rank", f"{int(r['rank'])} / {len(best)}", border=True)
+                st.metric("Its score", fmt(r["score"], 1), border=True,
+                          delta=f"{r['score'] - best['score'].iloc[0]:+.1f} vs #1" if r["rank"] > 1 else "#1")
+                st.metric("Its cold conversion", fmt(r["cold_conversion"], 2, " %"), border=True,
+                          delta=f"{r['cold_conversion'] - best['cold_conversion'].head(5).median():+.2f} vs top-5 median")
+        with st.container(border=True):
+            chart = alt.Chart(best).mark_bar().encode(
+                y=alt.Y("team:N", sort="-x", title=None, axis=alt.Axis(labelOverlap=False, labelFontSize=10)),
+                x=alt.X("score:Q", title="Best single model, score", scale=alt.Scale(domain=[0, 100])),
+                color=alt.condition("datum.is_us", alt.value("#e4572e"), alt.value("#9aa5b1")),
+                tooltip=["rank:Q", "team:N", alt.Tooltip("score:Q", format=".1f", title="best model"),
+                         alt.Tooltip("team_score:Q", format=".1f", title="team score"),
+                         alt.Tooltip("conversion:Q", format=".2f"), alt.Tooltip("cold_conversion:Q", format=".2f"),
+                         "requests:Q", "models:Q"],
+            ).properties(height=max(240, 16 * len(best)))
+            st.altair_chart(chart, alt="Best single model of every team, ours highlighted")
+        st.dataframe(best.drop(columns=["is_us"]), hide_index=True, width="stretch", column_config={
+            "score": st.column_config.ProgressColumn("Best model", min_value=0, max_value=100, format="%.1f"),
+            "team_score": st.column_config.NumberColumn("Team score", format="%.1f"),
+            "conversion": st.column_config.NumberColumn("Conversion %", format="%.2f"),
+            "cold_conversion": st.column_config.NumberColumn("Cold %", format="%.2f"),
+            "models": st.column_config.NumberColumn("Models run"),
+            "model": st.column_config.TextColumn("Our model"),
+        })
+    if ours is not None and not ours.empty:
+        with st.expander("All our models in this window"):
+            st.dataframe(ours, hide_index=True, width="stretch", column_config={
+                "score": st.column_config.ProgressColumn("Score", min_value=0, max_value=100, format="%.1f"),
+                "conversion": st.column_config.NumberColumn("Conversion %", format="%.2f"),
+                "cold_conversion": st.column_config.NumberColumn("Cold %", format="%.2f"),
+                "warm_conversion": st.column_config.NumberColumn("Warm %", format="%.2f"),
             })
 
 
