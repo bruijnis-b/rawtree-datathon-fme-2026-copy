@@ -1,15 +1,16 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 07:47 UTC. Naming (Bas, 06:38): "offline-fitted multipliers" means six wrapper settings taken
+Updated: 2026-11-15 08:38 UTC. Naming (Bas, 06:38): "offline-fitted multipliers" means six wrapper settings taken
 from logistic fits on our logged answers, mostly on v2; nothing was searched or tuned live, and the models are unchanged. Code: branch `run/live-ab`, restarted 06:25 UTC (new policy `route`).
 
-## Live now: three arms
+## Live now: the final setup only (Bas, 08:37 UTC)
 
-| Share | Public ID | Arm | Question | Live since |
-|---|---|---|---|---|
-| 50% | md363d5 | `embed_blend`: average of v10 and v11, default settings except **`cart=2.5`** | **The final submission** since 07:45 (PR #20) | 07:45 |
-| 25% | m655200 | `embed_blend`: average of v10 and v11, default settings | Reference for the cart change: md363d5 minus m655200 is the effect of cart 2.5 | 06:40 |
-| 25% | m8277ec | v3+v4 average, wrapper multipliers from offline fits (`cart=2.5`, `max_lift=1.3`, `w_cat=1`, `w_sub=1`, `new=1.5`, `alpha=0.3`) | Led the final setup by +7.4 ± 3.8 (06:45–07:30) | 06:02 |
+| Share | Public ID | Arm | Live since |
+|---|---|---|---|
+| 100% | md363d5 | `embed_blend`: average of v10 and v11, default settings except `cart=2.5` (= `arms.final.txt` on main) | 07:45, alone since 08:37 |
+
+Pruned at 08:37: `m655200` (v10+v11, default settings) and `m8277ec` (v3+v4, multipliers from offline fits), so the
+final round is answered by the final setup alone.
 
 ## Final report before the final round (08:30 UTC)
 
