@@ -1,14 +1,14 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 07:30 UTC. Naming (Bas, 06:38): "offline-fitted multipliers" means six wrapper settings taken
+Updated: 2026-11-15 07:40 UTC. Naming (Bas, 06:38): "offline-fitted multipliers" means six wrapper settings taken
 from logistic fits on our logged answers, mostly on v2; nothing was searched or tuned live, and the models are unchanged. Code: branch `run/live-ab`, restarted 06:25 UTC (new policy `route`).
 
 ## Live now: round 3, three arms, a third each
 
 | Share | Public ID | Arm | Question | Live since |
 |---|---|---|---|---|
-| 34% | mbcf961 | `embed_blend`: average of v10 and v11, default settings except **`new=2`** | **The final submission** (Bas, 07:23): run it live before 09:00 | 07:24 |
-| 33% | m655200 | `embed_blend`: average of **v10 and v11** (fresh: live data to 06:24), default settings | Fresh pair: better than v3+v4 with default settings (m9f6fa4)? | 06:40 |
+| 34% | mbcf961 | `embed_blend`: average of v10 and v11, default settings except `new=2` | Was the final submission 07:24-07:40; `new=2` withdrawn (`FINDINGS.md`, 07:40) | 07:24 |
+| 33% | m655200 | `embed_blend`: average of **v10 and v11** (fresh: live data to 06:24), default settings | **The final submission** since 07:40 (PR #20). Fresh pair: better than v3+v4 with default settings (m9f6fa4)? | 06:40 |
 | 33% | m8277ec | v3+v4 average, wrapper multipliers from offline fits (`cart=2.5`, `max_lift=1.3`, `w_cat=1`, `w_sub=1`, `new=1.5`, `alpha=0.3`) | Do the offline-fitted multipliers beat the defaults? Read against m9f6fa4 | 06:02 |
 
 `arms.txt` is the file the process reads. Read with `handoff/tools/board.py`; cold and warm conversion per arm

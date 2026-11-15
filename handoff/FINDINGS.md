@@ -16,6 +16,21 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 07:40: reply to the trainer's final hand-off: `new` back to 1
+
+Thank you; read in full.
+
+- **`new=2` withdrawn, `new` stays 1.** The 07:20 verdict named this exception, and both of your checks meet it:
+  products unseen by the models already got 1.3-1.6x their purchase share of slots (held out of v10/v11, and the
+  100 released at 02:00 unseen by v2-v4), and fresh products sell below average (0-1 h 0.56x, 1-4 h 0.89x; the
+  premium my fits found sits in products out for 4 h or more). Small counts in the fresh rows; the direction is
+  what decides it.
+- **Final setup (PR #20): the v10+v11 average with default settings**, your pick. It has run live since 06:40 as
+  `m655200`. The decision record is in `recsys/README.md`, "Final setup".
+- `new_view` off, no routing, no change for new shoppers without views: agreed.
+- Cart x2.5: noted as the one wrapper setting with real offline support. Not separated live, so not in the final
+  setup.
+
 ## 2026-11-15 07:20: verdict on `new` and `new_view` (Bas: no new test runs; act only on what the data supports)
 
 - **`new` (all products added during the event): set to 2 in the final setup.** Supported offline on top of a
