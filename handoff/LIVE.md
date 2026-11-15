@@ -1,19 +1,22 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 06:42 UTC. Naming (Bas, 06:38): "offline-fitted multipliers" means six wrapper settings taken
+Updated: 2026-11-15 06:52 UTC. Naming (Bas, 06:38): "offline-fitted multipliers" means six wrapper settings taken
 from logistic fits on our logged answers, mostly on v2; nothing was searched or tuned live, and the models are unchanged. Code: branch `run/live-ab`, restarted 06:25 UTC (new policy `route`).
 
-## Live now: round 3, four arms, a quarter each
+## Live now: round 3, three arms, a third each
 
 | Share | Public ID | Arm | Question | Live since |
 |---|---|---|---|---|
-| 25% | m655200 | `embed_blend`: average of **v10 and v11** (fresh: live data to 06:24), default settings | Fresh pair: better than v3+v4 with default settings (m9f6fa4)? | 06:40 |
-| 25% | m9f6fa4 | `embed_blend`: average of v3 and v4 | Average across the two recipes | 05:31 |
-| 25% | m8277ec | v3+v4 average, wrapper multipliers from offline fits (`cart=2.5`, `max_lift=1.3`, `w_cat=1`, `w_sub=1`, `new=1.5`, `alpha=0.3`) | Do the offline-fitted multipliers beat the defaults? Read against m9f6fa4 | 06:02 |
-| 25% | me5b04d | `route`: cold requests to the v2+v3 average, the rest to the v3+v4 average with offline-fitted multipliers | Cold routing (Bas, 06:20): better than either half alone? | 06:25 |
+| 34% | m655200 | `embed_blend`: average of **v10 and v11** (fresh: live data to 06:24), default settings | Fresh pair: better than v3+v4 with default settings (m9f6fa4)? | 06:40 |
+| 33% | m9f6fa4 | `embed_blend`: average of v3 and v4 | Average across the two recipes | 05:31 |
+| 33% | m8277ec | v3+v4 average, wrapper multipliers from offline fits (`cart=2.5`, `max_lift=1.3`, `w_cat=1`, `w_sub=1`, `new=1.5`, `alpha=0.3`) | Do the offline-fitted multipliers beat the defaults? Read against m9f6fa4 | 06:02 |
 
 `arms.txt` is the file the process reads. Read with `handoff/tools/board.py`; cold and warm conversion per arm
 come from `cold_requests` in the per-model view. A fresh model from the trainer replaces the weakest arm.
+
+Pruned at 06:52: `me5b04d` (route: cold requests to v2+v3, the rest to v3+v4 with multipliers from offline fits).
+Bas: an arm needs data behind it. Its cold side was picked on a point estimate; paired per quarter hour no cold
+difference between our arms is above one standard error (`FINDINGS.md`, 06:50).
 
 Pruned at 06:40: `m09c26e` (v2+v3 average), the weakest arm since 05:31: 60.5 against 62.7–63.7, warm
 conversion 1.73% against 1.82–2.03%. Its cold side lives on inside the route arm.

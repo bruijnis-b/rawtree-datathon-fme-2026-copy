@@ -92,6 +92,8 @@ There is no fixed number of arms. Traffic follows what we know about each arm.
 replaces the weakest arm once it has passed its checks; otherwise the arms are left alone to collect requests.
 
 - **Every arm answers a question**, written in `handoff/LIVE.md`. No question, no arm.
+- **And has data behind it** (Bas, 06:52): a setting or routing goes live only when the evidence for it holds up
+  over the same minutes (paired per quarter hour), not on one window's point estimate.
 - **Share follows quality.** The best arm so far (champion) gets the largest share. An arm that looks as good as
   the champion gets the same share. A new or uncertain arm starts at 15–25%.
 - **No arm below 15%.** Under that it collects fewer than 30 purchases per hour and answers nothing in time.
