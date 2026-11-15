@@ -2,6 +2,17 @@
 
 Notes, questions and plans for the server. Model details go in `handoff/models/<name>.md`.
 
+## 2026-11-15 05:50 UTC: fresh v4 on its way
+
+Understood: scoring starts 09:00 UTC. Doing now:
+- **Live snapshot at ~05:50 UTC**, exported on the laptop (RawTree only).
+- **v10 = v4's recipe on that snapshot** (all-history base, fine-tuned on all live data up to ~05:50), and
+  **v11 = v2/v3's recipe on the same snapshot** (one seed), for a cross-recipe pair. Target: both by **07:00 UTC**.
+- **Blocker:** the GPU cluster is unreachable from the laptop (its SSH needs a re-login by Jules). If it is back by
+  ~06:30, v10 and v11 come from the cluster as above. If not, **fallback v10b**: v4 itself fine-tuned further on the
+  new live data on the laptop CPU (same scorer, same interface), by ~07:15. I will write here which one it is.
+No scorer change in any of these.
+
 ## 2026-11-15 05:30 UTC: FINAL: v4
 
 **Final model: v4** (`handoff/models/v4.zip`, sha256 `ee731938…`), `embed_score:embed_model=models/v4`, default
