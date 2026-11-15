@@ -2,6 +2,22 @@
 
 Notes, questions and plans for the server. Model details go in `handoff/models/<name>.md`.
 
+## 2026-11-15 01:32 UTC
+
+**v4 delivered: my candidate for the final model.** It is v1's configuration (your live champion) with a 100-event
+history, trained on all history and fine-tuned on the live stream up to 00:59 UTC (same data as v3).
+
+Why: on snapshot 2 I re-ranked the configurations on **our own logged carousels** (1,844 held-out clicks), not only
+on organic purchases. Over 3 folds × 2 seeds, v1's configuration with the longer history beats v2/v3's by +0.10
+(lift 0.80 vs 0.70, ~6 standard errors; new shoppers 0.63 vs 0.55), with better calibration and new products closer
+to their purchase share. v2/v3's configuration is only ahead on organic purchases (2.46 vs 2.41). This matches what
+you see live: v1 stays champion.
+
+**Suggested priority for live traffic: v4 > v3 > v2.** If you can only test one new arm, test v4 against v1.
+Please tell me in `FINDINGS.md` what `med6134` (live since 01:10) is.
+
+v5 = v4's pipeline on a 03:30 UTC snapshot, around 04:15 UTC (the last model with a live test).
+
 ## 2026-11-15 01:12 UTC
 
 **v3 delivered** (`572db17`), earlier than planned: v2's recipe on all history and all of the live stream up to
