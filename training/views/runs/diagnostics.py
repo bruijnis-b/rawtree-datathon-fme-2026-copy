@@ -1,96 +1,110 @@
-"""Run view `diagnostics`: is the model unbiased, calibrated and safe to serve?
+"""Run view `diagnostics`: slot term, calibration, new products, serving and settings of one embedding run.
 
-Shows the slot term (carousel position bias), calibration of the purchase probability, how new products are
-ranked, latency and the run's settings. Reads only what the pipeline logged (see "Logging contract" in
-docs/EMBED_SWEEPS_FINAL.md).
+Data only. Reads what the pipeline logged (see "Logging contract" in docs/EMBED_SWEEPS_FINAL.md).
 """
+import math
+
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 import ivan
 
 run = ivan.results.run()
 S = run.summary
+SERIES, MUTED = ivan.style.SERIES, ivan.style.MUTED
 shown = 0
 
-# --- Slot bias ----------------------------------------------------------------------------------------------
+
+def num(value):
+    return value if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) else None
+
+
+# --- Slot term (history runs) --------------------------------------------------------------------------------
 slot = run.records.get("slot")
 if slot:
     frame = slot.frame()
-    fig = go.Figure()
+    has_ctr = {"ctr_pred", "ctr_obs"} <= set(frame.columns)
+    fig = make_subplots(rows=1, cols=2 if has_ctr else 1, horizontal_spacing=0.08,
+                        subplot_titles=["Attention relative to slot 1"] + (["Click rate"] if has_ctr else []))
     for i, (device, part) in enumerate(frame.groupby("device", sort=True)):
         part = part.sort_values("slot")
-        colour = ivan.style.SERIES[i % len(ivan.style.SERIES)]
-        fig.add_scatter(x=part["slot"], y=part["theta_learned"], name=f"{device}, learned", mode="lines+markers",
-                        line=dict(color=colour), hovertemplate=f"{device}, slot %{{x}}<br>learned %{{y:.3f}}<extra></extra>")
+        color = SERIES[i % len(SERIES)]
+        fig.add_scatter(row=1, col=1, x=part["slot"], y=part["theta_learned"], name=f"{device}, learned", mode="lines+markers",
+                        line=dict(color=color, width=2), legendgroup=device,
+                        hovertemplate=f"{device}, slot %{{x}}<br>learned %{{y:.3f}}<extra></extra>")
         if "theta_measured" in part:
-            fig.add_scatter(x=part["slot"], y=part["theta_measured"], name=f"{device}, measured", mode="lines",
-                            line=dict(color=colour, dash="dot"),
+            fig.add_scatter(row=1, col=1, x=part["slot"], y=part["theta_measured"], name=f"{device}, measured", mode="lines",
+                            line=dict(color=color, dash="dot", width=2), legendgroup=device,
                             hovertemplate=f"{device}, slot %{{x}}<br>measured %{{y:.3f}}<extra></extra>")
-    fig.update_layout(xaxis_title="Carousel slot", yaxis_title="Attention relative to slot 1", xaxis_dtick=1,
-                      yaxis_rangemode="tozero")
-    run.figure(fig, "slot-term", title="Slot effect: learned by the model vs. measured in the history", section="Slot bias",
-               caption="Solid: exp(slot term) of the click head. Dotted: product-adjusted attention curve from the "
-                       "historical carousels. The term is removed at inference, so scores are for slot 1.")
-    if {"ctr_pred", "ctr_obs"} <= set(frame.columns):
+    if has_ctr:
         per_slot = frame.groupby("slot")[["ctr_pred", "ctr_obs"]].mean().reset_index()
-        fig = go.Figure()
-        fig.add_bar(x=per_slot["slot"], y=per_slot["ctr_obs"], name="observed",
+        fig.add_bar(row=1, col=2, x=per_slot["slot"], y=per_slot["ctr_obs"], name="observed", marker_color=MUTED,
                     hovertemplate="slot %{x}<br>observed %{y:.3%}<extra></extra>")
-        fig.add_bar(x=per_slot["slot"], y=per_slot["ctr_pred"], name="predicted",
+        fig.add_bar(row=1, col=2, x=per_slot["slot"], y=per_slot["ctr_pred"], name="predicted", marker_color=SERIES[0],
                     hovertemplate="slot %{x}<br>predicted %{y:.3%}<extra></extra>")
-        fig.update_layout(barmode="group", xaxis_title="Carousel slot", yaxis_title="Click rate", yaxis_tickformat=".2%",
-                          xaxis_dtick=1)
-        run.figure(fig, "slot-ctr", title="Click rate per slot on the validation week", section="Slot bias",
-                   caption="Predicted with the slot term switched on. The two should agree in every slot.")
+        fig.update_yaxes(row=1, col=2, tickformat=".2%")
+    fig.update_xaxes(title_text="Slot", dtick=1)
+    fig.update_yaxes(row=1, col=1, rangemode="tozero")
+    fig.update_layout(barmode="group")
+    run.figure(fig, "slot", title="Slot term", section="Slot term", wide=True)
     shown += 1
 
-# --- Calibration --------------------------------------------------------------------------------------------
+# --- Calibration ---------------------------------------------------------------------------------------------
 calibration = run.records.get("calibration")
 if calibration:
     frame = calibration.frame()
-    fig = go.Figure()
-    low, high = frame[["predicted", "observed"]].replace(0, float("nan")).min().min(), frame[["predicted", "observed"]].max().max()
-    fig.add_scatter(x=[low, high], y=[low, high], mode="lines", name="perfect", line=dict(dash="dot", width=1),
-                    hoverinfo="skip")
-    keys = [c for c in ("dataset", "slice") if c in frame]
-    for key, part in frame.groupby(keys, sort=False):
-        label = " · ".join(key) if isinstance(key, tuple) else str(key)
-        part = part.sort_values("predicted")
-        fig.add_scatter(x=part["predicted"], y=part["observed"], name=label, mode="lines+markers",
-                        customdata=part[["n"]].to_numpy() if "n" in part else None,
-                        hovertemplate=f"{label}<br>predicted %{{x:.3%}}<br>observed %{{y:.3%}}"
-                                      + ("<br>%{customdata[0]:,} impressions" if "n" in part else "") + "<extra></extra>")
-    fig.update_layout(xaxis_type="log", yaxis_type="log", xaxis_title="Predicted purchase probability",
-                      yaxis_title="Observed purchase rate", xaxis_tickformat=".2%", yaxis_tickformat=".2%")
-    run.figure(fig, "calibration", title="Calibration of the purchase probability", section="Calibration",
-               caption="One point per score decile. The serving layer adds its corrections on the log-odds scale, so "
-                       "the points must lie on the dotted line.", wide=True)
-    shown += 1
+    frame = frame[(frame["predicted"] > 0) & (frame["observed"] > 0)]
+    if not frame.empty:
+        fig = go.Figure()
+        low, high = frame[["predicted", "observed"]].min().min(), frame[["predicted", "observed"]].max().max()
+        fig.add_scatter(x=[low, high], y=[low, high], mode="lines", name="predicted = observed",
+                        line=dict(dash="dot", width=1, color=MUTED), hoverinfo="skip")
+        keys = [c for c in ("dataset", "slice") if c in frame]
+        for i, (key, part) in enumerate(frame.groupby(keys, sort=False)):
+            label = " · ".join(map(str, key)) if isinstance(key, tuple) else str(key)
+            part = part.sort_values("predicted")
+            fig.add_scatter(x=part["predicted"], y=part["observed"], name=label, mode="lines+markers",
+                            line=dict(color=SERIES[i % len(SERIES)], width=2),
+                            customdata=part[["decile", "n"]].to_numpy(),
+                            hovertemplate=f"{label}, decile %{{customdata[0]}}<br>predicted %{{x:.3%}}<br>observed %{{y:.3%}}"
+                                          "<br>n %{customdata[1]:,}<extra></extra>")
+        fig.update_layout(xaxis_type="log", yaxis_type="log", xaxis_title="Predicted purchase probability",
+                          yaxis_title="Observed purchase rate", xaxis_tickformat=".2%", yaxis_tickformat=".2%")
+        error = num(S.get("calibration_max_err"))
+        run.figure(fig, "calibration", section="Calibration", wide=True,
+                   title="Calibration per score decile" + (f" (max error {error:.3f})" if error is not None else ""))
+        shown += 1
 
-# --- New products -------------------------------------------------------------------------------------------
+# --- New products --------------------------------------------------------------------------------------------
+groups = []  # (label, share of our top-10 slots, share of demand, demand name)
 products = run.records.get("products")
 if products:
-    frame = products.frame()
+    for p in products:
+        if p.get("group") == "held-out":
+            groups.append(("History held-out products", p["share_top10"], p["share_clicks"], "clicks"))
+if num(S.get("live_share_top10_heldout_new")) is not None and num(S.get("live_share_purchases_heldout_new")):
+    groups.append(("Live held-out new products", S["live_share_top10_heldout_new"], S["live_share_purchases_heldout_new"],
+                   "purchases"))
+if groups:
     fig = go.Figure()
-    fig.add_bar(x=frame["group"], y=frame["share_top10"], name="share of our top-10 slots",
-                hovertemplate="%{x}<br>%{y:.2%} of top-10 slots<extra></extra>")
-    fig.add_bar(x=frame["group"], y=frame["share_clicks"], name="share of clicks and purchases",
-                hovertemplate="%{x}<br>%{y:.2%} of clicks and purchases<extra></extra>")
-    fig.update_layout(barmode="group", yaxis_tickformat=".1%", yaxis_title="Share")
-    run.figure(fig, "new-products", title="Are new products ranked in proportion to their demand?", section="New products",
-               caption="Held-out products are scored from content alone, like the 300 products of the final round. "
-                       "Their share of top-10 slots should stay below twice their share of clicks.")
+    fig.add_bar(y=[g[0] for g in groups], x=[g[1] for g in groups], orientation="h", name="Share of our top-10 slots",
+                marker_color=SERIES[0], hovertemplate="%{y}<br>%{x:.2%} of top-10 slots<extra></extra>")
+    fig.add_bar(y=[g[0] for g in groups], x=[g[2] for g in groups], orientation="h", name="Share of demand",
+                marker_color=MUTED, customdata=[[g[3]] for g in groups],
+                hovertemplate="%{y}<br>%{x:.2%} of %{customdata[0]}<extra></extra>")
+    fig.update_layout(barmode="group", xaxis_tickformat=".1%", height=160 + 70 * len(groups), yaxis=dict(autorange="reversed"))
+    run.figure(fig, "new-products", title="New products: top-10 share vs. demand share", section="New products", wide=True)
     shown += 1
 
-# --- Serving and settings -----------------------------------------------------------------------------------
+# --- Serving -------------------------------------------------------------------------------------------------
 serving = [("Latency p50, ms", "latency_p50_ms", "{:.2f}"), ("Latency p99, ms", "latency_p99_ms", "{:.2f}"),
-           ("Numpy vs. PyTorch, max abs difference", "parity_max_abs", "{:.1e}"),
-           ("Calibration, largest relative error", "calibration_max_err", "{:.1%}"),
-           ("Slot term, largest gap to measured (log)", "slot_max_gap", "{:.3f}")]
-rows = [{"Serving check": name, "Value": fmt.format(S[key])} for name, key, fmt in serving if isinstance(S.get(key), (int, float))]
+           ("Parity, scores", "parity_max_abs", "{:.1e}"), ("Parity, product vectors", "product_parity_max_abs", "{:.1e}"),
+           ("Score scale a", "score_a", "{:.4f}"), ("Score offset c", "score_c", "{:.4f}"),
+           ("Calibration error before recalibration", "calibration_max_err_raw", "{:.3f}"),
+           ("Slot term, max gap", "slot_max_gap", "{:.3f}")]
+rows = [{"Item": name, "Value": fmt.format(S[key])} for name, key, fmt in serving if num(S.get(key)) is not None]
 if rows:
-    run.table("serving", rows, title="Serving checks", section="Serving",
-              caption="Latency: one request against the whole catalogue with the numpy scorer, on CPU.")
+    run.table("serving", rows, title="Serving", section="Serving")
     shown += 1
 if run.params:
     run.table("settings", [{"Setting": k, "Value": str(v)} for k, v in sorted(run.params.items())], title="Settings",

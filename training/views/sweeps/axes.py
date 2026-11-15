@@ -1,4 +1,4 @@
-"""Sweep view `axes`: what does each design choice do to the result?
+"""Sweep view `axes`: the objective per value of every setting that varies.
 
 One panel per setting that varies in the sweep: every run as a dot at its value, and the mean per value. A table
 lists the effect of every value against the sweep's default. Reads only what the runs logged (see "Logging contract"
@@ -74,15 +74,11 @@ for i, key in enumerate(settings):
         effects.append(effect)
 fig.update_layout(height=max(360, 300 * grid_rows))
 fig.update_yaxes(title_text="Objective", col=1)
-sweep.figure(fig, "axes", title="Objective per setting", section="Design choices", wide=True,
-             caption="Blue dots: one run each (click to open). Orange diamonds: the mean per value. Dotted line: the "
-                     "mean of the whole sweep. In a one-axis-at-a-time sweep, the value shared by most runs is the default.")
+sweep.figure(fig, "axes", title="Objective per setting", section="Design choices", wide=True)
 
 effects.sort(key=lambda e: (e["Setting"], -e["Mean objective"]))
-sweep.table("effects", effects, title="Effect of every value", section="Design choices",
-            formats={"Mean objective": "{:+.3f}", "vs. sweep mean": "{:+.3f}", "Lift all": "{:+.1%}", "Lift cold": "{:+.1%}"},
-            caption="Means over the runs with that value. With few runs per value, differences below about one "
-                    "standard error of a run are noise.")
+sweep.table("effects", effects, title="Mean per value", section="Design choices",
+            formats={"Mean objective": "{:+.3f}", "vs. sweep mean": "{:+.3f}", "Lift all": "{:+.1%}", "Lift cold": "{:+.1%}"})
 
 # Which single change helps most: the range of the per-value means, per setting.
 spread = defaultdict(list)
@@ -94,5 +90,4 @@ fig.add_bar(x=[s for s, _ in ranked][::-1], y=[k for _, k in ranked][::-1], orie
             hovertemplate="%{y}<br>best value − worst value: %{x:.3f}<extra></extra>")
 fig.update_layout(xaxis_title="Best value − worst value (mean objective)", showlegend=False,
                   height=max(300, 28 * len(ranked) + 120))
-sweep.figure(fig, "importance", title="Which choices matter most", section="Design choices",
-             caption="The difference in mean objective between a setting's best and worst value.")
+sweep.figure(fig, "importance", title="Range of the mean objective per setting", section="Design choices")
