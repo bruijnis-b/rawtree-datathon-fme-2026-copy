@@ -60,6 +60,7 @@ request go unanswered or late because of the policy:
 | `popularity.py` | `Popularity`: best-seller rankings from history plus the last hour of live purchases, with new products included |
 | `profiles.py` | `Profiles`: per shopper, the categories viewed, the cart and the purchases, from `shop.events` and `shop.history_events` |
 | `embeddings.py` | `Embeddings`: embedding models as a shared service, per request a purchase log-odds per product; model selection, download and publish (below) |
+| `refit/` | Refit `embed_score`'s weights for a model on our live feedback (below) |
 | `guard.py` | Exactly 10 distinct, active IDs; pads from the fallback; reports what it fixed |
 | `model_registry.py` | Opaque public `model_version` IDs and the private log of what they mean |
 | `features.py` | Signals computed in RawTree SQL: purchase counts, rankings, co-views |
@@ -173,9 +174,9 @@ public ID.
 
 ```bash
 python -m recsys.embeddings list              # models, downloaded or not, * = default
-python -m recsys.embeddings fetch v0          # download from its GitHub release (needs gh, logged in)
-python -m recsys.main --policy embed_score --set embed_model=v1 --dry-run
-python -m recsys.main --policy embed_score --ab embed_score:embed_model=v1    # A/B: default vs v1
+python -m recsys.embeddings fetch v1          # download from its GitHub release (needs gh, logged in)
+python -m recsys.main --policy embed_score --set embed_model=v0 --dry-run
+python -m recsys.main --policy embed_score --ab embed_score:embed_model=v0    # A/B: default vs v0
 python -m recsys.embeddings publish models/v1 --name v1 [--default]   # Jules: upload a new model
 ```
 
@@ -183,6 +184,33 @@ A model is 2 MB of weights plus ~18 MB of user vectors: too big to commit one pe
 release asset of this (private) repo. A name never changes content: the checksums in the manifest refuse a
 different file under the same name. A model with a new architecture adds its format in `load_backend`;
 policies do not change. A folder path also works as `embed_model` for trying a model that is not published.
+
+### Refit embed_score for a model (refit/)
+
+The model's score and the shopper factors complement each other, so `embed_score` should not switch the factors
+off: refit their weights for every new model. On the practice day's answers after 21:00 UTC (v1's fine-tuning data
+ends there; 284k shown products, 386 purchases), purchase AUC with list position left out (fitted on half of the
+answers, scored on the other half):
+
+| Inputs | v0 | v1 |
+|---|---|---|
+| Model only | 0.878 | 0.896 |
+| Shopper factors only (popularity, categories, recent views, cart, new) | 0.842 | 0.842 |
+| Model + shopper factors | 0.903 | 0.911 |
+
+The discount factor got almost no weight in these fits (the official A/B favoured `price_discount`), so it is
+left as it is.
+
+```bash
+python -m recsys.refit.download                                 # data/refit/: live data (~1 min), history once (~10 min)
+python -m recsys.refit.build v1                                 # or a folder: models/v1 (~1 min per 100k answers)
+python -m recsys.refit.fit v1 --after "2026-11-15 06:00"        # only answers the model was not trained on
+```
+
+`fit` prints the AUCs (fitted on one half of the answers, scored on the other), the weights per half (if they
+disagree, there are too few purchases) and a settings line for an arms file:
+`embed_score:embed_model=v1,alpha=...,w_cat=...`. Only shown products are in the fit, so it learns how to
+re-rank what policies showed, not the whole catalogue.
 
 ### Trend detection
 
