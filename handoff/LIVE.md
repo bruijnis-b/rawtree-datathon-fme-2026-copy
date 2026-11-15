@@ -1,6 +1,6 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 01:22 UTC. Code: branch `run/live-ab`, restarted 01:10:33 UTC (v2's scorer, shopper
+Updated: 2026-11-15 01:40 UTC. Code: branch `run/live-ab`, restarted 01:10:33 UTC (v2's scorer, shopper
 history of 100 events).
 
 ## Live now
@@ -8,11 +8,11 @@ history of 100 events).
 | Share | Public ID | Arm | Question | At this share since |
 |---|---|---|---|---|
 | 34% | m2b37f8 | `embed_score` on v1, default settings | Champion | 01:20 |
-| 33% | med6134 | `embed_score` on v2, default settings | Does v2 beat v1 live? Offline it does, clearly | 01:20 (25% from 01:10) |
-| 33% | m0cba68 | `embed_score` on v3, default settings | Does the final pipeline (v3) beat v1 and v2 live? | 01:20 |
+| 33% | m0cba68 | `embed_score` on v3, default settings | v2's recipe on all data: better than v1 live? | 01:20 |
+| 33% | mab651f | `embed_score` on v4, default settings | The trainer's final candidate: better than v1 and v3 live? | 01:33 |
 
-Equal shares: offline v2 looks better than the champion, and v3 is v2's recipe on more data. `arms.txt` is the
-file the process reads. Next review: 02:20 UTC (one hour side by side).
+`arms.txt` is the file the process reads. Waiting for: live requests on these three (each collects about 65
+purchases per hour). First comparison written here at 02:35 UTC; meanwhile the offline comparison runs.
 
 ## Conversion, 00:18 – 01:08 UTC (all three ran side by side)
 
@@ -26,6 +26,7 @@ file the process reads. Next review: 02:20 UTC (one hour side by side).
 
 | Public ID | Arm | Live (UTC) | Why pruned |
 |---|---|---|---|
+| med6134 | `embed_score` on v2, default settings | 01:10 – 01:33 | Not worse: v3 is the same recipe on more data and the trainer ranks v4 > v3 > v2, so v2's share went to v4. Its 23 minutes of answers stay usable |
 | m649454 | `embed_score` on v1, refit weights | 23:37 – 01:20 | Its weights were fitted for v1, and v2 and v3 are about to replace v1. Overall within noise of v1 default (1.81% against 2.07%), but clearly worse for new shoppers (1.72% against 3.21%) |
 | mdfdc72 | `combined` (no model) | 23:12 – 01:10 | 1.32% against 2.07% for v1 over the same 50 minutes: 2.1 standard errors lower, and lower in every earlier comparison |
 | m679016 | `cold_combined` | 23:51 – 00:18 | Conversion 1.25% against 1.73% for `combined` over the same period; cold conversion lower too. Far too strong a push for new products (x7.5) |

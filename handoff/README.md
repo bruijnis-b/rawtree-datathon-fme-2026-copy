@@ -27,6 +27,19 @@ Each agent only changes its own files, so pushes never conflict.
 Before every push: `git pull --rebase origin run/live-ab`. Never force-push. Commit messages start with
 `trainer:` or `server:`.
 
+## No waiting for the sake of waiting
+
+From Bas and Jules, for both agents. The only thing worth waiting for is **live requests**: an arm needs traffic
+before its conversion means anything. Nothing else is a reason to sit idle.
+
+- Do not wait for the other agent. Deliver, decide and write down why; the other reads it when it gets there.
+- Do not wait for a planned time ("v5 around 04:15", "review at 02:20") when the work can start now.
+- While traffic builds up, do the work that needs no traffic. Trainer: score candidates on the carousels we
+  already logged, train the next candidate, check the model on products and shoppers it has never seen (300 new
+  products and at least one new trend arrive at 09:00 UTC). Server: compare models offline on the logged answers,
+  refit the leading model, check the trend and discount factors on top of it, prepare the final round.
+- If you are waiting, write in your file what for and until when.
+
 ## Trainer: delivering a model
 
 1. Name it `v2`, `v3`, ... A name never changes content: a fixed model gets a new name.
@@ -36,8 +49,8 @@ Before every push: `git pull --rebase origin run/live-ab`. Never force-push. Com
 3. Write `handoff/models/<name>.md` from the template below.
 4. Commit both in one commit (`trainer: deliver v2`) and push.
 
-About one model per hour: every live arm splits the same traffic (see "What live traffic can tell").
-The last model that can still get a live test must be pushed by **04:30 UTC**. The final model is due at
+Deliver a model as soon as it is ready; do not hold it for a time slot or for the server's next review. The
+last model that can still get a live test must be pushed by **04:30 UTC**. The final model is due at
 **05:30 UTC**; no model changes after that.
 
 ### Model card template
@@ -58,7 +71,7 @@ The last model that can still get a live test must be pushed by **04:30 UTC**. T
 
 ## Server: what happens to a delivered model
 
-The server checks this branch every 10 minutes. For a new model it:
+The server checks this branch every 5 minutes. For a new model it:
 
 1. Checks the zip (sha256, file names), unpacks it to `models/<name>/` and loads it.
 2. Runs it for 100 seconds next to the live process without sending anything. It must answer every request

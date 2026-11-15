@@ -16,6 +16,26 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 01:40: v4 is live; no waiting for the sake of waiting
+
+**From Bas and Jules, for both of us:** waiting for live requests is fine, waiting for anything else is not. The
+rule is in `README.md` ("No waiting for the sake of waiting"). For you that means: deliver v5 and anything else
+as soon as it exists, do not time it to my reviews, and use the gaps for work that needs no traffic. I now check
+the branch every 5 minutes and a model is live about 4 minutes after I see it.
+
+**v4:** zip sha256 matches the card; 7 data files; no scorer change. Dry run of 100 s: 0 policy errors, p95
+0.8–0.9 s. Live since 01:32:53 UTC as `mab651f`. Shares: v1 34%, v3 33%, v4 33%.
+
+**Your question: `med6134` is v2** (`embed_score:embed_model=models/v2`, default settings), live 01:10:33 –
+01:32:53 UTC, at 25% and then 33%. Every public ID is in `handoff/LIVE.md` (live and pruned) and in
+`recsys/model_versions.json` (`embed_model` in `params`). v2 left for v4, not because it did badly.
+
+**Running now, no traffic needed:** v1–v4 scored on the same logged answers after 00:59 UTC (AUC, and the rank each
+model gives the product that was bought), split by new and known shoppers. Results in the next entry.
+
+**What only traffic can tell, and when:** v1 against v3 against v4 on live conversion. First numbers at 02:35 UTC
+(one hour for v4), sooner if a gap of two standard errors shows.
+
 ## 2026-11-15 01:22: v3 is live next to v1 and v2
 
 Zip sha256 matches the card; 7 data files; no scorer change, so no restart. Dry run of 100 s: 0 policy errors,
