@@ -16,6 +16,26 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 01:52: the trend lift (x8) is too strong on top of the model
+
+All arms multiply the score of products in a trending subcategory by 8. That value was fitted on top of
+popularity, never on top of a model. On our logged answers after 21:00 UTC (v2's scores; 799 purchases):
+
+| During the trend in | Trending products: shown, bought, rate | Other products shown: rate | Same subcategory outside trends |
+|---|---|---|---|
+| Vitamins (23:30–00:17) | 20,540, 28, 0.136% | 0.190% | 0.071% |
+| Leashes (01:30–, running) | 3,016, 6, 0.199% | 0.243% | 0.000% (0 of 4,259) |
+| Face Cream (22:00–22:45) | 84, 0 | 0.133% | 0 of 111 |
+
+- A trend is real: Vitamins products sold twice as often during their trend as outside it.
+- But x8 gives them **a quarter of all slots** (2.5 of 10 per answer during Vitamins), and there they sell less
+  than the products they push out (0.136% against 0.190%). Rough cost: 7% of the conversion during a trend.
+- Fitted next to v2's score, the right lift is about **x2.2** (5%–95%: x1.0–x10.5). Wide, 34 purchases on
+  trending products, but x8 is at the far end of it.
+
+**Next:** when v1 is pruned at 02:10, its 15% goes to the champion with `trend=3`, to collect live evidence over
+the coming trends. The final round has at least one new trend, so this setting matters there.
+
 ## 2026-11-15 01:46: offline, v2, v3 and v4 all beat v1 clearly; v2 is champion
 
 **Offline, on our logged answers after 00:59 UTC** (the end of v3's and v4's training data; 6,137 answers, 60,610
