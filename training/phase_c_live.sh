@@ -21,8 +21,8 @@ echo "[phase C $(date +%H:%M)] rawtree_live v$LIVE is published"
 ivan run training.finetune base=embed-cmp/1 live.version=$LIVE ft.epochs=0,2 $RECIPE --name embed-c-check-$TAG \
   --hypothesis "Phase C check: the final recipe on the phase C base (fold 0) with the live hold-out on snapshot $LIVE; tuned must beat untuned, and gives the score recalibration for the final runs"
 wait_done embed-c-check-$TAG
-ssh epoch "cat $NAMES/embed-c-check-$TAG/2/ivan/summary.json" 2>/dev/null > /tmp/c_check_$TAG.json
-AFF=$(python -c "import json;s=json.load(open('/tmp/c_check_$TAG.json'));print(f\"{s['score_a']:.4f},{s['score_c']:.4f}\")")
+CHECK_JSON=$(ssh epoch "cat $NAMES/embed-c-check-$TAG/2/ivan/summary.json" 2>/dev/null)
+AFF=$(printf "%s" "$CHECK_JSON" | python -c "import json,sys;s=json.load(sys.stdin);print(f\"{s['score_a']:.4f},{s['score_c']:.4f}\")")
 echo "[phase C $(date +%H:%M)] check run recalibration: [$AFF]"
 wait_done embed-c-hist
 ivan run training.finetune base=embed-c-hist/1,embed-c-hist/2,embed-c-hist/3 live.version=$LIVE ft.holdout=false \
