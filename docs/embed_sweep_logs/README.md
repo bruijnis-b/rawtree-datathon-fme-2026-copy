@@ -47,6 +47,32 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Cart decision, final recipe, v2 (Sun 01:25–01:30)
+
+`embed-cart2` + control `embed-cart2c` (phase C base, 2 seeds each; carousel hold-out = our logged carousels):
+
+| Variant | Carousel all | New | Known | In-cart | Organic live | Calibration |
+|---|---|---|---|---|---|---|
+| **no cart, no feedback task** | **0.524** | **0.477** | **0.572** | **1.32** | 2.44 | **0.18** |
+| cart 50 events, no feedback | 0.446 | 0.440 | 0.452 | 1.26 | **2.72** | 0.20 |
+| cart 10 events, no feedback | 0.472 | 0.459 | 0.485 | 0.74 | 2.55 | 0.19 |
+| cart 50 + feedback task | 0.340 | 0.346 | 0.334 | 1.14 | 2.63 | 0.30 |
+| no cart + feedback task | 0.409 | 0.366 | 0.454 | 1.02 | 2.39 | 0.30 |
+
+- The **carousel-feedback task hurts** in every arm (carousel −0.11, calibration fails): off.
+- The **cart in the embedding** raises the organic proxy (+0.1 to +0.3) but **lowers our real carousels in every
+  variant** (−0.05 to −0.08). The carousel hold-out is the faithful measure, so the cart stays **out** of the model.
+  The signal itself is real (cold analysis: odds ratio 5–6): it belongs in Bas's layer as one weight on "candidate is
+  in the open cart", fitted on live feedback with our score as offset, next to his already-bought filter.
+- **Final recipe:** base `c_a4_25` + history 100 (compact contexts); fine-tune 2 epochs, 50 % history, lr 0.3×,
+  new-product ID dropout 0.5, all weights, `new_user_trunc`, no feedback, no cart; serving rule min 5 history events.
+- **v2** = `embed-cart2c/1` (that recipe on snapshot 1): live 2.43 (v1 2.32), cold 2.31, carousel hold-out 0.54,
+  new users 2.09 (none) / 2.29 (5 events) / 2.86 (50), calibration 0.18, history 4.23, parity 1.1e-5, p99 0.28 ms,
+  dry run 0 policy errors. `models/v2/`, `models/v2_for_bas.zip` (20 MB, with `description.md`).
+- **Phase C history runs started early** (`embed-c-hist`, 01:27): c_a4_25 + history 100 on all history, 3 seeds,
+  recalibration fixed at [1.0185, 0.2188] (mean of the 8 phase B2 runs of this configuration). After snapshot 2
+  (04:30) only the fine-tuning remains.
+
 ### Open cart in the embedding, short histories (Sun 01:00–01:30)
 
 **Short-history training (`embed-cold`, phase C base, 2 seeds):**
