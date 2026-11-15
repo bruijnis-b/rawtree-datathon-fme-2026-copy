@@ -185,6 +185,31 @@ release asset of this (private) repo. A name never changes content: the checksum
 different file under the same name. A model with a new architecture adds its format in `load_backend`;
 policies do not change. A folder path also works as `embed_model` for trying a model that is not published.
 
+### Final setup (15 Nov)
+
+`arms.final.txt` (repo root): `embed_score` on embedding model **v4**, default settings (the model ranks; on top:
+discount lift, trend x8, cart x6; bought products never shown). Start it with `python -m recsys.main --arms
+arms.final.txt` after `python -m recsys.embeddings fetch v4`. v4 is also the manifest default.
+
+Why v4, on the official expected score (leaderboard per-model view, 02:30-05:25 UTC, ~7,900 requests per arm):
+
+| Arm | Score | Conversion | Cold conversion |
+|---|---|---|---|
+| v2+v3 average (`embed_blend`) | 60.8 | 2.10% | 2.62% |
+| v4 | 60.3 | 2.10% | 2.40% |
+| v2, a new shopper's recent views x2 | 58.2 | 2.04% | 2.37% |
+| v2 | 57.1 | 2.00% | 2.63% |
+
+v4 and the average are level (per quarter hour, v4 minus average +0.8 +- 5.9); v4 was the steadiest arm and is
+one model, so it is the default. The alternative is `embed_blend:embed_model=models/v2,embed_model2=models/v3`.
+Models: v2 and v3 are one recipe (`c_a4_25`, 100-event history), v4 is v1's configuration with a 100-event
+history; v3 and v4 are fine-tuned on the live stream up to 00:59 UTC on 15 Nov. Details of the night:
+`handoff/` on branch `run/live-ab`.
+
+Lessons: purchase AUC on our own logged answers ranked the recipes the wrong way round (it only sees products
+earlier policies chose to show); judge on the official expected score with `handoff/tools/board.py` (copied to `tools/board.py`).
+Wrapper factors refit on top of the model (cart 2.5, recent views x2, trend 3, popularity 0.3) showed no live gain.
+
 ### Refit embed_score for a model (refit/)
 
 The model's score and the shopper factors complement each other, so `embed_score` should not switch the factors
@@ -247,6 +272,7 @@ real end, 0 false alarms. Tuned on these 4 events only: the final round's trends
 | `discount_boost` | Wraps another policy; pushes products that are on sale up, and pulls in discounted best sellers from the shopper's category (below) |
 | `embed` | The embedding model on its own: the ten highest scores in stock, no corrections (the reference arm) |
 | `embed_score` | `combined` with the embedding model's score as its base: `exp(score_weight x score)` x discount lift x trend lift x cart, bought-before left out. Factors the model covers (`alpha`, `w_cat`, `w_sub`, `ctx`, `recent`, `new`) are off by default. `--set embed_model=NAME` picks the model |
+| `embed_blend` | `embed_score` with `embed_model2` (a second model; the two scores are averaged) and `max_lift` (cap on the discount lift, 0 = off). Its own policy, so `embed_score`'s public IDs do not change. See `policies/embed_blend.py` |
 | `cold_combined`, `cold_embed` | `combined` / `embed_score` with lifts for cold requests: new products x `new_view` (3 / 6) when the recent views include a new product (they sold ~7x old products there, any subcategory), recent views x `recent_new_user` (2) for new shoppers (5x there). Warm requests unchanged. See `policies/cold.py` |
 | `price_discount` | `discount_boost` with the lift fitted to the sales: no lift up to 12% off, and cheap products (within their subcategory) gain more than pricey ones (below) |
 

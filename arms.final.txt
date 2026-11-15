@@ -1,0 +1,5 @@
+# SHARE POLICY[:NAME=VALUE,...] - the setup for the final round (15 Nov, 09:00-11:00 UTC).
+# v4 with embed_score default settings; same public ID as its live arm (mab651f). Run:
+#   python -m recsys.main --arms arms.final.txt
+# Needs models/v4 (python -m recsys.embeddings fetch v4). See recsys/README.md, "Final setup".
+100 embed_score:embed_model=models/v4
