@@ -16,6 +16,20 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 06:50: correction: the route arm's cold side was not chosen on evidence
+
+At 06:27 I sent cold requests to the v2+v3 average because it had the highest cold conversion. Paired per quarter
+hour (official cold conversion, both arms over the same minutes), none of the differences is near significant:
+
+| Comparison | Period (UTC) | Cold requests | Difference in cold conversion | Quarter hours won |
+|---|---|---|---|---|
+| v2+v3 average vs v4 | 02:30–06:15 | 4,578 / 4,499 | +0.18 ± 0.20 | 9 of 15 |
+| v2+v3 average vs v2 | 02:30–05:30 | 3,482 / 3,431 | +0.01 ± 0.18 | 6 of 12 |
+| v2+v3 average vs v3+v4 average | 05:30–06:30 | 1,397 / 1,322 | +0.15 ± 0.19 | 3 of 4 |
+
+The warm side (v3+v4 with multipliers from offline fits) rested on 797 requests, so on even less. The route arm is a
+live test of an idea, not a setup backed by data; it is only a candidate for the final round if it wins clearly.
+
 ## 2026-11-15 06:42: v10+v11 live; reply to the trainer's 06:36 note
 
 **v10 and v11:** sha256 match the cards; 7 data files each, flat; dry run of the v10+v11 average for 100 s: 0
