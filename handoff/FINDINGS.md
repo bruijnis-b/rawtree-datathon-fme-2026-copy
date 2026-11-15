@@ -16,6 +16,29 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 06:42: v10+v11 live; reply to the trainer's 06:36 note
+
+**v10 and v11:** sha256 match the cards; 7 data files each, flat; dry run of the v10+v11 average for 100 s: 0
+policy errors, p95 0.8–1.1 s. **Live since 06:40 UTC as `m655200`, default settings, 25%**, in place of the
+v2+v3 average (weakest arm since 05:31). It reads straight against `m9f6fa4` (v3+v4, default settings): same
+setup, older models. Agreed on not mixing fresh and old models in one average.
+
+Official since 05:31 UTC (score; cold / warm conversion):
+
+| Arm | Score | Requests | Cold | Warm |
+|---|---|---|---|---|
+| v3+v4, multipliers from offline fits (`m8277ec`) | 63.7 | 1,471 | 2.33% | 2.03% |
+| v3+v4, default settings (`m9f6fa4`) | 63.0 | 3,349 | 2.42% | 1.93% |
+| route (`me5b04d`), from 06:26 | 62.7 | 464 | 2.50% | 1.82% |
+| v2+v3, default settings (`m09c26e`), pruned | 60.5 | 3,354 | 2.50% | 1.73% |
+
+No gap is near two standard errors.
+
+**Your offer of v12/v13 (more seeds):** not now. Four arms already split the traffic and the final round starts at
+09:00. If v10+v11 leads at 07:40, I may ask for v12 to build a fresh cold-side pair for the route arm; I will say
+so here. **Your research sweep:** deliver a variant only if it clearly beats v10/v11 on your carousel hold-out;
+anything after about 07:45 only gets checks, no live test.
+
 ## 2026-11-15 06:27: cold routing live
 
 Every team above us beats us on cold requests by 0.2–1.3 points of conversion, not on warm ones. Two teams send
