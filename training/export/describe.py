@@ -36,8 +36,13 @@ def _metric(met, dataset, metric, sl):
     return None
 
 
+def _num(x) -> bool:
+    """A real, finite number (runs without a live hold-out leave NaN or None)."""
+    return isinstance(x, (int, float)) and x == x and abs(x) != float("inf")
+
+
 def _fmt(m, key="lift"):
-    if not m or m.get(key) is None:
+    if not m or not _num(m.get(key)) or (key == "lift" and not (_num(m.get("lift_lo")) and _num(m.get("lift_hi")))):
         return "–"
     if key == "lift":
         return f"{m['lift']:+.2f} [{m['lift_lo']:+.2f}, {m['lift_hi']:+.2f}]"
@@ -119,7 +124,7 @@ def text(folder: Path, name: str | None = None, note: str | None = None) -> str:
                   f"task {'on' if f['feedback'] else 'off'}"
                   + (" (with a live hold-out: 20 % of live users, the last 2 hours, 60 practice products)"
                      if f["holdout"] else " (on all live data, no hold-out)") + "."]
-    if s.get("score_a") is not None:
+    if _num(s.get("score_a")):
         lines += [f"- **Recalibration:** the final score is `{s['score_a']:.3f} · score {s['score_c']:+.3f}`, fitted on "
                   "half of the history validation week and checked on the other half (applied inside the scorer)."]
     lines += [""]
@@ -136,21 +141,21 @@ def text(folder: Path, name: str | None = None, note: str | None = None) -> str:
             lines.append(f"| {label} | " + " | ".join(_fmt(v, key) for v in vals) + " |")
     lines += [""]
     extra = []
-    if s.get("slate_auc") is not None:
+    if _num(s.get("slate_auc")):
         extra.append(f"within a shown carousel, the clicked product scores above another shown product "
                      f"{s['slate_auc']:.0%} of the time (slate_auc; 50 % = random)")
-    if s.get("live_share_top10_heldout_new") is not None:
+    if _num(s.get("live_share_top10_heldout_new")) and _num(s.get("live_share_purchases_heldout_new")):
         extra.append(f"held-out practice products get {s['live_share_top10_heldout_new']:.2%} of top-10 slots "
                      f"against {s['live_share_purchases_heldout_new']:.2%} of purchases")
-    elif s.get("heldout_share_top10") is not None:
+    elif _num(s.get("heldout_share_top10")) and _num(s.get("heldout_share_clicks")):
         extra.append(f"held-out (content-only) products get {s['heldout_share_top10']:.2%} of top-10 slots against "
                      f"{s['heldout_share_clicks']:.2%} of clicks")
-    if s.get("calibration_max_err") is not None:
+    if _num(s.get("calibration_max_err")):
         extra.append(f"calibration: predicted and observed purchase rates differ by at most "
                      f"{s['calibration_max_err']:.0%} per score decile")
-    if s.get("latency_p99_ms") is not None:
+    if _num(s.get("latency_p99_ms")):
         extra.append(f"serving: {s['latency_p99_ms']:.2f} ms per request (p99, numpy only)")
-    if s.get("hm_dynamic_50_new_user") is not None:
+    if _num(s.get("hm_dynamic_50_new_user")) and _num(s.get("hm_none_0_new_user")):
         extra.append(f"new users: lift {s.get('hm_none_0_new_user', float('nan')):.2f} without history, "
                      f"{s['hm_dynamic_50_new_user']:.2f} when their last 50 live events are passed")
     lines += [f"- {e}." for e in extra] + [""]
@@ -163,7 +168,7 @@ def text(folder: Path, name: str | None = None, note: str | None = None) -> str:
             "Stock, already-bought and diversity are not handled: hard filters in recsys."]
     if not fine:
         weak.insert(0, "Never saw new users or new products with labels; `is_new_user` is ignored.")
-    if s.get("calibration_max_err") is not None and s["calibration_max_err"] > 0.2:
+    if _num(s.get("calibration_max_err")) and s["calibration_max_err"] > 0.2:
         weak.append(f"Calibration misses the 20 % target (max decile error {s['calibration_max_err']:.0%}): use the "
                     "score as a ranking first, refit any weight that is added to it.")
     if hl > 0:
