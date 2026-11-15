@@ -186,11 +186,11 @@ policies do not change. A folder path also works as `embed_model` for trying a m
 
 ### Final setup (15 Nov)
 
-`arms.final.txt` (repo root): `embed_blend` = the **average of embedding models v10 and v11**, **default
-settings**. Start it with `python -m recsys.main --arms arms.final.txt`. Live as `m655200` since 06:40 UTC.
+`arms.final.txt` (repo root): `embed_blend` = the **average of embedding models v10 and v11**, default settings
+except **`cart=2.5`**. Start it with `python -m recsys.main --arms arms.final.txt`. Live as `md363d5` since 07:45 UTC.
 
 On top of the model scores (unchanged defaults): discount lift, trend x8 for a subcategory the live detector
-flags, cart x6; bought products are never shown; every answer is 10 distinct active products.
+flags, cart x2.5; bought products are never shown; every answer is 10 distinct active products.
 
 **Decisions and their evidence** (official expected score = leaderboard per-model view; offline fits = logistic
 regression on our logged answers with list position held constant, ranges 5-95% from a bootstrap):
@@ -202,7 +202,8 @@ regression on our logged answers with list position held constant, ranges 5-95% 
 | `new` stays 1 (no extra lift for products added during the event) | Offline fits asked x2.3-3.3, but on products that had been out for hours. By age, practice-day answers against the slot average: 0-1 h 0.56x, 1-4 h 0.89x, 4-12 h 1.39x, 12 h+ 2.44x. Products unseen by the models already got 1.3-1.6x their purchase share of slots (held out of v10/v11; and the 100 released at 02:00, unseen by v2-v4). In the final round every new product is 0-2 h old | Supported: two independent checks on unseen products agree. `new=2` (decided 07:20) withdrawn on this, as that decision had foreseen |
 | No `new_view` (extra lift when a recent view is new) | x3.3 against x2.3: ranges overlap; its live test (`cold_combined`) lost 10% | Not supported |
 | No cold/warm routing | Paired per quarter hour, no cold difference between our arms above one standard error | Not supported |
-| Default cart, discount, popularity, category multipliers | The arm with all six offline-fitted multipliers (`m8277ec`) was not separated live (63.7 against 63.0). Cart x2.5 has the most offline support (x2.6-3.4 on top of the model; default x6) | Not supported live; cart is the one candidate |
+| `cart=2.5` (products in the cart and not bought: x2.5 instead of x6) | Offline on top of the model: x2.0-3.4 in two analyses (v2-v4). Live, paired per quarter hour 06:45-07:30: the v3+v4 arm with offline-fitted multipliers (cart 2.5 among them) beat the final setup by +7.4 +- 3.8 and v3+v4 with default settings by +20.3 +- 8.3, despite older models. With x6, cart products filled 36% of warm slots; with x2.5, 21%, for about the same cart purchases (19 against 17) | Several sources agree; this exact setup not separated live on its own |
+| Other multipliers stay at default (discount cap, popularity, category shares) | Nothing separates them; `new=1.5` in the leading arm spent 6% of slots on fresh products that sold 1 purchase | Not supported |
 
 Lessons: purchase AUC on our own logged answers ranked the model recipes the wrong way round (it only sees
 products earlier policies chose to show); judge on the official expected score per quarter hour, both arms over the

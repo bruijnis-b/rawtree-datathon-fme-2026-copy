@@ -1,5 +1,5 @@
 # SHARE POLICY[:NAME=VALUE,...] - the setup for the final round (15 Nov, 09:00-11:00 UTC).
-# Average of embedding models v10 and v11 (embed_blend), default settings. Same public ID as its live arm
-# (m655200). Run:  python -m recsys.main --arms arms.final.txt
+# Average of embedding models v10 and v11 (embed_blend), default settings except cart=2.5. Same public ID as
+# its live arm (md363d5). Run:  python -m recsys.main --arms arms.final.txt
 # models/v10 and models/v11 are in the repo. Why: recsys/README.md, "Final setup".
-100 embed_blend:embed_model=models/v10,embed_model2=models/v11
+100 embed_blend:embed_model=models/v10,embed_model2=models/v11,cart=2.5
