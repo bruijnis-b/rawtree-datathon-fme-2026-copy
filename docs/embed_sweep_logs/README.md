@@ -47,6 +47,31 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### v3, and the configurations re-ranked on our carousels (01:00–01:15 UTC)
+
+- `phase_c.sh` stopped after the check runs: Windows Python cannot read the Git Bash `/tmp` path. Final step run by
+  hand; both scripts fixed (summary via stdin); the v4 pipeline (`phase_c_live.sh`, LIVE=3) restarted.
+- Check on snapshot 2 (`embed-c-check`, hold-out 23:00–01:00 UTC + 20 % users): tuned vs untuned: organic 2.48 vs
+  2.33, cold 2.39 vs 2.17, new users with 5 events 2.47 vs 2.10, carousels 0.72 vs 0.76, calibration 0.26 (fails).
+- **v3 delivered 01:10 UTC** (`572db17`): `embed-c-final/2` (seed 1, the median of 3 by base objective), all history
+  + live up to 00:59 UTC; parity 1.1e-5, p99 0.42 ms, 79,535 users, 5,400 products, dry run clean.
+- **Re-ranking on snapshot 2** (`embed-s2`, fold-0 bases, 2 fine-tune seeds; carousel hold-out = 1,844 clicks):
+
+  | Config | Carousels | Organic | Calibration | New users (5 ev.) | History |
+  |---|---|---|---|---|---|
+  | c_a4_36 + h100 | **0.846** | 2.43 | 0.27 | 2.34 | 4.29 |
+  | b_a2_43 + h100 | **0.820** | 2.42 | **0.14** | 2.38 | 4.12 |
+  | b_a2_43 + h20 (v1 base) | 0.750 | 2.33 | 0.13 | 2.47 | 3.68 |
+  | c_a4_25 + h100 (v2/v3) | 0.730 | **2.48** | 0.18 | 2.47 | 4.10 |
+  | c_a4_100 + h100 | 0.730 | 2.46 | 0.22 | 2.33 | 4.09 |
+  | c_a4_39 + h100 | 0.680 | 2.45 | 0.13 | 2.36 | 4.04 |
+
+  Carousel and organic disagree again. v1's configuration with a 100-event history is the balanced candidate
+  (carousels +0.09 over c_a4_25, best calibration, organic −0.06). Being checked on folds 1–2 (`embed-hl100f` →
+  `embed-s2b` vs `embed-s2a`); its all-history version is trained as a hedge for v4 (`embed-c-hist-b`).
+- Live (00:20–01:14 UTC): v1 default 2.06 % ± 0.45 (3,939 answers), v1 refit 1.79 % ± 0.43, `combined` 1.35 % (stopped
+  01:10); a new arm `med6134` since 01:10 (not yet in the registry on the branch).
+
 ### Live A/B hand-off with Bas's server (Sun 01:58 CET = 00:58 UTC onwards; times below UTC)
 
 Bas set up an overnight loop on branch `run/live-ab` (`handoff/README.md`): the trainer delivers models as flat zips
