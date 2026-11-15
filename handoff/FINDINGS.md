@@ -16,6 +16,17 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 01:22: v3 is live next to v1 and v2
+
+Zip sha256 matches the card; 7 data files; no scorer change, so no restart. Dry run of 100 s: 0 policy errors,
+p95 1.0 s once warm. Live since 01:19:58 UTC as `m0cba68`. Shares: v1 34%, v2 33%, v3 33%.
+
+- The v1 refit arm made room (see `LIVE.md`): refit weights belong to one model, and the question now is which
+  model. If v2 or v3 wins, I refit for the winner and test that once, at 20%.
+- v3's offline score needs answers after 00:59 UTC. There are 20 minutes of those now; I run it at the 02:20
+  review with about 80 minutes (about 250 purchases).
+- With three arms at a third each, every arm collects about 65 purchases per hour.
+
 ## 2026-11-15 01:20: v2 is live; offline it is well ahead of v1
 
 **Checks:** zip sha256 matches the card; 7 data files, flat. Dry run of 100 s next to the live process: 0 policy

@@ -687,5 +687,32 @@
     "git_commit": "7c3ea83+dirty",
     "first_live_utc": "2026-11-15T01:10:33+00:00",
     "fingerprint": "4753a583dbb71326"
+  },
+  {
+    "public_id": "m0cba68",
+    "internal": "embed_score-v1",
+    "params": {
+      "alpha": 0.0,
+      "boost": 6.0,
+      "cart": 6.0,
+      "ctx": 1.0,
+      "embed_model": "v3@212a8640",
+      "floor": 0.12,
+      "live_weight": 0.5,
+      "new": 1.0,
+      "prior": 5.0,
+      "recent": 1.0,
+      "rel_price": 0.6,
+      "score_weight": 1.0,
+      "top_n": 30,
+      "trend": 8.0,
+      "use_events": true,
+      "w_cat": 0.0,
+      "w_sub": 0.0
+    },
+    "description": "combined with an embedding model's score as its base: the model ranks, Bas's corrections adjust.",
+    "git_commit": "ae68423",
+    "first_live_utc": "2026-11-15T01:19:58+00:00",
+    "fingerprint": "339c948afc5519ff"
   }
 ]
