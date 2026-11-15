@@ -24,10 +24,19 @@ Numbers are written here at 03:20, 04:20 and 05:20 UTC without changing the arms
 |---|---|---|---|---|---|---|
 | 03:07 | 57.2 (cold 2.80%) | 53.4 (cold 2.46%) | 58.7 (cold 2.53%) | 51.4 (cold 2.07%) | 1,530–1,620 | team_06 60.9; us 55.1, 4th |
 | 03:37 | 58.9 (cold 2.72%) | 51.5 (cold 2.39%) | 61.5 (cold 2.41%) | 55.9 (cold 2.35%) | 2,870–2,990 | team_06 62.8; us 57.0, 5th |
+| 04:07 | 59.5 (cold 2.78%) | 53.8 (cold 2.42%) | 62.8 (cold 2.46%) | 56.4 (cold 2.33%) | 4,240–4,320 | team_06 64.6; us 58.1, 5th |
 
-03:37: v4 leads and the average is last, the opposite of the offline order (average first, v4 last). Ten points
-between best and worst at 2,900 requests each is more than I expected from noise alone; another two hours will
-tell. The recent-views arm is behind v2 on cold requests in both readings (2.35% against 2.72%).
+04:07: the order holds (v4, v2, recent views x2, average), but it is not a result yet. Scored per quarter hour
+(six of them, 02:30–04:00), each arm against v2 over the same minutes:
+
+| Against v2 | Difference in score | 
+|---|---|
+| v4 | +3.2 ± 2.2 |
+| v2, recent views x2 | −4.3 ± 3.1 |
+| v2+v3 average | −4.8 ± 7.6 |
+
+All within 1.5 standard errors. The average swings most (39 to 75 between quarter hours). What can be said:
+v4 is **not** behind v2 live, the average shows **no** gain live, recent views x2 shows **no** gain on cold.
 
 ## Official scores, 01:11 – 02:31 UTC (`board.py`; score out of 100, expected conversion)
 
