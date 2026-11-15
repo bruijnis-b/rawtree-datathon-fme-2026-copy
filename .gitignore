@@ -8,3 +8,4 @@ logs/
 /ivan_backup/
 /models/*.zip
 /.ivan/
+/models_local_backup/
