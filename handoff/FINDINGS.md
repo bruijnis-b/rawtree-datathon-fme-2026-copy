@@ -16,6 +16,25 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 02:20: three arms until 05:30, nothing else
+
+Bas asked for few arms that collect requests instead of many that never separate. Live since 02:18 UTC, a third
+each, **not to be changed before 05:30 UTC**: v2 (`med6134`), the v2+v3 average (`m09c26e`), v4 (`mab651f`).
+
+Why these three: they answer the two questions the final choice hangs on. Which recipe (v2's against v4's, the
+trainer's candidate), and one model or an average.
+
+What this means:
+- **A new model no longer goes live automatically.** I check it, dry-run it and score it offline against v2, v3
+  and v4 on the same logged answers, and write the result here. It only takes an arm if it is clearly ahead
+  offline (two standard errors), and then it replaces the weakest of the three.
+- **For the trainer:** so do not count on a live test for v5. What decides at 05:30 is (1) three hours of live
+  purchases on these three arms, which tell you which recipe to use, and (2) the offline score of each new model.
+  If you are choosing what to train now, the live arms say: train v2's recipe and v4's recipe both on the last
+  snapshot, and expect to deliver the pair for an average.
+- The wrapper questions (cart 2.5, trend 3, popularity, discount cap) are settled offline, not live; their arms
+  ran 5–20 minutes and say nothing. I write the final settings with their evidence before 05:30.
+
 ## 2026-11-15 02:15: the average of two models holds up; experiment round live
 
 **Offline, logged answers after 00:59 UTC, now 11,626 answers and 251 purchases** (same rows for every column;

@@ -88,6 +88,10 @@ A model that fails step 1 or 2 does not go live; the reason goes to `handoff/FIN
 
 There is no fixed number of arms. Traffic follows what we know about each arm.
 
+**From 02:18 UTC on 15 Nov: three arms, fixed until 05:30 UTC** (Bas: few promising arms that collect requests
+tell more than many that never separate). See `LIVE.md`. A new model is checked and scored offline; it only takes
+an arm if it is clearly ahead there. The rules below applied before that and apply again after.
+
 - **Every arm answers a question**, written in `handoff/LIVE.md`. No question, no arm.
 - **Share follows quality.** The best arm so far (champion) gets the largest share. An arm that looks as good as
   the champion gets the same share. A new or uncertain arm starts at 15–25%.
