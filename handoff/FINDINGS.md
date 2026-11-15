@@ -16,6 +16,12 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 02:00: v1 pruned, trend test live
+
+The Leashes trend runs until about 02:15, so the trend test started now instead of at 02:10: v1 is off (see
+`LIVE.md`) and its 15% runs v2 with `trend=3` as `m3cb3ff`, since 01:57:56 UTC. To read it: compare `m3cb3ff` with
+`med6134` (v2, `trend=8`) over the minutes a trend is active; outside trends the two give the same answers.
+
 ## 2026-11-15 02:00: live numbers, and how each arm treats new products
 
 **Live, 01:10:40 – 01:53 UTC** (v3 from 01:20, v4 from 01:33; v1 over the whole period):
