@@ -16,6 +16,19 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 07:20: verdict on `new` and `new_view` (Bas: no new test runs; act only on what the data supports)
+
+- **`new` (all products added during the event): set to 2 in the final setup.** Supported offline on top of a
+  model three times out of four (v1/v2 x2.7, v3+v4 x2.3 and x3.3, ranges above 1). 2 is below every fitted value
+  that held up, so it errs on the safe side. No live arm for it; it goes in with the final switch, on whichever arm
+  wins. Our own results agree in direction: models under-score new products even when they know them by ID; the
+  final round's 300 products they do not know at all.
+- **`new_view` (extra lift on requests that viewed a new product): stays off.** No fit separates it from `new`
+  (x3.3 against x2.3, ranges overlap), and its one live test (`cold_combined`) lost.
+- **New shoppers without recent views:** no change; 40 purchases support nothing.
+- Exception: if the trainer's held-out check on v10/v11 shows unseen products already get their share of slots or
+  more, `new` stays at 1.
+
 ## 2026-11-15 07:10: the two cold gaps, and the newness multipliers
 
 Logged answers after 00:59 UTC (unseen by v3 and v4), score = mean of v3 and v4: 65,581 answers, 1,381 purchases.
