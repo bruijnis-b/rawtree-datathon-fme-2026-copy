@@ -47,6 +47,26 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Live A/B hand-off with Bas's server (Sun 01:58 CET = 00:58 UTC onwards; times below UTC)
+
+Bas set up an overnight loop on branch `run/live-ab` (`handoff/README.md`): the trainer delivers models as flat zips
+plus a card in `handoff/models/`, writes notes in `handoff/TRAINER.md`; the server puts each model live as an A/B
+arm and reports in `handoff/LIVE.md` / `FINDINGS.md`. Deadlines: last live-tested model 04:30 UTC, final 05:30 UTC.
+Work on that branch happens in a separate worktree (`../rawtree-liveab`), so this checkout stays on `embed-sweeps`
+for the phase C runs.
+
+- **00:58 v2 delivered** (`077ac9a`): zip sha256 `30b8661b…`, card, and the scorer update (min-history rule, cart
+  support). Backward compatibility checked: v0 and v1 score exactly as with the old scorer; v2 differs only for
+  histories of fewer than 5 events (intended).
+- **v1 on the carousel hold-out** (`embed-v1-eval`): 0.59 vs v2 0.54 (±0.12 each). v2 leads on organic (2.43 vs
+  2.32) and history (4.23 vs 3.68); v1 leads on the carousel measure and on new users with 5 events (2.39 vs 2.29).
+  Reported to the server; the live A/B decides.
+- **01:00 live snapshot 2 published early** (up to 00:59 UTC: 3.83 M events, 172.6 k requests, 142.9 k carousels), so
+  a model on fresher data gets a live test. `phase_c.sh` started on it: v3 = the final recipe on all history + live
+  up to 00:59, delivery ≈ 02:00. `phase_c_live.sh` (LIVE=3, TAG=v4) waits for the 03:30 UTC snapshot: v4 ≈ 04:15.
+- Live conversion 00:20–01:02 (our feedback): v1 default 2.02 % ± 0.50 (3,074 answers), v1 refit 1.84 % ± 0.49,
+  `combined` 1.51 % ± 0.60.
+
 ### Phase C preparation (Sun 01:28–01:40)
 
 - `embed-c-hist` (c_a4_25 + history 100, all history, seeds 0/1/2): succeeded in 5–6 min each. In-sample objective
