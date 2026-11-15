@@ -22,13 +22,13 @@ Models are named folders under `models/` (gitignored; a few MB to ~20 MB each), 
 names the `default` model. Policies pick one with their `embed_model` setting:
 
     python -m recsys.main --policy embed_score                       # the default model
-    python -m recsys.main --policy embed_score --set embed_model=v1   # another one
-    python -m recsys.main --policy embed_score --ab embed_score:embed_model=v1   # A/B: default vs v1
+    python -m recsys.main --policy embed_score --set embed_model=v0   # another one
+    python -m recsys.main --policy embed_score --ab embed_score:embed_model=v0   # A/B: default vs v0
 
 The resolved name is part of the policy's settings, so each model gets its own public model ID.
 
     python -m recsys.embeddings list              # models, which are downloaded, which is the default
-    python -m recsys.embeddings fetch v0          # download one from its GitHub release (needs `gh`)
+    python -m recsys.embeddings fetch v1          # download one from its GitHub release (needs `gh`)
     python -m recsys.embeddings publish models/v1 --name v1 [--default]   # upload a new one (Jules)
 
 ## Live sync

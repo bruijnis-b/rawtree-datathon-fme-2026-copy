@@ -17,6 +17,12 @@ live feedback (654 purchases): products bought in the history were bought again 
 (0.008%, against 0.095% for the rest), history cart-not-bought products sold 0.44%, and the history view
 shares predict as well as the live ones (60%+ of views in the category: 0.56%).
 
+Our own carousel sales are not in shop.events (1 of 940 on the practice day), but the simulator counts them as
+bought. A third thread reads them from team_NN.feedback every FEEDBACK_POLL_S seconds; get() and bought() include
+them. On the practice day, products bought before were bought again 0 times in 206 showings (through our carousel),
+6 in 9,840 (live organic) and 1 in 39,651 (history), against 0.104% for the rest: never show them (the guard
+drops them from every answer).
+
 Each shopper's last MAX_EVENTS events are also kept in time order (history tail, then live), for the embedding
 models: `events(user_id)` gives the sequence they were trained on (see recsys/embeddings.py). Stored as compact
 int arrays (~15 MB for 60,000 shoppers).
@@ -41,6 +47,8 @@ POLL_S = 2.0      # pause between reads once caught up
 LAG_S = 3         # read up to this many seconds ago
 HISTORY_CHUNKS = 8  # history is read in this many queries (by shopper hash), to stay under the 30 s limit
 MAX_EVENTS = 50   # events kept per shopper in time order, for the embedding models (they use their last 20-50)
+FEEDBACK_POLL_S = 5.0  # pause between reads of our own carousel purchases
+FEEDBACK_WINDOW_MIN = 20  # each read looks back this far (purchases are re-read; adding is idempotent)
 EVENT_TYPES = ("view", "add_to_cart", "purchase")  # anything else is stored as "other"
 
 
@@ -65,6 +73,7 @@ class Profiles:
         self.history: dict[str, Profile] = {}  # from shop.history_events; cart times are 0 (older than live)
         self.seq: dict[str, array] = {}           # live events per shopper, oldest first, encoded (see _code)
         self.history_seq: dict[str, array] = {}   # last MAX_EVENTS history events per shopper, encoded
+        self.carousel_bought: dict[str, set[str]] = {}  # from team_NN.feedback: bought through our answers
         self.history_ready = False  # history profiles and sequences loaded
         self._pids: list[str] = []  # product index -> product ID, for the encoded sequences
         self._pidx: dict[str, int] = {}
@@ -78,10 +87,11 @@ class Profiles:
         h = self.history.get(user_id)
         with self._lock:
             p = self.users.get(user_id)
-            if p is None and h is None:
+            if p is None and h is None and user_id not in self.carousel_bought:
                 return None
             out = Profile() if p is None else Profile(p.views, Counter(p.categories), Counter(p.subcategories),
                                                       dict(p.cart), set(p.bought))
+            out.bought |= self.carousel_bought.get(user_id, set())
         if h is not None:
             out.views += h.views
             out.categories.update(h.categories)
@@ -89,6 +99,32 @@ class Profiles:
             out.cart = {**h.cart, **out.cart}
             out.bought |= h.bought
         return out
+
+    def bought(self, user_id: str) -> set[str]:
+        """Everything the shopper bought: history, live organic and through our carousel (a new set)."""
+        h = self.history.get(user_id)
+        with self._lock:
+            p = self.users.get(user_id)
+            out = set(p.bought) if p is not None else set()
+            out |= self.carousel_bought.get(user_id, set())
+        if h is not None:
+            out |= h.bought
+        return out
+
+    def sync_carousel(self, minutes: float = FEEDBACK_WINDOW_MIN) -> int:
+        """Add our own carousel purchases of the last `minutes` (team_NN.feedback, shopper from shop.requests)."""
+        rows = client.query(f"""
+            SELECT r.u AS u, f.purchased::String AS p
+            FROM {client.TEAM}.feedback f
+            INNER JOIN (SELECT request_id::String AS rid, user_id::String AS u FROM shop.requests
+                        WHERE ts::DateTime64(3) > now64(3) - INTERVAL {minutes + 5} MINUTE) r
+              ON f.request_id::String = r.rid
+            WHERE f.purchased::String != '' AND f.request_id::String != '__init__'
+              AND f.ts::DateTime64(3) > now64(3) - INTERVAL {minutes} MINUTE""", timeout=30)
+        with self._lock:
+            for r in rows:
+                self.carousel_bought.setdefault(r["u"], set()).add(r["p"])
+        return len(rows)
 
     def _code(self, pid: str, event_type: str) -> int:
         """One event as an int: product index x 4 + event type (0-2, 3 = other). Call under the lock or before
@@ -225,5 +261,18 @@ class Profiles:
                     log.warning("shopper history load failed (attempt %d of 5): %s", attempt + 1, e)
                     time.sleep(5)
 
+        def run_carousel() -> None:
+            first = True
+            while True:
+                try:
+                    n = self.sync_carousel(BACKFILL_H * 60 if first else FEEDBACK_WINDOW_MIN)
+                    if first:
+                        log.info("carousel purchases loaded: %d in the last %d h", n, BACKFILL_H)
+                    first = False
+                except Exception as e:  # keep what we have
+                    log.warning("carousel purchase sync failed: %s", e)
+                time.sleep(FEEDBACK_POLL_S)
+
         threading.Thread(target=run, name="profiles", daemon=True).start()
+        threading.Thread(target=run_carousel, name="profile-carousel", daemon=True).start()
         threading.Thread(target=run_history, name="profile-history", daemon=True).start()

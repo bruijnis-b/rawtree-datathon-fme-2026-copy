@@ -47,7 +47,8 @@ request go unanswered or late because of the policy:
   right away instead of waiting ~0.3-0.5 s for the insert; pulls run every 0.1 s (`POLL_S`). A failed or
   slow (>3 s, `PUSH_TIMEOUT_S`) insert is retried on the next pull while the request is still fresh.
 - **Policy crash:** that request gets the fallback.
-- **Guard:** every answer is padded from the fallback to exactly 10 distinct, active products.
+- **Guard:** every answer is padded from the fallback to exactly 10 distinct, active products, and never holds a
+  product the shopper already bought (history, live organic, or through our own carousel), whatever the policy.
 
 ## Layout
 
@@ -59,6 +60,7 @@ request go unanswered or late because of the policy:
 | `popularity.py` | `Popularity`: best-seller rankings from history plus the last hour of live purchases, with new products included |
 | `profiles.py` | `Profiles`: per shopper, the categories viewed, the cart and the purchases, from `shop.events` and `shop.history_events` |
 | `embeddings.py` | `Embeddings`: embedding models as a shared service, per request a purchase log-odds per product; model selection, download and publish (below) |
+| `refit/` | Refit `embed_score`'s weights for a model on our live feedback (below) |
 | `guard.py` | Exactly 10 distinct, active IDs; pads from the fallback; reports what it fixed |
 | `model_registry.py` | Opaque public `model_version` IDs and the private log of what they mean |
 | `features.py` | Signals computed in RawTree SQL: purchase counts, rankings, co-views |
@@ -130,6 +132,14 @@ A second thread loads the same from the 60 days of `shop.history_events`, once (
 `get()` returns history and live together. This part does not depend on the live stream, so it is there
 from the first minute of the final round. Checked on the practice day's live feedback:
 
+- **Already bought = never show (the guard drops them from every answer).** The simulator scores a product
+  the shopper bought before (in `shop.history_events`, `shop.events` or through our carousel) as much less likely
+  to be bought again; the organic data was generated without this, so do not learn repeat buying from it. Our
+  feedback (127,000 answers) agrees: bought again 0 times in 206 showings after a carousel sale, 6 in 9,840 after a
+  live organic purchase, 1 in 39,651 after a history purchase, against 0.104% for the rest. It is only the exact
+  product: others from the same subcategory sell more (x3.7 after a live purchase), not less.
+- Our carousel sales are not in `shop.events` (1 of 940), so `Profiles` reads them from `team_NN.feedback`
+  every 5 s (last 12 h at startup); `get()` and `bought()` include them.
 - Products the shopper bought in the history: bought again 3 times in 39,000 showings (0.008%). The old
   carousel log (`history_sessions`) says the opposite (1.47%): for repeat purchases the live shop behaves
   differently from the history, so check such findings on live feedback. `category_pop` spends ~9% of
@@ -164,9 +174,9 @@ public ID.
 
 ```bash
 python -m recsys.embeddings list              # models, downloaded or not, * = default
-python -m recsys.embeddings fetch v0          # download from its GitHub release (needs gh, logged in)
-python -m recsys.main --policy embed_score --set embed_model=v1 --dry-run
-python -m recsys.main --policy embed_score --ab embed_score:embed_model=v1    # A/B: default vs v1
+python -m recsys.embeddings fetch v1          # download from its GitHub release (needs gh, logged in)
+python -m recsys.main --policy embed_score --set embed_model=v0 --dry-run
+python -m recsys.main --policy embed_score --ab embed_score:embed_model=v0    # A/B: default vs v0
 python -m recsys.embeddings publish models/v1 --name v1 [--default]   # Jules: upload a new model
 ```
 
@@ -174,6 +184,33 @@ A model is 2 MB of weights plus ~18 MB of user vectors: too big to commit one pe
 release asset of this (private) repo. A name never changes content: the checksums in the manifest refuse a
 different file under the same name. A model with a new architecture adds its format in `load_backend`;
 policies do not change. A folder path also works as `embed_model` for trying a model that is not published.
+
+### Refit embed_score for a model (refit/)
+
+The model's score and the shopper factors complement each other, so `embed_score` should not switch the factors
+off: refit their weights for every new model. On the practice day's answers after 21:00 UTC (v1's fine-tuning data
+ends there; 284k shown products, 386 purchases), purchase AUC with list position left out (fitted on half of the
+answers, scored on the other half):
+
+| Inputs | v0 | v1 |
+|---|---|---|
+| Model only | 0.878 | 0.896 |
+| Shopper factors only (popularity, categories, recent views, cart, new) | 0.842 | 0.842 |
+| Model + shopper factors | 0.903 | 0.911 |
+
+The discount factor got almost no weight in these fits (the official A/B favoured `price_discount`), so it is
+left as it is.
+
+```bash
+python -m recsys.refit.download                                 # data/refit/: live data (~1 min), history once (~10 min)
+python -m recsys.refit.build v1                                 # or a folder: models/v1 (~1 min per 100k answers)
+python -m recsys.refit.fit v1 --after "2026-11-15 06:00"        # only answers the model was not trained on
+```
+
+`fit` prints the AUCs (fitted on one half of the answers, scored on the other), the weights per half (if they
+disagree, there are too few purchases) and a settings line for an arms file:
+`embed_score:embed_model=v1,alpha=...,w_cat=...`. Only shown products are in the fit, so it learns how to
+re-rank what policies showed, not the whole catalogue.
 
 ### Trend detection
 
@@ -210,6 +247,7 @@ real end, 0 false alarms. Tuned on these 4 events only: the final round's trends
 | `discount_boost` | Wraps another policy; pushes products that are on sale up, and pulls in discounted best sellers from the shopper's category (below) |
 | `embed` | The embedding model on its own: the ten highest scores in stock, no corrections (the reference arm) |
 | `embed_score` | `combined` with the embedding model's score as its base: `exp(score_weight x score)` x discount lift x trend lift x cart, bought-before left out. Factors the model covers (`alpha`, `w_cat`, `w_sub`, `ctx`, `recent`, `new`) are off by default. `--set embed_model=NAME` picks the model |
+| `cold_combined`, `cold_embed` | `combined` / `embed_score` with lifts for cold requests: new products x `new_view` (3 / 6) when the recent views include a new product (they sold ~7x old products there, any subcategory), recent views x `recent_new_user` (2) for new shoppers (5x there). Warm requests unchanged. See `policies/cold.py` |
 | `price_discount` | `discount_boost` with the lift fitted to the sales: no lift up to 12% off, and cheap products (within their subcategory) gain more than pricey ones (below) |
 
 ### Shopper profile: tunable settings

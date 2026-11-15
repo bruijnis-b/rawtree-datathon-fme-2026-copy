@@ -1,12 +1,20 @@
 {
-  "default": "v0",
+  "default": "v1",
   "models": {
     "v0": {
       "release": "embed-v0",
-      "notes": "Sat 22:00 default model, history only (exp-0189); ignores is_new_user",
+      "notes": "Sat 22:00 first model, history only (exp-0189); ignores is_new_user",
       "sha256": {
         "model.npz": "fd0169cebeecfad686bca0ba9fe226c73e3d8138c5220fcb59ea75d82a4d0380",
         "user_vectors.npz": "8f4d0a1eb00848a46defc2130cda0505ee9f3adee79f2510fd899c909fda53b3"
+      }
+    },
+    "v1": {
+      "release": "embed-v1",
+      "notes": "Sat 23:31 CET: b_a2_43 fine-tuned on the live practice stream up to Sat 21:00 UTC (exp-0200); learns is_new_user",
+      "sha256": {
+        "model.npz": "1dc688389060ba2d3f0b0aad0111714656c2cecd896a402ea87b8208cebbe910",
+        "user_vectors.npz": "ba483a70d7901809ecdb87e9c8bc3338b845bb89ae94409307abb52a1d6517e4"
       }
     }
   }
