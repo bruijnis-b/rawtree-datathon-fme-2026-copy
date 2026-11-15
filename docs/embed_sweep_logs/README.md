@@ -47,6 +47,47 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Open cart in the embedding, short histories (Sun 01:00–01:30)
+
+**Short-history training (`embed-cold`, phase C base, 2 seeds):**
+
+| New users, history at scoring | none | 1 | 3 | 5 | 10 | 50 |
+|---|---|---|---|---|---|---|
+| recipe | 2.09 | **1.50** | 1.92 | 2.16 | 2.46 | 2.83 |
+| + `ft.new_user_trunc` | 2.10 | 1.68 | 2.06 | 2.29 | 2.53 | 2.85 |
+
+A very short history scores *worse* than none. Truncation training helps exactly there (+0.13 to +0.18 at 1–5
+events), costs nothing at full length, calibration 0.17. **Adopted.** Even so, < 5 events loses to none, so the
+export now carries a serving rule: a history shorter than `ft.min_history_events` (5) is ignored by the scorer
+(both `events=` and the snapshot; `counts` stored in `user_vectors.npz`). `is_new` gain on the bias: learned −0.02,
+no gain: dropped.
+
+**Open cart** (`ft.cart`): products carted and not bought since within the user's last 50 events, pooled into the
+user vector through a zero-start adapter, plus a learned in-cart term on the score, learned from our carousel
+feedback (organic labels would teach it the opposite: there the purchased product is removed from the context). The
+scorer takes the cart from `events=` or from the cart saved at export (`cart_ids` in `user_vectors.npz`). Parity
+first failed (0.27): `scatter_` let a closed duplicate entry overwrite an open one in the in-cart indicator (affected
+training and evaluation too). Fixed (additive scatter, capped): 2.5e-5.
+
+New metric, **carousel hold-out** (`evaluate_feedback`): our own logged carousels of held-out users / last 2 h with a
+click; does our full-catalogue top 10 contain the clicked product (purchase 3×), vs live best sellers. The only
+offline measure that sees the cart effect. 1,199 clicks, 12 % of them on an open-cart product.
+
+`embed-cart` (phase C base, feedback task on in both arms, 2 seeds):
+
+| | no cart | cart |
+|---|---|---|
+| carousel hold-out, all (lift) | 0.435 / 0.383 | 0.321 / 0.354 |
+| carousel, clicks on in-cart products | 1.05 / 1.00 | **1.21 / 1.18** |
+| carousel, known users | 0.50 / 0.41 | 0.31 / 0.34 |
+| organic live objective | 2.42 / 2.36 | **2.64 / 2.62** |
+| calibration | 0.28 / 0.31 | 0.34 / 0.28 |
+
+The cart does what it should on in-cart products and on the organic proxy, but loses on known users' carousels
+(their open carts are mostly old history carts), so it does not win on the carousel hold-out overall (difference
+within noise, wrong direction). The feedback task also costs calibration (0.17 → ~0.3). Follow-up `embed-cart2`:
+window 10 vs 50 × in-cart term from feedback vs adapter only, with a no-cart / no-feedback control.
+
 ### Cold-request analysis (side session, Sun 00:40–01:30) and what we do with it
 
 Full report: `docs/cold_analysis/README.md` on branch `claude/cold-analysis-50bdea` (not merged). Key points:
