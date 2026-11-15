@@ -186,8 +186,8 @@ policies do not change. A folder path also works as `embed_model` for trying a m
 
 ### Final setup (15 Nov)
 
-`arms.final.txt` (repo root): `embed_blend` = the **average of embedding models v10 and v11**, default settings
-except **`new=2`**. Start it with `python -m recsys.main --arms arms.final.txt`. Live as `mbcf961` since 07:24 UTC.
+`arms.final.txt` (repo root): `embed_blend` = the **average of embedding models v10 and v11**, **default
+settings**. Start it with `python -m recsys.main --arms arms.final.txt`. Live as `m655200` since 06:40 UTC.
 
 On top of the model scores (unchanged defaults): discount lift, trend x8 for a subcategory the live detector
 flags, cart x6; bought products are never shown; every answer is 10 distinct active products.
@@ -199,14 +199,14 @@ regression on our logged answers with list position held constant, ranges 5-95% 
 |---|---|---|
 | Models v10 + v11 (v4's and v3's recipes, fine-tuned on live data to 06:24 UTC) | Fresher live data was the largest gain of the night (v1 to v2-v4). The two recipes were level live (v4 60.3 against v2+v3 60.8, 02:30-05:25); an average of two models never lost to its single members | Tie-break: v10+v11 has not been separated from the v3+v4 arms live |
 | Average of two models (`embed_blend`) | v2+v3 and v3+v4 averages scored at or above every single model over the same minutes | Not separated by two standard errors |
-| `new=2` (x2 for products added during the event) | Offline on top of a model: v1/v2 x2.7 (1.8-4.1); v3+v4 x2.3 (1.2-2.7) on all requests, x3.3 (1.8-4.2) on requests that viewed a new product. The models under-score new products even when they know them; the final round's 300 products they do not know | Offline only, three fits of four above 1. 2 is below every fit that held up |
+| `new` stays 1 (no extra lift for products added during the event) | Offline fits asked x2.3-3.3, but on products that had been out for hours. By age, practice-day answers against the slot average: 0-1 h 0.56x, 1-4 h 0.89x, 4-12 h 1.39x, 12 h+ 2.44x. Products unseen by the models already got 1.3-1.6x their purchase share of slots (held out of v10/v11; and the 100 released at 02:00, unseen by v2-v4). In the final round every new product is 0-2 h old | Supported: two independent checks on unseen products agree. `new=2` (decided 07:20) withdrawn on this, as that decision had foreseen |
 | No `new_view` (extra lift when a recent view is new) | x3.3 against x2.3: ranges overlap; its live test (`cold_combined`) lost 10% | Not supported |
 | No cold/warm routing | Paired per quarter hour, no cold difference between our arms above one standard error | Not supported |
-| Default cart, discount, popularity, category multipliers | The arm with all six offline-fitted multipliers (`m8277ec`) led some quarter hours but was not separated live | Not supported yet |
+| Default cart, discount, popularity, category multipliers | The arm with all six offline-fitted multipliers (`m8277ec`) was not separated live (63.7 against 63.0). Cart x2.5 has the most offline support (x2.6-3.4 on top of the model; default x6) | Not supported live; cart is the one candidate |
 
 Lessons: purchase AUC on our own logged answers ranked the model recipes the wrong way round (it only sees
 products earlier policies chose to show); judge on the official expected score per quarter hour, both arms over the
-same minutes (`tools/board.py`). Earlier candidate (main until this change): v4 alone, default settings.
+same minutes (`tools/board.py`). Earlier candidates: v4 alone, default settings (main until PR #20); v10+v11 with `new=2` (07:20-07:35, withdrawn). The trainer's hand-off with the research sweep and checks: `handoff/TRAINER.md` on branch `run/live-ab`, 07:30 UTC.
 
 ### Refit embed_score for a model (refit/)
 
