@@ -16,6 +16,23 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 01:55: the discount lift also looks too strong on top of the model
+
+Same logged answers (after 21:00 UTC, v2's scores, 799 purchases). "Against the model" is purchases divided by
+what v2's score alone predicts for those products, with list position taken out.
+
+| Discount of the shown product | Shown | Bought | Rate | Against the model |
+|---|---|---|---|---|
+| None | 461,429 | 768 | 0.166% | 1.03 |
+| 12–16% | 4,549 | 9 | 0.198% | 1.46 |
+| Over 16% | 27,422 | 21 | 0.077% | 0.63 |
+
+- Products more than 16% off get a lift of up to x1.5 from us, and sold a third **less** than the model alone
+  predicts (21 purchases where 33 were expected; about 2 standard errors).
+- Limits: night hours only, 30 purchases on discounted products, and these are products the lift itself put
+  in the list. The daytime A/B favoured the discount lift, but on a policy without a model.
+- No change live yet. One factor at a time: the trend arm comes first (02:10), a `boost=0` arm after it.
+
 ## 2026-11-15 01:52: the trend lift (x8) is too strong on top of the model
 
 All arms multiply the score of products in a trending subcategory by 8. That value was fitted on top of
