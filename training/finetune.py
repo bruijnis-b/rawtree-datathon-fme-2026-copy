@@ -72,6 +72,9 @@ class FineTuner:
         sd = torch.load(bdir / "model.pt", map_location=tr.dev)
         if "disc_beta" in sd:
             m.disc_beta = torch.nn.Parameter(torch.tensor(0.0, device=tr.dev))
+        if "new_gain" in sd:
+            m.new_gain = torch.nn.Parameter(torch.tensor(0.0, device=tr.dev),
+                                            requires_grad=bool(cfg.ft.get("new_gain", False)))
         if sd["e_id.weight"].shape[0] == m.e_id.weight.shape[0]:
             missing = m.load_state_dict(sd, strict=False)
             log(f"base weights loaded; missing {missing.missing_keys}")
@@ -89,6 +92,10 @@ class FineTuner:
         m.e_id, m.b_id = e_id, b_id
         if not hasattr(m, "disc_beta"):
             m.disc_beta = torch.nn.Parameter(torch.tensor(0.0, device=self.dev))  # live-only discount weight
+        if not hasattr(m, "new_gain"):
+            # x = u.v + (1 + new_gain * is_new) * b: new users lean more on popularity (cold-analysis proposal 3)
+            m.new_gain = torch.nn.Parameter(torch.tensor(0.0, device=self.dev),
+                                            requires_grad=bool(cfg.ft.get("new_gain", False)))
         if sd is not None:  # the base is itself a fine-tuned model: its ID tables already cover the live products
             assert sd["e_id.weight"].shape[0] == P, (sd["e_id.weight"].shape, P)
             missing = m.load_state_dict(sd, strict=False)
@@ -139,6 +146,10 @@ class FineTuner:
             mask = mask * (torch.rand_like(mask) >= drop).float()
         return m.products(p["cat"], p["sub"], p["brand"], p["price"], p["tokens"], mask)
 
+    def bias(self, b, is_new):
+        """Per-row product bias [rows, P]: b scaled by (1 + new_gain) for new users."""
+        return b[None] * (1 + self.tr.model.new_gain * is_new[:, None])
+
     def users(self, V, part, idx, page=None, train=True, no_hist=None):
         m = self.tr.model
         page_t = part["page"][idx] if page is None else torch.full_like(idx, page)
@@ -152,6 +163,13 @@ class FineTuner:
                 hm = hm * (~no_hist).float()[:, None]
             if train and self.bcfg.model.history_dropout > 0:
                 hm = hm * (torch.rand(len(idx), device=self.dev) >= self.bcfg.model.history_dropout).float()[:, None]
+            if train and self.cfg.ft.get("new_user_trunc", False):
+                # new users: keep only their last k events, k in {0, 1, 2, 3, 5, 10, 20, all} (cold-analysis
+                # proposal 2: early in a stream new users have almost no history)
+                ks = torch.tensor([0, 1, 2, 3, 5, 10, 20, N], device=self.dev)
+                k = ks[torch.randint(len(ks), (len(idx),), device=self.dev)]
+                k = torch.where(part["is_new"][idx] > 0, k, torch.full_like(k, N))
+                hm = hm * (torch.arange(N, device=self.dev)[None] < k[:, None]).float()
             hist, hh = m.pool_history(V, self.h_prod[pos.clamp(min=0)], self.h_type[pos.clamp(min=0)], hm)
         else:
             hist, hh = torch.zeros_like(rec), torch.zeros_like(rh)
@@ -161,7 +179,7 @@ class FineTuner:
         m, E = self.tr.model, self.E
         u = self.users(V, E, idx, page=self.page_org)
         tgt = E["prod"][idx]
-        logits = u @ V[tgt].T + b[tgt][None] + m.disc_beta * E["disc"][idx][None] - self.logq[tgt][None]
+        logits = u @ V[tgt].T + self.bias(b[tgt], E["is_new"][idx]) + m.disc_beta * E["disc"][idx][None] - self.logq[tgt][None]
         same = tgt[:, None] == tgt[None]
         eye = torch.eye(len(idx), device=self.dev, dtype=torch.bool)
         return Fn.cross_entropy(logits.masked_fill(same & ~eye, -1e9), torch.arange(len(idx), device=self.dev))
@@ -171,7 +189,8 @@ class FineTuner:
         u = self.users(V, S, idx)
         shown = S["shown"][idx]
         valid = (shown >= 0) & ~self.held_p[shown.clamp(min=0)]
-        x = (u[:, None] * V[shown.clamp(min=0)]).sum(-1) + b[shown.clamp(min=0)]
+        x = (u[:, None] * V[shown.clamp(min=0)]).sum(-1) + b[shown.clamp(min=0)] * (
+            1 + m.new_gain * S["is_new"][idx][:, None])
         k = torch.arange(10, device=self.dev)[None].expand_as(shown)
         sl = m.slot[k, S["device"][idx][:, None].expand_as(shown)]
         click = (k == S["click_slot"][idx][:, None]) & valid
@@ -193,7 +212,7 @@ class FineTuner:
         if what == "new_parts":
             for p in m.parameters():
                 p.requires_grad_(False)
-            for p in (m.w_new, m.e_id.weight, m.b_id.weight, m.p_bias.weight, m.p_bias.bias, m.disc_beta, m.no_id):
+            for p in (m.w_new, m.e_id.weight, m.b_id.weight, m.p_bias.weight, m.p_bias.bias, m.disc_beta, m.no_id, m.new_gain):
                 p.requires_grad_(True)
         if what in ("new_parts", "freeze_hist_ids"):
             def hook(g):
@@ -280,7 +299,7 @@ class FineTuner:
             idx = self.tr.t(self.vidx[a:a + 4096])
             held = self.tr.t(self.live.heldout_users)[E["user"][idx]]
             u = self.users(V, E, idx, page=self.page_org, train=False, no_hist=held)
-            top = m.score_from_x(u @ V.T + b).topk(10, dim=1).indices
+            top = m.score_from_x(u @ V.T + self.bias(b, E["is_new"][idx])).topk(10, dim=1).indices
             top_new += self.held_p[top].float().sum().item()
             hit[a:a + 4096] = (top == E["prod"][idx][:, None]).any(1).float().cpu().numpy()
         base = np.isin(self.live.e["prod"][self.vidx], self.best).astype(np.float32)
@@ -294,7 +313,7 @@ class FineTuner:
                 "live_share_purchases_heldout_new": float(self.live.heldout_products[self.live.e["prod"][self.vidx]].mean())}
 
     @torch.no_grad()
-    def history_modes(self, lengths=(10, 20, 50, 100), B=300):
+    def history_modes(self, lengths=(1, 3, 5, 10, 20, 50, 100), B=300):
         """Held-out live purchases scored with three kinds of long-term history, at several lengths:
         none (a brand-new user); snapshot (history + live events up to the start of the hold-out window, as a
         user_vectors.npz exported then); dynamic (every event of the user before the purchase, as Bas passing
@@ -323,7 +342,8 @@ class FineTuner:
         masks = {k: v.astype(np.float32) for k, v in self.slices.items()}
         n_hist = {}
         rows = []
-        for mode, L in [("none", 0)] + [(md, L) for md in ("snapshot", "dynamic") for L in lengths]:
+        for mode, L in [("none", 0)] + [(md, L) for md in ("snapshot", "dynamic") for L in lengths
+                                        if md == "dynamic" or L >= 10]:
             hit = np.zeros(len(self.vidx), np.float32)
             nh = np.zeros(len(self.vidx), np.float32)
             for a in range(0, len(self.vidx), 4096):
@@ -343,7 +363,7 @@ class FineTuner:
                     hist, hh_ = m.pool_history(V, tp[pos.clamp(min=0)], tt[pos.clamp(min=0)], ok.float())
                     nh[sl] = ok.float().sum(1).cpu().numpy()
                 u = m.users(ctx, rec, rh, hist, hh_, E["is_new"][idx])
-                top = m.score_from_x(u @ V.T + b).topk(10, dim=1).indices
+                top = m.score_from_x(u @ V.T + self.bias(b, E["is_new"][idx])).topk(10, dim=1).indices
                 hit[sl] = (top == E["prod"][idx][:, None]).any(1).float().cpu().numpy()
             res, _ = boot_lift(hit, base, masks, B)
             for s, v in res.items():
@@ -442,7 +462,7 @@ class FineTuner:
             has = j is not None and m.hist_len > 0
             hist = torch.as_tensor(sc.user_vecs[j] if has else np.zeros(m.d, np.float32), device=self.dev)[None]
             u = m.users(ctx, rec, rh, hist, torch.tensor([[1.0 if has else 0.0]], device=self.dev), E["is_new"][ii])
-            ts_ = m.score_from_x(u @ V.T + b)[0].cpu().numpy()[order.argsort()]
+            ts_ = m.score_from_x(u @ V.T + self.bias(b, E["is_new"][ii]))[0].cpu().numpy()[order.argsort()]
             gap = max(gap, float(np.abs(ts_ - ns).max()))
         lat = np.array(lat)
         return {"parity_max_abs": gap, "product_parity_max_abs": prod_gap,
@@ -486,7 +506,7 @@ def main(cfg: DictConfig) -> None:
                "live_objective": r["live_objective"], "live_objective_se": r["live_objective_se"],
                "live_lift_all": r["live_lift_all"], "live_lift_cold": r["live_lift_cold"],
                "live_share_top10_heldout_new": r["live_share_top10_heldout_new"],
-               "disc_beta": float(ft.tr.model.disc_beta.item()), "minutes": (time.time() - t0) / 60}
+               "disc_beta": float(ft.tr.model.disc_beta.item()), "new_gain": float(ft.tr.model.new_gain.item()), "minutes": (time.time() - t0) / 60}
     if ref is not None:
         summary["live_objective_before"] = ref["live_objective"]
     if hc is not None:

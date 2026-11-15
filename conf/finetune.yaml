@@ -19,6 +19,8 @@ ft:
   feedback: true
   new_id_dropout: 0.25 # ID dropout for practice-round products during fine-tuning
   half_life_h: 0     # 0 = no recency weighting of live events
+  new_user_trunc: false # new users' history truncated to a random k in training (cold-analysis proposal 2)
+  new_gain: false    # learn (1 + g * is_new) on the product bias (cold-analysis proposal 3)
   history_modes: true # evaluate none / snapshot / dynamic history on the live hold-out
   score_affine: null # [a, c] fixed score recalibration (bases trained on all history); null = refit on history week
 

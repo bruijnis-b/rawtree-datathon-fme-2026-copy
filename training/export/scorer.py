@@ -169,7 +169,8 @@ class Model:
     # ---------------- score ----------------
     def score(self, request, pm: ProductMatrix, events=None, hist=None) -> np.ndarray:
         u = self._user(request, pm, events, hist)
-        x = pm.vecs @ u + pm.bias
+        gain = float(self.w["new_gain"]) if "new_gain" in self.w else 0.0
+        x = pm.vecs @ u + pm.bias * (1.0 + gain * float(bool(_get(request, "is_new_user"))))
         w = self.w
         lc = _log_sigmoid(x + w["c_click"]) + _log_sigmoid(w["alpha"] * x + w["c_purchase"])
         sc = lc - np.log1p(-np.minimum(np.exp(lc), 1 - 1e-7))
