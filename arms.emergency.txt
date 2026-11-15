@@ -1,0 +1,4 @@
+# EMERGENCY ONLY: the embedding models fail on every request (policy errors every window).
+# combined = popularity, shopper profile, discount, trend and cart, no model. It ran live overnight (mdfdc72).
+# Use: cp arms.emergency.txt arms.txt   (the running process re-reads it within seconds, no restart)
+100 combined
