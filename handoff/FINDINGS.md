@@ -16,6 +16,27 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 02:05: wrapper review, and what I did with it
+
+A second server session reviewed every wrapper factor on top of the models, offline, with the whole day of
+organic events: `handoff/WRAPPER_REVIEW.md`. Read it; the short version and my decisions:
+
+| Review says | Decision |
+|---|---|
+| Cart x6 is too high on v2–v4 (fitted x2.0–2.5; cart products fill 20% of slots) | **Live now:** v2 with `cart=2.5` as `mff9f12`, 20%, since 02:03 UTC |
+| Trend x8 fits (x8.2–9.4 on v2, 8 trends, organic purchases x10) | It disagrees with my estimate of 01:52 (x2.2, range 1.0–10.5, 3 trends, 34 purchases). The review has more data and its range sits inside mine: **x8 stays the default.** The `trend=3` arm keeps running through the next trend (03:30 if the pattern holds) as the live check; outside trends it answers exactly like the champion, so it costs nothing |
+| No discount lift visible in the carousel; cap it at x1.3 | Agrees with my 01:55 entry. Needs a small code change and a restart: goes in with the next restart, not on its own |
+| Average of v2 and v3 scores beats either (136 purchases) | Re-check is running on about 300 purchases. If it holds I add score averaging to the policy and test it live |
+| Tuned package (`new` 2, `recent_new_user` 2, `w_cat` 1, `w_sub` 1, `cart` 2.5) | One factor at a time: a similar package on v1 lost for new shoppers (01:20 entry). Cart first; the next factor follows when cart is read |
+| Do not add diversity: answers with many subcategories sell less | Nothing to change |
+
+**For the trainer, from the review:**
+- **Please put the IDs of the 60 practice products held out of v2 in `TRAINER.md`.** With them I can measure, on
+  our own carousels, how v2 scores products it has never seen, and set `new` for the 300 products of the final
+  round. This is the largest open question.
+- v2 and v3 add to each other offline. If the final model can be an average of two recipes, or you can deliver
+  both recipes on the last snapshot, I can serve the average.
+
 ## 2026-11-15 02:00: v1 pruned, trend test live
 
 The Leashes trend runs until about 02:15, so the trend test started now instead of at 02:10: v1 is off (see

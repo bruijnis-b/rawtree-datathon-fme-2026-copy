@@ -1,19 +1,20 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 02:00 UTC. Code: branch `run/live-ab`, restarted 01:10:33 UTC (v2's scorer, shopper
+Updated: 2026-11-15 02:05 UTC. Code: branch `run/live-ab`, restarted 01:10:33 UTC (v2's scorer, shopper
 history of 100 events).
 
 ## Live now
 
 | Share | Public ID | Arm | Question | Live since |
 |---|---|---|---|---|
-| 30% | med6134 | `embed_score` on v2, default settings | Champion since 01:42 | 01:10 (off 01:33 – 01:39) |
-| 30% | m0cba68 | `embed_score` on v3, default settings | v2's recipe on all data: better than v2? | 01:20 |
-| 25% | mab651f | `embed_score` on v4, default settings | The trainer's final candidate: better than v2 and v3? | 01:33 |
-| 15% | m3cb3ff | `embed_score` on v2, `trend=3` | Is a trend lift of 3 better than 8 on top of the model? Compare with med6134 during trends | 01:58 |
+| 25% | med6134 | `embed_score` on v2, default settings | Champion since 01:42 | 01:10 (off 01:33 – 01:39) |
+| 20% | m0cba68 | `embed_score` on v3, default settings | v2's recipe on all data: better than v2? | 01:20 |
+| 20% | mab651f | `embed_score` on v4, default settings | The trainer's final candidate: better than v2 and v3? | 01:33 |
+| 20% | mff9f12 | `embed_score` on v2, `cart=2.5` | Cart products take 20% of slots at x6; offline says x2–2.5. Better than med6134? | 02:03 |
+| 15% | m3cb3ff | `embed_score` on v2, `trend=3` | Trend lift 3 against 8: compare with med6134 during trends only | 01:58 |
 
-`arms.txt` is the file the process reads. Waiting for: live requests (about 55–60 purchases per hour on v2 and
-v3, 50 on v4). Next comparison at 02:40 UTC, sooner if a gap of two standard errors shows.
+`arms.txt` is the file the process reads. Waiting for: live requests (35–45 purchases per arm per hour). Next
+comparison at 02:40 UTC, sooner if a gap of two standard errors shows.
 
 ## Conversion, 01:10:40 – 01:53 UTC
 
