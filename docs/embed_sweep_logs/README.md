@@ -47,6 +47,26 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### v4, the server's offline AUC, two v5 pipelines (01:15–01:40 UTC)
+
+- **3-fold check** (`embed-hl100f` → `embed-s2b` vs `embed-s2a` + `embed-s2`, 6 runs each, snapshot-2 hold-out):
+  b_a2_43 + h100 vs c_a4_25 + h100: carousels **0.801 ± 0.013** vs 0.697 ± 0.011, new users 0.625 vs 0.547,
+  organic 2.406 vs **2.458**, cold 2.346 vs 2.369, calibration 0.134 vs 0.151, new products 0.7 % vs 0.5 % of top 10
+  (purchases 0.66 %), history 3.98 vs 3.98.
+- **v4 delivered 01:32 UTC** (`a3d8d74`): b_a2_43 + h100, all history (`embed-c-hist-b/1`, seed 0 = median) + all of
+  snapshot 2 (`embed-c-final-b/1`), recalibration [1.0616, 0.2951] from `embed-s2`. Parity 1.1e-5, p99 0.19 ms, dry
+  run clean. Card names it the final candidate; priority v4 > v3 > v2.
+- **Server (01:20–01:22 UTC):** v2 and v3 live (v1 34 %, v2 33 %, v3 33 %); `combined` and the v1 refit arm pruned
+  (refit clearly worse for new shoppers: 1.72 % vs 3.21 %). `Profiles` now passes 100 events (with types). The
+  server's offline measure, purchase AUC on our own answers after 21:00 UTC (re-ranking of shown products, 666
+  purchases): **v1 0.883, v2 0.923** (with its shopper factors 0.903 vs 0.930). This disagrees with our carousel
+  top-10 measure in direction (there v1's configuration with history 100 beat v2's): different questions (re-rank the
+  10 shown vs find the clicked product in the whole catalogue) and different model pairs. The server's 02:20 review
+  (v3, and v4 if live) decides between the two configurations, together with live conversion.
+- Request from the server: no more scorer changes (each costs a restart). v3, v4 and v5 need none.
+- **Two v5 pipelines** wait for the 03:30 UTC snapshot: `v5` (b_a2_43 + h100, `embed-c-hist-b`) and `v5a`
+  (c_a4_25 + h100, `embed-c-hist`). The one whose configuration wins at the review is delivered (~04:15 UTC).
+
 ### v3, and the configurations re-ranked on our carousels (01:00–01:15 UTC)
 
 - `phase_c.sh` stopped after the check runs: Windows Python cannot read the Git Bash `/tmp` path. Final step run by
