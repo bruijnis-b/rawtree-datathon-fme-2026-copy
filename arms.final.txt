@@ -1,5 +1,5 @@
 # SHARE POLICY[:NAME=VALUE,...] - the setup for the final round (15 Nov, 09:00-11:00 UTC).
-# v4 with embed_score default settings; same public ID as its live arm (mab651f). Run:
-#   python -m recsys.main --arms arms.final.txt
-# models/v4 is in the repo. See recsys/README.md, "Final setup".
-100 embed_score:embed_model=models/v4
+# Average of embedding models v10 and v11 (embed_blend), default settings except new=2. Same public ID as its
+# live arm (mbcf961). Run:  python -m recsys.main --arms arms.final.txt
+# models/v10 and models/v11 are in the repo. Why: recsys/README.md, "Final setup".
+100 embed_blend:embed_model=models/v10,embed_model2=models/v11,new=2

@@ -35,6 +35,20 @@
         "model.npz": "a59dce631cf51de1c4f85f9b1446ef215a8d5f4ad3670edaaff03b5e04aaca99",
         "user_vectors.npz": "eb0d2c91752c509d6f8a7a5e9a90dbee9555c5c694dcccc47c0580ff5451aafb"
       }
+    },
+    "v10": {
+      "notes": "Based on: **v4's recipe**, unchanged: v1's configuration (`b_a2_43`, dim 32) with a 100-event history, trained on",
+      "sha256": {
+        "model.npz": "7d2ea3b86176013b94684336edff9764f666d7d8ff96cd5154e8c7a430d23b53",
+        "user_vectors.npz": "2f4bdec6feeb4f858a8b180bb6cc82c08e1a2987c99900201680728504377015"
+      }
+    },
+    "v11": {
+      "notes": "Based on: **v2/v3's recipe**, unchanged: configuration `c_a4_25` (dim 64) with a 100-event history, trained on all",
+      "sha256": {
+        "model.npz": "55b6cb2321a43700779330bcc9e1b56f9fc985322286ae7eae41792b66209d81",
+        "user_vectors.npz": "707fa0b167b3fa3fff6ae91a7ebccf167fcf18a4e39198304c5d07df9f963e0d"
+      }
     }
   }
 }

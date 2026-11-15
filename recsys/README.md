@@ -186,28 +186,27 @@ policies do not change. A folder path also works as `embed_model` for trying a m
 
 ### Final setup (15 Nov)
 
-`arms.final.txt` (repo root): `embed_score` on embedding model **v4**, default settings (the model ranks; on top:
-discount lift, trend x8, cart x6; bought products never shown). Start it with `python -m recsys.main --arms
-arms.final.txt`. v4 is also the manifest default.
+`arms.final.txt` (repo root): `embed_blend` = the **average of embedding models v10 and v11**, default settings
+except **`new=2`**. Start it with `python -m recsys.main --arms arms.final.txt`. Live as `mbcf961` since 07:24 UTC.
 
-Why v4, on the official expected score (leaderboard per-model view, 02:30-05:25 UTC, ~7,900 requests per arm):
+On top of the model scores (unchanged defaults): discount lift, trend x8 for a subcategory the live detector
+flags, cart x6; bought products are never shown; every answer is 10 distinct active products.
 
-| Arm | Score | Conversion | Cold conversion |
-|---|---|---|---|
-| v2+v3 average (`embed_blend`) | 60.8 | 2.10% | 2.62% |
-| v4 | 60.3 | 2.10% | 2.40% |
-| v2, a new shopper's recent views x2 | 58.2 | 2.04% | 2.37% |
-| v2 | 57.1 | 2.00% | 2.63% |
+**Decisions and their evidence** (official expected score = leaderboard per-model view; offline fits = logistic
+regression on our logged answers with list position held constant, ranges 5-95% from a bootstrap):
 
-v4 and the average are level (per quarter hour, v4 minus average +0.8 +- 5.9); v4 was the steadiest arm and is
-one model, so it is the default. The alternative is `embed_blend:embed_model=models/v2,embed_model2=models/v3`.
-Models: v2 and v3 are one recipe (`c_a4_25`, 100-event history), v4 is v1's configuration with a 100-event
-history; v3 and v4 are fine-tuned on the live stream up to 00:59 UTC on 15 Nov. Details of the night:
-`handoff/` on branch `run/live-ab`.
+| Decision | Evidence | Strength |
+|---|---|---|
+| Models v10 + v11 (v4's and v3's recipes, fine-tuned on live data to 06:24 UTC) | Fresher live data was the largest gain of the night (v1 to v2-v4). The two recipes were level live (v4 60.3 against v2+v3 60.8, 02:30-05:25); an average of two models never lost to its single members | Tie-break: v10+v11 has not been separated from the v3+v4 arms live |
+| Average of two models (`embed_blend`) | v2+v3 and v3+v4 averages scored at or above every single model over the same minutes | Not separated by two standard errors |
+| `new=2` (x2 for products added during the event) | Offline on top of a model: v1/v2 x2.7 (1.8-4.1); v3+v4 x2.3 (1.2-2.7) on all requests, x3.3 (1.8-4.2) on requests that viewed a new product. The models under-score new products even when they know them; the final round's 300 products they do not know | Offline only, three fits of four above 1. 2 is below every fit that held up |
+| No `new_view` (extra lift when a recent view is new) | x3.3 against x2.3: ranges overlap; its live test (`cold_combined`) lost 10% | Not supported |
+| No cold/warm routing | Paired per quarter hour, no cold difference between our arms above one standard error | Not supported |
+| Default cart, discount, popularity, category multipliers | The arm with all six offline-fitted multipliers (`m8277ec`) led some quarter hours but was not separated live | Not supported yet |
 
-Lessons: purchase AUC on our own logged answers ranked the recipes the wrong way round (it only sees products
-earlier policies chose to show); judge on the official expected score with `handoff/tools/board.py` (copied to `tools/board.py`).
-Wrapper factors refit on top of the model (cart 2.5, recent views x2, trend 3, popularity 0.3) showed no live gain.
+Lessons: purchase AUC on our own logged answers ranked the model recipes the wrong way round (it only sees
+products earlier policies chose to show); judge on the official expected score per quarter hour, both arms over the
+same minutes (`tools/board.py`). Earlier candidate (main until this change): v4 alone, default settings.
 
 ### Refit embed_score for a model (refit/)
 
