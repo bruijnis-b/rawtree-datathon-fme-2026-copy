@@ -1008,5 +1008,34 @@
     "git_commit": "c4d1ae7",
     "first_live_utc": "2026-11-15T07:25:04+00:00",
     "fingerprint": "e9de914a547e20df"
+  },
+  {
+    "public_id": "md363d5",
+    "internal": "embed_blend-v1",
+    "params": {
+      "alpha": 0.0,
+      "boost": 6.0,
+      "cart": 2.5,
+      "ctx": 1.0,
+      "embed_model": "v10@7d2ea3b8",
+      "embed_model2": "v11@55b6cb23",
+      "floor": 0.12,
+      "live_weight": 0.5,
+      "max_lift": 0.0,
+      "new": 1.0,
+      "prior": 5.0,
+      "recent": 1.0,
+      "rel_price": 0.6,
+      "score_weight": 1.0,
+      "top_n": 30,
+      "trend": 8.0,
+      "use_events": true,
+      "w_cat": 0.0,
+      "w_sub": 0.0
+    },
+    "description": "embed_score with two optional extras, kept in their own policy so embed_score's public IDs do not change.",
+    "git_commit": "0e3c08c",
+    "first_live_utc": "2026-11-15T07:45:18+00:00",
+    "fingerprint": "d3ffc7bc566d997e"
   }
 ]
