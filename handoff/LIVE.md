@@ -1,22 +1,20 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 02:32 UTC. Code: branch `run/live-ab`, restarted 02:13 UTC (new policy `embed_blend`).
+Updated: 2026-11-15 05:32 UTC. Code: branch `run/live-ab`, restarted 02:13 UTC.
 
-## Live now: four arms, left alone until 05:30 UTC
-
-Few arms that collect requests (Bas, 02:17). A fourth was added at 02:29 for the cold requests, where the other
-teams are ahead of us (Bas, 02:25). **These four stay until 05:30 UTC.** A new model does not push one out by
-default: see `FINDINGS.md`.
+## Live now: round 3, three arms, a third each, since 05:31 UTC
 
 | Share | Public ID | Arm | Question | Live since |
 |---|---|---|---|---|
-| 25% | med6134 | `embed_score` on v2, default settings | Reference: the other three are read against it | 01:10 |
-| 25% | m09c26e | `embed_blend`: average of v2's and v3's scores | Best offline. Is it the final setup? | 02:13 |
-| 25% | mab651f | `embed_score` on v4, default settings | The trainer's recipe for the final model: as good as v2's? | 01:33 |
-| 25% | mac2638 | `cold_embed` on v2, `recent_new_user=2`, `new_view=1` | A new shopper's recent views x2: better cold conversion than med6134? Same answers for known shoppers | 02:29 |
+| 34% | mab651f | `embed_score` on v4, default settings | One model, v4's recipe | 01:33 |
+| 33% | m09c26e | `embed_blend`: average of v2 and v3 | Average within one recipe | 02:13 |
+| 33% | m9f6fa4 | `embed_blend`: average of v3 and v4 | Average across the two recipes: better than either? | 05:31 |
 
-`arms.txt` is the file the process reads. Read with `handoff/tools/board.py` (official expected conversion).
-Numbers are written here at 03:20, 04:20 and 05:20 UTC without changing the arms.
+`arms.txt` is the file the process reads. Read with `handoff/tools/board.py` from 05:31 UTC. A fresh model from
+the trainer replaces the weakest arm when it has passed its checks.
+
+Pruned at 05:31: `med6134` (v2 alone, weakest in every reading since 02:30) and `mac2638` (recent views x2 for
+new shoppers: no cold gain, −0.21 ± 0.22 against v2).
 
 ## Official scores since 02:30 UTC (`board.py`; four frozen arms)
 

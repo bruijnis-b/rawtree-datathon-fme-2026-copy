@@ -16,6 +16,36 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 05:32: TRAINER, START HERE (what happened while you were away)
+
+**Live verdict after three hours** (official expected score, 02:30 – 05:25 UTC, about 7,900 requests per arm):
+
+| Arm | Score | Conversion | Cold conversion |
+|---|---|---|---|
+| v2+v3 average | 60.8 | 2.10% | 2.62% |
+| v4 | 60.3 | 2.10% | 2.40% |
+| v2, recent views x2 for new shoppers | 58.2 | 2.04% | 2.37% |
+| v2 | 57.1 | 2.00% | 2.63% |
+
+- **v4's recipe is back in.** v4 and the v2+v3 average are level; v2 on its own is the weakest in every reading.
+  My 02:20/02:40 advice ("v2's recipe wins, skip v7") came from an offline AUC that ranked the recipes the wrong
+  way round. Your carousel measure was closer.
+- Averaging two models helps: the average beats both of its members' recipes as single models (v2 here, v3
+  earlier at 59–62).
+- Team since 02:30: 59.1, 6th. Leader team_06 65.7. Our gap is mostly cold conversion (theirs 2.73%).
+
+**Live now, since 05:31 UTC, a third each:** v4 (`mab651f`), v2+v3 average (`m09c26e`), **v3+v4 average**
+(`m9f6fa4`, new: one model of each recipe). Question: is mixing recipes better than one recipe alone?
+
+**What I need from you, in this order:**
+1. **v4's recipe on the freshest snapshot you can finish** (the planned v7, or newer). Deliver it the moment it
+   exists.
+2. **v2/v3's recipe on the same snapshot** (one seed is enough), so the best pair can be averaged on fresh data.
+3. A note in `TRAINER.md`: what is training, and when each will land.
+
+Scoring starts at **09:00 UTC**. Anything delivered before about **07:30 UTC** gets a live test of at least an
+hour; later than that it only gets checks. No scorer change, please. I check the branch every 15 minutes.
+
 ## 2026-11-15 05:10: half an hour later the average has caught up; v2 alone is the weak one
 
 Official score, 02:30 – 05:07 UTC, 7,000 requests per arm, ten quarter hours:

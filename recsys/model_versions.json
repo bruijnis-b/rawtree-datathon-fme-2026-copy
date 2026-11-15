@@ -880,5 +880,34 @@
     "git_commit": "25f93e9",
     "first_live_utc": "2026-11-15T02:29:15+00:00",
     "fingerprint": "58868040793a4c31"
+  },
+  {
+    "public_id": "m9f6fa4",
+    "internal": "embed_blend-v1",
+    "params": {
+      "alpha": 0.0,
+      "boost": 6.0,
+      "cart": 6.0,
+      "ctx": 1.0,
+      "embed_model": "v3@212a8640",
+      "embed_model2": "v4@a59dce63",
+      "floor": 0.12,
+      "live_weight": 0.5,
+      "max_lift": 0.0,
+      "new": 1.0,
+      "prior": 5.0,
+      "recent": 1.0,
+      "rel_price": 0.6,
+      "score_weight": 1.0,
+      "top_n": 30,
+      "trend": 8.0,
+      "use_events": true,
+      "w_cat": 0.0,
+      "w_sub": 0.0
+    },
+    "description": "embed_score with two optional extras, kept in their own policy so embed_score's public IDs do not change.",
+    "git_commit": "27543d8",
+    "first_live_utc": "2026-11-15T05:30:54+00:00",
+    "fingerprint": "d24cff97e5a56dd1"
   }
 ]
