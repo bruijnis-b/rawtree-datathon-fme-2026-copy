@@ -21,6 +21,9 @@ ft:
   half_life_h: 0     # 0 = no recency weighting of live events
   new_user_trunc: false # new users' history truncated to a random k in training (cold-analysis proposal 2)
   new_gain: false    # learn (1 + g * is_new) on the product bias (cold-analysis proposal 3)
+  cart: false        # open cart: pooled into the user vector + learned in-cart score term (cold analysis)
+  cart_window: 50    # events looked back for the open cart
+  min_history_events: 0 # serving: ignore a user's history shorter than this (export meta)
   history_modes: true # evaluate none / snapshot / dynamic history on the live hold-out
   score_affine: null # [a, c] fixed score recalibration (bases trained on all history); null = refit on history week
 

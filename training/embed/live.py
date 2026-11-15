@@ -44,6 +44,7 @@ class Live:
     t_holdout: int  # events at or after this are held out (last 2 h)
     popularity: np.ndarray
     n_hist_products: int
+    a: dict | None = None  # every event (history + all live, any user/product/time), sorted: inputs only (open cart)
 
 
 def build(hist: D.Data, folder: Path, holdout: bool = True) -> Live:
@@ -148,6 +149,14 @@ def build(hist: D.Data, folder: Path, holdout: bool = True) -> Live:
     h = {"user": h_user[o2], "ts": h_ts[o2], "prod": h_prod[o2], "type": h_type[o2]}
     key = h["user"] * D.KEY + h["ts"]
     lo_user = np.searchsorted(key, np.arange(len(users) + 1) * D.KEY)
+    # every event, for the open cart at a sample's time (a user's own past events are inputs, not labels)
+    a_user = np.concatenate([hh["user"], e_user])
+    a_ts = np.concatenate([hh["ts"], e_ts])
+    o3 = np.lexsort((a_ts, a_user))
+    a = {"user": a_user[o3], "ts": a_ts[o3], "prod": np.concatenate([hh["prod"], e_prod])[o3],
+         "type": np.concatenate([hh["type"], e_type])[o3]}
+    akey = a["user"] * D.KEY + a["ts"]
+    a_lo = np.searchsorted(akey, np.arange(len(users) + 1) * D.KEY)
 
     n = len(e_ts)
     rec = np.full((n, F.MAX_RECENT), -1, dtype=np.int64)
@@ -163,6 +172,7 @@ def build(hist: D.Data, folder: Path, holdout: bool = True) -> Live:
     e = {"user": e_user, "ts": e_ts, "prod": e_prod, "type": e_type, "device": e_dev, "region": e_reg,
          "hour": ((e_ts // HOUR_MS) % 24).astype(np.int64), "rv": rec, "disc": disc.astype(np.float32),
          "hist_end": np.searchsorted(key, e_user * D.KEY + hour0), "hist_lo": lo_user[e_user],
+         "cart_end": np.searchsorted(akey, e_user * D.KEY + e_ts), "cart_lo": a_lo[e_user],
          "is_new": new_u[e_user].astype(np.float32)}
 
     # carousels: feedback x requests, with the request context
@@ -189,6 +199,7 @@ def build(hist: D.Data, folder: Path, holdout: bool = True) -> Live:
           "rv": rv, "shown": shown, "click_slot": np.where(cs == 99, -1, cs),
           "purchased": (purchased >= 0) & (purchased == clicked), "is_new": flagged[ri].astype(np.float32),
           "hist_end": np.searchsorted(key, f_user * D.KEY + f_ts // HOUR_MS * HOUR_MS), "hist_lo": lo_user[f_user],
+          "cart_end": np.searchsorted(akey, f_user * D.KEY + f_ts), "cart_lo": a_lo[f_user],
           "prop": np.ones((len(ri), 10), np.float32)}
     tr = (e_ts < t_hold) & ~held_u[e_user]
     pop = np.bincount(e_prod[(e_type == 2) & tr], minlength=P).astype(np.float64)
@@ -196,4 +207,4 @@ def build(hist: D.Data, folder: Path, holdout: bool = True) -> Live:
          f"{held_u.sum()} held-out users, {len(ri)} carousels ({time.time() - t0:.0f}s)")
     return Live(product_ids=pids, prod=prod, new_product=is_new_p, heldout_products=held_p, user_ids=users,
                 new_user=new_u, heldout_users=held_u, h=h, e=e, f=fr, t_end=t_end, t_holdout=t_hold, popularity=pop,
-                n_hist_products=P0)
+                n_hist_products=P0, a=a)

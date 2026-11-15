@@ -108,6 +108,17 @@ class FineTuner:
         e = lv.e
         self.E = {k: t(v) for k, v in e.items() if k != "ts"}
         self.h_prod, self.h_type = t(lv.h["prod"]), t(lv.h["type"])
+        self.a_prod, self.a_type = t(lv.a["prod"]), t(lv.a["type"])
+        self.a_bounds = np.searchsorted(lv.a["user"], np.arange(len(lv.user_ids) + 1))
+        self.use_cart = bool(cfg.ft.get("cart", False))
+        if not hasattr(m, "cart_w"):
+            # open cart (carted, not bought since): pooled into the user vector through a zero-start adapter, and a
+            # learned score term for a candidate that is in the cart (cold analysis: odds ratio 5-6 for a purchase)
+            m.cart_w = torch.nn.Linear(m.d + 1, m.d, bias=False).to(self.dev)
+            torch.nn.init.zeros_(m.cart_w.weight)
+            m.cart_beta = torch.nn.Parameter(torch.tensor(0.0, device=self.dev))
+        for p_ in (m.cart_w.weight, m.cart_beta):
+            p_.requires_grad_(self.use_cart)
         self.page_org = tr.data.vocab["page"][F.ORGANIC_PAGE]
         train = (e["ts"] < lv.t_holdout) & ~lv.heldout_users[e["user"]] & ~lv.heldout_products[e["prod"]]
         self.org_idx = np.flatnonzero(train)
@@ -150,7 +161,46 @@ class FineTuner:
         """Per-row product bias [rows, P]: b scaled by (1 + new_gain) for new users."""
         return b[None] * (1 + self.tr.model.new_gain * is_new[:, None])
 
-    def users(self, V, part, idx, page=None, train=True, no_hist=None):
+    def open_cart(self, end, lo, exclude=None):
+        """Products in the user's open cart before `end` (events [lo, end) of the all-events source): added to cart
+        and not bought since, within the last ft.cart_window events, each product once. -> (products, mask) [B, W]."""
+        W = int(self.cfg.ft.get("cart_window", 50))
+        pos = end[:, None] - 1 - torch.arange(W, device=self.dev)[None]
+        valid = pos >= lo[:, None]
+        pp = self.a_prod[pos.clamp(min=0)]
+        tt = self.a_type[pos.clamp(min=0)]
+        cart, buy = valid & (tt == 1), valid & (tt == 2)
+        newer = torch.ones(W, W, device=self.dev, dtype=torch.bool).tril(-1)  # [i, j]: column j is newer than i
+        same = pp[:, :, None] == pp[:, None, :]
+        bought = (same & buy[:, None, :] & newer[None]).any(-1)
+        open_ = cart & ~bought
+        open_ = open_ & ~(same & open_[:, None, :] & newer[None]).any(-1)  # keep the newest add of a product
+        if exclude is not None:
+            open_ = open_ & (pp != exclude[:, None])
+        return pp, open_
+
+    def in_cart(self, cart, cand):
+        """cand [B, K] product indices -> [B, K] bool: candidate is in the row's open cart."""
+        pp, open_ = cart
+        return ((cand[:, :, None] == pp[:, None, :]) & open_[:, None, :]).any(-1)
+
+    def cart_scores(self, cart, P):
+        """[B, P] in-cart indicator for every product."""
+        pp, open_ = cart
+        out = torch.zeros(pp.shape[0], P, device=self.dev)
+        # additive, capped at 1: a plain scatter_ lets a closed or duplicate entry (0) overwrite an open one (1)
+        return out.scatter_add_(1, pp.clamp(min=0), open_.float()).clamp_(max=1.0)
+
+    def add_cart(self, u, V, cart):
+        if not self.use_cart:
+            return u
+        pp, open_ = cart
+        w = open_.float()
+        has = (w.sum(1, keepdim=True) > 0).float()
+        vec = (V[pp] * w[..., None]).sum(1) / w.sum(1, keepdim=True).clamp(min=1)
+        return u + self.tr.model.cart_w(torch.cat([vec * has, has], 1))
+
+    def users(self, V, part, idx, page=None, train=True, no_hist=None, cart_exclude=None, with_cart=False):
         m = self.tr.model
         page_t = part["page"][idx] if page is None else torch.full_like(idx, page)
         ctx = m.context(part["device"][idx], part["region"][idx], page_t, part["hour"][idx])
@@ -173,12 +223,16 @@ class FineTuner:
             hist, hh = m.pool_history(V, self.h_prod[pos.clamp(min=0)], self.h_type[pos.clamp(min=0)], hm)
         else:
             hist, hh = torch.zeros_like(rec), torch.zeros_like(rh)
-        return m.users(ctx, rec, rh, hist, hh, part["is_new"][idx])
+        u = m.users(ctx, rec, rh, hist, hh, part["is_new"][idx])
+        cart = self.open_cart(part["cart_end"][idx], part["cart_lo"][idx], cart_exclude) if self.use_cart else None
+        if cart is not None:
+            u = self.add_cart(u, V, cart)
+        return (u, cart) if with_cart else u
 
     def organic_loss(self, V, b, idx):
         m, E = self.tr.model, self.E
-        u = self.users(V, E, idx, page=self.page_org)
         tgt = E["prod"][idx]
+        u = self.users(V, E, idx, page=self.page_org, cart_exclude=tgt)
         logits = u @ V[tgt].T + self.bias(b[tgt], E["is_new"][idx]) + m.disc_beta * E["disc"][idx][None] - self.logq[tgt][None]
         same = tgt[:, None] == tgt[None]
         eye = torch.eye(len(idx), device=self.dev, dtype=torch.bool)
@@ -186,11 +240,13 @@ class FineTuner:
 
     def feedback_loss(self, V, b, idx):
         m, S = self.tr.model, self.Fb
-        u = self.users(V, S, idx)
+        u, cart = self.users(V, S, idx, with_cart=True)
         shown = S["shown"][idx]
         valid = (shown >= 0) & ~self.held_p[shown.clamp(min=0)]
         x = (u[:, None] * V[shown.clamp(min=0)]).sum(-1) + b[shown.clamp(min=0)] * (
             1 + m.new_gain * S["is_new"][idx][:, None])
+        if cart is not None:
+            x = x + m.cart_beta * self.in_cart(cart, shown.clamp(min=0)).float()
         k = torch.arange(10, device=self.dev)[None].expand_as(shown)
         sl = m.slot[k, S["device"][idx][:, None].expand_as(shown)]
         click = (k == S["click_slot"][idx][:, None]) & valid
@@ -212,7 +268,7 @@ class FineTuner:
         if what == "new_parts":
             for p in m.parameters():
                 p.requires_grad_(False)
-            for p in (m.w_new, m.e_id.weight, m.b_id.weight, m.p_bias.weight, m.p_bias.bias, m.disc_beta, m.no_id, m.new_gain):
+            for p in (m.w_new, m.e_id.weight, m.b_id.weight, m.p_bias.weight, m.p_bias.bias, m.disc_beta, m.no_id, m.new_gain, m.cart_w.weight, m.cart_beta):
                 p.requires_grad_(True)
         if what in ("new_parts", "freeze_hist_ids"):
             def hook(g):
@@ -298,8 +354,12 @@ class FineTuner:
         for a in range(0, n, 4096):
             idx = self.tr.t(self.vidx[a:a + 4096])
             held = self.tr.t(self.live.heldout_users)[E["user"][idx]]
-            u = self.users(V, E, idx, page=self.page_org, train=False, no_hist=held)
-            top = m.score_from_x(u @ V.T + self.bias(b, E["is_new"][idx])).topk(10, dim=1).indices
+            u, cart = self.users(V, E, idx, page=self.page_org, train=False, no_hist=held,
+                                 cart_exclude=E["prod"][idx], with_cart=True)
+            x = u @ V.T + self.bias(b, E["is_new"][idx])
+            if cart is not None:
+                x = x + m.cart_beta * self.cart_scores(cart, V.shape[0])
+            top = m.score_from_x(x).topk(10, dim=1).indices
             top_new += self.held_p[top].float().sum().item()
             hit[a:a + 4096] = (top == E["prod"][idx][:, None]).any(1).float().cpu().numpy()
         base = np.isin(self.live.e["prod"][self.vidx], self.best).astype(np.float32)
@@ -311,6 +371,52 @@ class FineTuner:
                 "live_lift_all": res["all"]["lift"], "live_lift_cold": res["cold"]["lift"],
                 "live_share_top10_heldout_new": top_new / max(n * 10, 1),
                 "live_share_purchases_heldout_new": float(self.live.heldout_products[self.live.e["prod"][self.vidx]].mean())}
+
+    @torch.no_grad()
+    def evaluate_feedback(self, B=1000):
+        """Live carousel hold-out: our own carousels (feedback) of held-out users or from the last 2 hours, with a
+        click. Rank the whole catalogue as at serving (full context, open cart included); a click counts if the
+        clicked product is in our top 10 (a purchase counts 3x), against live best sellers. Also the share of these
+        clicks that went to an open-cart product, and the lift on that subset."""
+        lv, m, S = self.live, self.tr.model, self.Fb
+        f = lv.f
+        held = (f["ts"] >= lv.t_holdout) | lv.heldout_users[f["user"]]
+        vi = np.flatnonzero(held & (f["click_slot"] >= 0))
+        if not len(vi):
+            return {}
+        m.eval()
+        V, b = self.product_matrix(False)
+        hit = np.zeros(len(vi), np.float32)
+        incart = np.zeros(len(vi), bool)
+        cprod = f["shown"][vi, f["click_slot"][vi]]
+        w = np.where(f["purchased"][vi], 3.0, 1.0).astype(np.float32)
+        for a in range(0, len(vi), 2048):
+            idx = self.tr.t(vi[a:a + 2048])
+            # history as at serving: no hour cut; held-out users keep their own past (inputs, not labels)
+            u, cart = self.users(V, S, idx, train=False, with_cart=True)
+            if cart is None:
+                cart = self.open_cart(S["cart_end"][idx], S["cart_lo"][idx])
+            else:
+                x_c = m.cart_beta * self.cart_scores(cart, V.shape[0])
+            x = u @ V.T + self.bias(b, S["is_new"][idx])
+            if self.use_cart:
+                x = x + x_c
+            top = m.score_from_x(x).topk(10, dim=1).indices
+            cp = self.tr.t(cprod[a:a + 2048])
+            hit[a:a + 2048] = (top == cp[:, None]).any(1).float().cpu().numpy()
+            incart[a:a + 2048] = self.in_cart(cart, cp[:, None])[:, 0].cpu().numpy()
+        base = np.isin(cprod, self.best).astype(np.float32)
+        nu = f["is_new"][vi] > 0
+        masks = {"all": np.ones(len(vi), np.float32), "new_user": nu.astype(np.float32),
+                 "known": (~nu).astype(np.float32), "in_cart": incart.astype(np.float32)}
+        res, _ = boot_lift(hit * w, base * w, masks, B)
+        m.train()
+        out = {"fb": res, "fb_lift_all": res["all"]["lift"], "fb_lift_new_user": res["new_user"]["lift"],
+               "fb_hit_all": float((hit * w).sum() / w.sum()), "fb_clicks": int(len(vi)),
+               "fb_share_clicks_in_cart": float(incart.mean())}
+        if incart.any():
+            out["fb_hit_in_cart"] = float(hit[incart].mean())
+        return out
 
     @torch.no_grad()
     def history_modes(self, lengths=(1, 3, 5, 10, 20, 50, 100), B=300):
@@ -389,11 +495,15 @@ class FineTuner:
         m.eval()
         w = {k: v.detach().cpu().numpy().astype(np.float32) for k, v in m.state_dict().items()}
         w.pop("disc_beta", None)
+        if not self.use_cart:
+            w.pop("cart_w.weight", None)
+            w.pop("cart_beta", None)
         w["type_w"] = m.type_w.detach().cpu().numpy()
         d = tr.data
         meta = {"vocab": d.vocab, "sub_mean": d.sub_mean, "global_mean": d.global_mean, "use_desc": m.use_desc,
                 "use_price": m.use_price, "pooling": m.pooling, "recency": float(m.recency), "dim": m.d,
-                "history_len": m.hist_len}
+                "history_len": m.hist_len, "min_history_events": int(self.cfg.ft.get("min_history_events", 0)),
+                "cart_window": int(self.cfg.ft.get("cart_window", 50))}
         np.savez(out / "model.npz", **w, meta__json=np.array(json.dumps(meta)),
                  meta__id_products=lv.product_ids.astype(str), meta__id_has=self.has_id.cpu().numpy())
         with torch.no_grad():
@@ -411,7 +521,20 @@ class FineTuner:
                 hm = (pos >= torch.as_tensor(lo[uu], device=self.dev)[:, None]).float()
                 vec, _ = m.pool_history(V, self.h_prod[pos.clamp(min=0)], self.h_type[pos.clamp(min=0)], hm)
                 vecs[a:a + 8192] = vec.cpu().numpy()
-            np.savez(out / "user_vectors.npz", user_ids=lv.user_ids[uw].astype(str), vectors=vecs)
+            extra = {"counts": (hi - lo)[uw].astype(np.int32)}
+            if self.use_cart:  # each user's open cart at export time, from every event of the user
+                ab = self.a_bounds
+                ids, off = [], [0]
+                for a in range(0, len(uw), 8192):
+                    uu = uw[a:a + 8192]
+                    pp, op = self.open_cart(torch.as_tensor(ab[uu + 1], device=self.dev),
+                                            torch.as_tensor(ab[uu], device=self.dev))
+                    pp, op = pp.cpu().numpy(), op.cpu().numpy()
+                    for r in range(len(uu)):
+                        ids += [str(lv.product_ids[q]) for q in pp[r][op[r]]]
+                        off.append(len(ids))
+                extra.update(cart_ids=np.array(ids, dtype=str), cart_off=np.array(off, dtype=np.int64))
+            np.savez(out / "user_vectors.npz", user_ids=lv.user_ids[uw].astype(str), vectors=vecs, **extra)
         return self.parity(out, V)
 
     @torch.no_grad()
@@ -459,10 +582,17 @@ class FineTuner:
             rv = [p for p in e["rv"][i] if p >= 0]
             rv_t = torch.as_tensor([[-1] * (len(e["rv"][i]) - len(rv)) + rv], device=self.dev)
             rec, rh = m.pool_recent(V, rv_t, ctx)
-            has = j is not None and m.hist_len > 0
+            has = j is not None and m.hist_len > 0 and (sc.user_counts is None or sc.user_counts[j] >= sc.min_hist)
             hist = torch.as_tensor(sc.user_vecs[j] if has else np.zeros(m.d, np.float32), device=self.dev)[None]
             u = m.users(ctx, rec, rh, hist, torch.tensor([[1.0 if has else 0.0]], device=self.dev), E["is_new"][ii])
-            ts_ = m.score_from_x(u @ V.T + self.bias(b, E["is_new"][ii]))[0].cpu().numpy()[order.argsort()]
+            x = u @ V.T + self.bias(b, E["is_new"][ii])
+            if self.use_cart and j is not None:
+                uix = int(e["user"][i])
+                cart = self.open_cart(torch.as_tensor([self.a_bounds[uix + 1]], device=self.dev),
+                                      torch.as_tensor([self.a_bounds[uix]], device=self.dev))
+                u = self.add_cart(u, V, cart)
+                x = u @ V.T + self.bias(b, E["is_new"][ii]) + m.cart_beta * self.cart_scores(cart, V.shape[0])
+            ts_ = m.score_from_x(x)[0].cpu().numpy()[order.argsort()]
             gap = max(gap, float(np.abs(ts_ - ns).max()))
         lat = np.array(lat)
         return {"parity_max_abs": gap, "product_parity_max_abs": prod_gap,
@@ -478,6 +608,9 @@ def main(cfg: DictConfig) -> None:
     ref = ft.evaluate(B=200) if int(cfg.ft.epochs) > 0 else None
     ft.fit()
     r = ft.evaluate(B=1000)
+    fb = ft.evaluate_feedback()
+    if fb:
+        ivan.log_records("feedback_holdout", [dict(slice=k, **v) for k, v in fb.pop("fb").items()])
     hm = ft.history_modes() if cfg.ft.get("history_modes", True) else []
     if hm:
         ivan.log_records("history_modes", hm)
@@ -501,7 +634,7 @@ def main(cfg: DictConfig) -> None:
     torch.save(ft.tr.model.state_dict(), out / "model.pt")
     hm_summary = {f"hm_{h['mode']}_{h['length']}_{h['slice']}": h["lift"] for h in hm
                   if h["slice"] in ("all", "cold", "new_user")}
-    summary = {**recal, **serve, **hm_summary, "live_share_purchases_heldout_new": r.get("live_share_purchases_heldout_new"),
+    summary = {**recal, **serve, **hm_summary, **fb, "cart_beta": float(ft.tr.model.cart_beta.item()), "live_share_purchases_heldout_new": r.get("live_share_purchases_heldout_new"),
                "calibration_max_err": hc.get("calibration_max_err") if hc else None,
                "live_objective": r["live_objective"], "live_objective_se": r["live_objective_se"],
                "live_lift_all": r["live_lift_all"], "live_lift_cold": r["live_lift_cold"],
