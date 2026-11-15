@@ -16,6 +16,37 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 01:46: offline, v2, v3 and v4 all beat v1 clearly; v2 is champion
+
+**Offline, on our logged answers after 00:59 UTC** (the end of v3's and v4's training data; 6,137 answers, 60,610
+shown products, 136 purchases; the same rows for every model; ± is one standard error from a bootstrap over
+answers). AUC is for purchase; "rank" is the place the model gives the bought product among the 10 shown (1 = top).
+
+| | v1 | v2 | v3 | v4 |
+|---|---|---|---|---|
+| AUC, all | 0.838 | 0.897 | 0.901 | 0.893 |
+| Gain over v1 | | +0.058 ± 0.012 | +0.063 ± 0.012 | +0.055 ± 0.009 |
+| Rank of the bought product, all | 3.88 | 3.07 | 3.06 | 3.38 |
+| AUC, new shoppers (49 purchases) | 0.844 | 0.897 | 0.881 | 0.894 |
+| Rank, new shoppers | 3.59 | 2.78 | 3.04 | 3.06 |
+| AUC, known shoppers (87 purchases) | 0.834 | 0.895 | 0.910 | 0.891 |
+| Rank, known shoppers | 4.03 | 3.23 | 3.07 | 3.56 |
+
+- v2, v3 and v4 are each 4–6 standard errors above v1. The 100-event history is the common factor.
+- Among the three there is no decision yet (differences under one standard error). v4 ranks the bought product
+  a little lower than v2 and v3 (3.38 against 3.07), mostly for known shoppers.
+- Caution: from 01:10 some of these answers were chosen by v2 or v3 themselves.
+
+**Live, 01:10:40 – 01:42 UTC:** v2 3.05% ± 0.48 against v1 1.94% ± 0.30 (1.95 standard errors; table in `LIVE.md`).
+
+**Decision:** v2 is champion (higher offline, higher live). v1 drops to 15% as a reference and is pruned at 02:10
+unless it catches up. Shares: v2 30%, v3 30%, v4 25%, v1 15%.
+
+**For the trainer:** on purchases, v1's configuration with a long history (v4) is not ahead of v2's recipe so
+far: offline equal or slightly behind, live too early. Do not fix the final choice on the carousel-click measure
+alone. If v5 can be either recipe, the purchase evidence does not yet say which; training **both** on the 03:30
+snapshot would let the live test decide.
+
 ## 2026-11-15 01:42: v2 is back; it led v1 in its first 22 minutes
 
 I took v2 off at 01:33 to make room for v4 without first looking at its numbers. That was a mistake:

@@ -1,30 +1,31 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 01:42 UTC. Code: branch `run/live-ab`, restarted 01:10:33 UTC (v2's scorer, shopper
+Updated: 2026-11-15 01:46 UTC. Code: branch `run/live-ab`, restarted 01:10:33 UTC (v2's scorer, shopper
 history of 100 events).
 
 ## Live now
 
 | Share | Public ID | Arm | Question | Live since |
 |---|---|---|---|---|
-| 25% | m2b37f8 | `embed_score` on v1, default settings | Champion | 23:37 |
-| 25% | med6134 | `embed_score` on v2, default settings | Ahead of v1 in its first 22 minutes (below): does it hold? | 01:10 (off 01:33 – 01:39) |
-| 25% | m0cba68 | `embed_score` on v3, default settings | v2's recipe on all data: better than v2 and v1? | 01:20 |
-| 25% | mab651f | `embed_score` on v4, default settings | The trainer's final candidate: better than v1, v2, v3? | 01:33 |
+| 30% | med6134 | `embed_score` on v2, default settings | **Champion since 01:45** | 01:10 (off 01:33 – 01:39) |
+| 30% | m0cba68 | `embed_score` on v3, default settings | v2's recipe on all data: better than v2? | 01:20 |
+| 25% | mab651f | `embed_score` on v4, default settings | The trainer's final candidate: better than v2 and v3? | 01:33 |
+| 15% | m2b37f8 | `embed_score` on v1, default settings | Old champion, kept as reference until 02:10; pruned then unless it catches up | 23:37 |
 
-`arms.txt` is the file the process reads. Waiting for: live requests on these four (each collects about 50
-purchases per hour). Next comparison at 02:40 UTC, sooner if a gap of two standard errors shows.
+`arms.txt` is the file the process reads. Waiting for: live requests, about 55–60 purchases per hour on v2 and
+v3, 50 on v4. Next comparison at 02:35 UTC, sooner if a gap of two standard errors shows.
 
-## Conversion since v2 went live
+## Conversion since v2 went live (01:10:40 – 01:42 UTC)
 
-| Period (UTC) | Arm | Answers | Purchases | Conversion (± 1 s.e.) | New shoppers |
+| Arm | Answers | Purchases | Conversion (± 1 s.e.) | Clicks | New shoppers |
 |---|---|---|---|---|---|
-| 01:10 – 01:33 | v1 (m2b37f8) | 1,566 | 28 | 1.79% ± 0.33 | 9 of 447, 2.01% |
-| 01:10 – 01:33 | v2 (med6134) | 1,127 | 35 | 3.11% ± 0.52 | 16 of 338, 4.73% |
-| 01:20 – 01:33 | v3 (m0cba68) | 741 | 20 | 2.70% ± 0.60 | 7 of 210, 3.33% |
-| 01:20 – 01:33 | v1, same 13 minutes | 786 | 14 | 1.78% ± 0.47 | 5 of 219, 2.28% |
+| v1 (m2b37f8) | 2,114 | 41 | 1.94% ± 0.30 | 5.8% | 15 of 608, 2.47% |
+| v2 (med6134) | 1,277 | 39 | 3.05% ± 0.48 | 6.9% | 19 of 387, 4.91% |
+| v3 (m0cba68), from 01:20 | 1,259 | 32 | 2.54% ± 0.44 | 6.9% | 12 of 343, 3.50% |
+| v4 (mab651f), from 01:33 | 469 | 9 | 1.92% ± 0.63 | 6.2% | 4 of 134, 2.99% |
 
-v2 is 2.1 standard errors above v1 over its 22 minutes. Short, but it agrees with the offline AUC.
+The arms started at different times, so compare each with v1 over its own period (see `FINDINGS.md`). v4 has
+9 purchases: nothing to read yet.
 
 ## Conversion, 00:18 – 01:08 UTC (all three ran side by side)
 
