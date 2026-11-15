@@ -414,8 +414,49 @@ class FineTuner:
         out = {"fb": res, "fb_lift_all": res["all"]["lift"], "fb_lift_new_user": res["new_user"]["lift"],
                "fb_hit_all": float((hit * w).sum() / w.sum()), "fb_clicks": int(len(vi)),
                "fb_share_clicks_in_cart": float(incart.mean())}
+        out.update(self.purchase_auc(V, b))
         if incart.any():
             out["fb_hit_in_cart"] = float(hit[incart].mean())
+        return out
+
+    @torch.no_grad()
+    def purchase_auc(self, V, b, B=500):
+        """The server's offline measure: on held-out carousels with a purchase (held-out users or the last 2 hours),
+        the AUC of the purchased product against the other shown products, by model score (0.5 = random). Also
+        for new and known shoppers, and the mean rank of the bought product among the 10 (1 = top)."""
+        lv, m, S = self.live, self.tr.model, self.Fb
+        f = lv.f
+        held = (f["ts"] >= lv.t_holdout) | lv.heldout_users[f["user"]]
+        vi = np.flatnonzero(held & f["purchased"] & (f["click_slot"] >= 0))
+        if not len(vi):
+            return {}
+        m.eval()
+        auc = np.zeros(len(vi), np.float32)
+        rank = np.zeros(len(vi), np.float32)
+        for a in range(0, len(vi), 2048):
+            idx = self.tr.t(vi[a:a + 2048])
+            u = self.users(V, S, idx, train=False)
+            shown = S["shown"][idx]
+            valid = shown >= 0
+            x = (u[:, None] * V[shown.clamp(min=0)]).sum(-1) + b[shown.clamp(min=0)] * (
+                1 + m.new_gain * S["is_new"][idx][:, None])
+            sc = m.score_from_x(x)
+            cs = S["click_slot"][idx]
+            c = sc.gather(1, cs[:, None])
+            others = valid & (torch.arange(10, device=self.dev)[None] != cs[:, None])
+            gt = ((c > sc).float() + 0.5 * (c == sc).float()) * others
+            auc[a:a + 2048] = (gt.sum(1) / others.sum(1).clamp(min=1)).cpu().numpy()
+            rank[a:a + 2048] = (1 + ((sc > c) & others).float().sum(1)).cpu().numpy()
+        nu = f["is_new"][vi] > 0
+        rng = np.random.default_rng(0)
+        boot = np.array([auc[rng.integers(0, len(auc), len(auc))].mean() for _ in range(B)])
+        m.train()
+        out = {"pauc_all": float(auc.mean()), "pauc_se": float(boot.std()), "pauc_n": int(len(vi)),
+               "pauc_rank": float(rank.mean())}
+        if nu.any():
+            out["pauc_new_user"] = float(auc[nu].mean())
+        if (~nu).any():
+            out["pauc_known"] = float(auc[~nu].mean())
         return out
 
     @torch.no_grad()
