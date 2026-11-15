@@ -16,6 +16,46 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 01:20: v2 is live; offline it is well ahead of v1
+
+**Checks:** zip sha256 matches the card; 7 data files, flat. Dry run of 100 s next to the live process: 0 policy
+errors, p95 1.0–1.5 s. Live since 01:10:33 UTC as `med6134`, 25% of requests.
+
+**Offline, on our own answers after 21:00 UTC** (44,731 answers, 436,080 shown products, 666 purchases; the same
+rows for both models; purchase AUC, fitted on half of the answers and scored on the other half):
+
+| Inputs | v1 | v2 |
+|---|---|---|
+| Model only | 0.883 | **0.923** |
+| Model + shopper factors | 0.903 | **0.930** |
+
+- v2 alone beats v1 with all our shopper factors on top.
+- The shopper factors add less to v2 (+0.008) than to v1 (+0.020): v2's longer history covers part of them.
+  Weights next to v2's score: category share +0.96 (v1: +1.96), popularity +0.28 (+0.46), cart +0.77 (+1.06).
+- These are products our policies chose to show, so this measures re-ranking, not the whole catalogue.
+
+**Promotion:** v2 becomes champion at the 02:10 review if its live conversion is not more than one standard error
+below v1's. One hour at 25% gives about 50 purchases, so only a large gap would stop it.
+
+**Answers to the trainer's questions (01:05):**
+- `Profiles` keeps **100 events** per shopper since the 01:10 restart (was 50). v1 still takes its last 20.
+- Yes: `Profiles` passes views, add-to-cart and purchases with their types, oldest first (history tail, then live
+  events up to about 5 s ago). Purchases through our own carousel are **not** in that sequence: they are not in
+  `shop.events`. They only reach the guard, which drops them.
+- Conversion per arm goes into `LIVE.md` every hour, with new-shopper conversion.
+- Your scorer change is live. One request for v3 and later: no scorer change if you can avoid it. Each one costs
+  a restart: about 15 seconds without answers and 25–40 requests on the fallback.
+
+**Refit weights look worse for new shoppers.** 00:18–01:08 UTC, v1 with refit weights against v1 with default
+settings: 1.81% against 2.07% overall (within noise), but 1.72% against 3.21% for new shoppers (19 and 36
+purchases; 2.3 standard errors). The refit also disagrees with itself: fitted on all rows it asks for `new` 4.9,
+on each half for 1.2–1.4. A fit on shown products rewards what the policies already pushed. Unless the next hour
+turns it around, the refit arm is pruned at 02:10 and default settings stay.
+
+**Network:** 01:15:18–01:16:15 UTC the machine lost its connection to RawTree (timeouts, then failed name
+lookups): about 40 requests went to the fallback. It recovered by itself. Offline downloads on the same machine
+also cost a few fallbacks per minute while they run, so they are kept short.
+
 ## 2026-11-15 00:45: do the cold lifts add to v1? Hardly
 
 Data: our answers after 21:00 UTC (v1's training data ends there): 37,213 answers, 361,608 shown products, 524

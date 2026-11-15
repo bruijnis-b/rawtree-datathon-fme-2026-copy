@@ -25,7 +25,7 @@ drops them from every answer).
 
 Each shopper's last MAX_EVENTS events are also kept in time order (history tail, then live), for the embedding
 models: `events(user_id)` gives the sequence they were trained on (see recsys/embeddings.py). Stored as compact
-int arrays (~15 MB for 60,000 shoppers).
+int arrays (~30 MB for 60,000 shoppers).
 """
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ STEP_MIN = 30     # at most this many minutes of events per query (~120,000 rows
 POLL_S = 2.0      # pause between reads once caught up
 LAG_S = 3         # read up to this many seconds ago
 HISTORY_CHUNKS = 8  # history is read in this many queries (by shopper hash), to stay under the 30 s limit
-MAX_EVENTS = 50   # events kept per shopper in time order, for the embedding models (they use their last 20-50)
+MAX_EVENTS = 100  # events kept per shopper in time order, for the embedding models (they use their last 20-100)
 FEEDBACK_POLL_S = 5.0  # pause between reads of our own carousel purchases
 FEEDBACK_WINDOW_MIN = 20  # each read looks back this far (purchases are re-read; adding is idempotent)
 EVENT_TYPES = ("view", "add_to_cart", "purchase")  # anything else is stored as "other"

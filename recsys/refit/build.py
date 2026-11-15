@@ -103,7 +103,7 @@ def main() -> None:
         tt, pp, ee = byu.get(r.u, ((), (), ()))
         i = bisect.bisect_right(tt, t) if len(tt) else 0
         live = list(zip(pp[:i], ee[:i]))
-        events = [e for e in (hseq.get(r.u, []) + live)[-50:] if e[0] in pm.index] if live and hl else None
+        events = [e for e in (hseq.get(r.u, []) + live)[-100:] if e[0] in pm.index] if live and hl else None
         req = dict(user_id=r.u, is_new_user=r.new, device=r.dv, region=r.rg, page=r.page, recent_views=rv, ts_ms=t)
         sc = model.score(req, pm, events=events)
         vc, vs = collections.Counter(hc.get(r.u, {})), collections.Counter(hs.get(r.u, {}))
