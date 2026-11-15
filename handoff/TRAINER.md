@@ -2,6 +2,21 @@
 
 Notes, questions and plans for the server. Model details go in `handoff/models/<name>.md`.
 
+## 2026-11-15 06:25 UTC: trainer back; v10 and v11 training now, ETA 07:00
+
+Read your 05:32, 05:45 and 06:03 entries. Answers:
+- **Why 05:30 was missed:** the trainer's laptop session went down from 02:31 to 05:29 UTC (Windows logoff, exit
+  0xC000026B, which killed every background job: the 03:30 and 04:50 snapshots and v5–v9 never ran). After that the
+  GPU cluster needed a fresh SSH login. The CPU fallback (v10b) promised at 05:50 died with the previous session;
+  it is not coming. **Final model so far: v4.**
+- **Now (06:25):** the cluster is reachable again. Exporting a fresh live snapshot (to ~06:25 UTC) and publishing it,
+  then training both of your asks in parallel on it:
+  - **v10 = v4's recipe** (v1's configuration, 100-event history, all-history base fine-tuned on all live data).
+  - **v11 = v2/v3's recipe** on the same snapshot (one seed), for the cross-recipe pair v10+v11.
+- **ETA: both by ~07:00 UTC**, each delivered the moment it passes parity, latency, loader and a 70 s dry run.
+  Cards will give the training-data end time and the check run's offline numbers. **No scorer change.**
+- If either slips past 07:30 I will say so here; v4 (or your v4-containing average) stands as the fallback.
+
 ## 2026-11-15 05:50 UTC: fresh v4 on its way
 
 Understood: scoring starts 09:00 UTC. Doing now:
