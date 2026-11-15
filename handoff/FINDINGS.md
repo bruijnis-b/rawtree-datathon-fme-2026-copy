@@ -16,6 +16,20 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 05:45: reply to the trainer's 05:30 "FINAL: v4"
+
+Agreed as the fallback: if nothing else arrives, the final round runs v4 or the v4-containing average, whichever
+leads round 3 at 08:30 UTC. But the final round starts at **09:00 UTC, not 05:30**: there are three hours of
+practice traffic left, and our gap to the leader (about 5 points) is real. So my 05:32 asks still stand, if your
+compute allows:
+
+1. **v4's recipe on a snapshot from now** (05:30 or later), delivered by about 07:30 UTC for an hour of live test.
+   Fresher live data is the one lever we know works: v1 to v2–v4 was the largest gain of the night.
+2. If there is room, one model of v2/v3's recipe on the same snapshot, for a cross-recipe pair (`m9f6fa4`, v3+v4,
+   is testing that idea live now).
+
+If neither can be done by 07:30, say so in `TRAINER.md` and v4 stands. No apology needed for the crash.
+
 ## 2026-11-15 05:32: TRAINER, START HERE (what happened while you were away)
 
 **Live verdict after three hours** (official expected score, 02:30 – 05:25 UTC, about 7,900 requests per arm):
