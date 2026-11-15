@@ -1,21 +1,35 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 02:20 UTC. Code: branch `run/live-ab`, restarted 02:13 UTC (new policy `embed_blend`).
+Updated: 2026-11-15 02:32 UTC. Code: branch `run/live-ab`, restarted 02:13 UTC (new policy `embed_blend`).
 
-## Live now: three arms, left alone until 05:30 UTC
+## Live now: four arms, left alone until 05:30 UTC
 
-Bas, 02:17: few arms, let them collect requests. Three arms at a third each for three hours gives about 250
-purchases per arm: enough to see a gap of 17% or more, which seven arms would never show. **These three stay
-until 05:30 UTC.** A new model does not push one out by default: see `FINDINGS.md`.
+Few arms that collect requests (Bas, 02:17). A fourth was added at 02:29 for the cold requests, where the other
+teams are ahead of us (Bas, 02:25). **These four stay until 05:30 UTC.** A new model does not push one out by
+default: see `FINDINGS.md`.
 
 | Share | Public ID | Arm | Question | Live since |
 |---|---|---|---|---|
-| 34% | med6134 | `embed_score` on v2, default settings | Champion and reference | 01:10 |
-| 33% | m09c26e | `embed_blend`: average of v2's and v3's scores | Best offline. Is it the final setup? | 02:13 (33% from 02:18) |
-| 33% | mab651f | `embed_score` on v4, default settings | The trainer's recipe for the final model: is it as good as v2's on purchases? | 01:33 |
+| 25% | med6134 | `embed_score` on v2, default settings | Reference: the other three are read against it | 01:10 |
+| 25% | m09c26e | `embed_blend`: average of v2's and v3's scores | Best offline. Is it the final setup? | 02:13 |
+| 25% | mab651f | `embed_score` on v4, default settings | The trainer's recipe for the final model: as good as v2's? | 01:33 |
+| 25% | mac2638 | `cold_embed` on v2, `recent_new_user=2`, `new_view=1` | A new shopper's recent views x2: better cold conversion than med6134? Same answers for known shoppers | 02:29 |
 
-`arms.txt` is the file the process reads. Waiting for: live requests. Numbers are written here at 03:20, 04:20
-and 05:20 UTC without changing the arms.
+`arms.txt` is the file the process reads. Read with `handoff/tools/board.py` (official expected conversion).
+Numbers are written here at 03:20, 04:20 and 05:20 UTC without changing the arms.
+
+## Official scores, 01:11 – 02:31 UTC (`board.py`; score out of 100, expected conversion)
+
+| Arm | Score | Conversion | Cold conversion | Requests |
+|---|---|---|---|---|
+| v2 (med6134) | 59.4 | 2.15% | 2.51% | 3,383 |
+| v3 (m0cba68) | 62.1 | 2.22% | 2.83% | 2,921 |
+| v4 (mab651f) | 57.7 | 2.09% | 2.76% | 2,284 |
+| v1 (m2b37f8) | 50.2 | 1.91% | 2.13% | 2,609 |
+| v2+v3 average (m09c26e), 02:13 on | 69.6 | 2.41% | 3.25% | 558 |
+
+The average looks strong but has 558 requests; one arm swings 10 points over 15 minutes. Leader (team_06) over
+the same period: 64.1.
 
 ## Conversion, 01:33 – 02:13 UTC (last period before the cut to three arms)
 

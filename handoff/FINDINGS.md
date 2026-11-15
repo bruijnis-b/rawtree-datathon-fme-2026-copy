@@ -16,6 +16,59 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 02:32: cold requests, where we lose to the other teams
+
+Logged answers of the model arms (v1–v4) since 23:37 UTC, 14,304 answers. Purchases counted, so read the sizes,
+not the decimals.
+
+**Who is cold:**
+
+| Request | Share of answers | Conversion | Recent views |
+|---|---|---|---|
+| New shopper, 1–2 recent views | 13.5% | 4.11% | 1.5 |
+| New shopper, 3+ recent views | 9.9% | 3.39% | 3.9 |
+| New shopper, no recent views (home page) | 6.2% | 1.12% | 0 |
+| Known shopper who viewed a new product | 10.3% | 1.69% | 3.2 |
+| Warm | 60.1% | 1.74% | 1.8 |
+
+Cold is mostly new shoppers with a few views, and they buy twice as often as anyone else.
+
+**What a new shopper with recent views buys from us** (purchase rate per shown product):
+
+| Shown product | Share of slots | Rate |
+|---|---|---|
+| In their cart | 8.5% | 1.5–1.9% |
+| One of their recent views | 2.3–2.9% | 0.9–1.0% |
+| Same category as a view, other subcategory | 26–30% | 0.28–0.41% |
+| Same subcategory as a view | 19–21% | 0.16–0.20% |
+| Anything else | 37–43% | 0.15–0.19% |
+
+- **We show only 14% of a new shopper's recent views; 75% of their answers contain none.** When one is shown it
+  sells five times as often as an unrelated product. `embed_score` has `recent` = 1 because "the model covers
+  recent views". It does not cover the viewed product itself: in training that product is removed from the
+  context (trainer, 01:05).
+- Fitted on top of v2's score, with list position held constant (answers after 21:00 UTC, 869 purchases):
+
+| Factor | New shopper | Known shopper |
+|---|---|---|
+| A recent view itself | **x1.6** (1.3–3.4) | x1.05 (0.8–2.6) |
+| In the cart, not bought | **x3.4** (2.9–4.5) | **x2.6** (1.8–3.5) |
+| Same subcategory as a view | x1.0 | x0.7 |
+| Same category, other subcategory | x1.2 (1.0–1.7) | x1.0 |
+
+- So two wrapper settings are off for cold requests: recent views (x1 live, x1.6 fitted) and cart (x6 live, x3.4
+  fitted for new shoppers, x2.6 for known ones, where cart products fill 37% of the slots).
+- A product from the **same subcategory** as a view sells no better than the model expects, and worse than one
+  from a neighbouring subcategory. More of the same is not what these shoppers buy.
+
+**Live since 02:29 UTC:** `mac2638` = v2 with a new shopper's recent views x2 and nothing else changed. Known
+shoppers get exactly v2's answers, so its cold conversion is read straight against `med6134`'s.
+
+**For the trainer:**
+- The viewed product itself is a blind spot by construction. Can the model get an explicit "this product is in
+  the recent views" input, so it learns the size of the effect per shopper type instead of our flat x2?
+- New shoppers buy from the neighbouring subcategory more than from the viewed one. Does the model see that?
+
 ## 2026-11-15 02:25: our models against the other teams, on the official numbers
 
 The public leaderboard has a per-model view with **expected** conversion (the simulator's probabilities, not the

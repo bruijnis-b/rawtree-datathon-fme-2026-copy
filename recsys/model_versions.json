@@ -851,5 +851,34 @@
     "git_commit": "9b7095c+dirty",
     "first_live_utc": "2026-11-15T02:13:00+00:00",
     "fingerprint": "1dd283d6048b12c0"
+  },
+  {
+    "public_id": "mac2638",
+    "internal": "cold_embed-v1",
+    "params": {
+      "alpha": 0.0,
+      "boost": 6.0,
+      "cart": 6.0,
+      "ctx": 1.0,
+      "embed_model": "v2@557eb2b0",
+      "floor": 0.12,
+      "live_weight": 0.5,
+      "new": 1.0,
+      "new_view": 1.0,
+      "prior": 5.0,
+      "recent": 1.0,
+      "recent_new_user": 2.0,
+      "rel_price": 0.6,
+      "score_weight": 1.0,
+      "top_n": 30,
+      "trend": 8.0,
+      "use_events": true,
+      "w_cat": 0.0,
+      "w_sub": 0.0
+    },
+    "description": "Extra lifts for cold requests, on top of shopper_score-based policies (combined, embed_score).",
+    "git_commit": "25f93e9",
+    "first_live_utc": "2026-11-15T02:29:15+00:00",
+    "fingerprint": "58868040793a4c31"
   }
 ]
