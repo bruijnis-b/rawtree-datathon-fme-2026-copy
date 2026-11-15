@@ -2,6 +2,87 @@
 
 Notes, questions and plans for the server. Model details go in `handoff/models/<name>.md`.
 
+## 2026-11-15 07:30 UTC: FINAL HAND-OFF (trainer side is finished; nothing else comes)
+
+**Server: this is the last entry from the trainer side.** Written by the research session on Jules's request. The
+final models are **v10 and v11** (`handoff/models/`, training data ends 06:24 UTC). No v12/v13, no scorer change,
+no further delivery. Open questions go to Jules in person.
+
+### 1. Research sweep: the embeddings are as good as this recipe gets
+
+22 check runs on snapshot 3 (live hold-out, 2,869 held-out carousel clicks, 2 seeds; seed spread 0.02–0.05).
+Carousel hold-out, all / new shoppers:
+
+| Variant | v10's recipe | v11's recipe |
+|---|---|---|
+| baseline (= v10, v11) | 1.41 / 0.92 | 1.43 / 0.92 |
+| recency weighting, 6 h half-life | 1.41 / 0.92 | 1.43 / 0.90 |
+| 25 % history batches | 1.36 / 0.87 | 1.40 / 0.89 |
+| 4 epochs | 1.37 / 0.87 | 1.32 / 0.78 |
+| lr 1x | 1.38 / 0.88 | 1.29 / 0.72 |
+| learning from our own carousels | 1.15 / 0.68 | 1.03 / 0.56 |
+
+Nothing beats the baseline. The two recipes are level on this snapshot (v10's lead on snapshot 2 is gone).
+
+### 2. Your 07:10 ask: unseen products already get their share, so `new` should stay at 1
+
+- **Held-out products (content only), check runs of v10 and v11:** 0.92 % and 1.19 % of top-10 slots against 0.73 %
+  of purchases (1.3x and 1.6x). By your own exception in the 07:20 verdict, `new` stays at 1.
+- **Live, the same thing:** the 100 products released at 02:00 UTC were unseen by v2, v3 and v4. 02:30–05:25 they
+  got 2.4 % (v4) to 3.9 % (v2) of our slots against 2.0 % of organic purchases, and sold 1.8 per 1,000 showings
+  against 2.0 for old products (20 purchases in 10,930 showings).
+- **Why your fits ask for x2.3:** the premium is in products that have been out for hours, not in fresh ones.
+  All team answers of the practice day, per showing against the slot average, viewed products left out:
+
+  | Product age when shown | Showings | Purchases | vs slot average |
+  |---|---|---|---|
+  | 0–1 h | 4,330 | 3 | 0.56x |
+  | 1–4 h | 17,548 | 23 | 0.89x |
+  | 4–12 h | 26,737 | 47 | 1.39x |
+  | 12 h+ | 26,629 | 88 | 2.44x |
+
+  Organically a new product is viewed 1.03–1.11x as often as an old one at every age, with the same purchases per
+  view. In the final round every new product is 0–2 h old, so `new=2` would push products that sell at or below
+  average. Small counts in the first two rows (26 purchases): the direction is clear, the size is not.
+- **`new_view` off: agreed.** On requests that viewed a new product, new products of the same category sold 3.7–7x
+  the slot average (32 purchases), other new products 1.5x; organically there is no new-to-new pull (next view is
+  new in 6.9 % of sessions against 6.0 %). A hypothesis, not a setting.
+
+### 3. Pros and cons of what you can run at 09:00
+
+| Setup | For | Against |
+|---|---|---|
+| **v10+v11 average, default settings** (my pick) | 5.5 h more live data than v3+v4, both recipes, same score level, averaging beat single models all night | about two hours of live evidence by 09:00 |
+| v3+v4 average | most live evidence of any pair (since 05:31) | training data ends 00:59 |
+| One model alone | simplest | single models lost to averages in every period |
+| Cold/warm route | none measured | no cold difference above one standard error between any of our arms |
+| Offline-fitted multipliers | cart 2.5 matches the fits on top of the model (x2.6–3.4; the default is x6) | `w_cat`, `w_sub`, `alpha` repeat what the model has (AUC +0.008 on v2); `new=1.5` see section 2; live 63.7 vs 63.0, within noise |
+
+If you change one wrapper setting on the winner, the cart factor is the one with the most support.
+
+### 4. What the models do and do not cover (so nothing is corrected twice)
+
+- **In the model:** product content and identity, shopper history (100 events, history plus live), the request's
+  recent views, device, region, page, hour, `is_new_user`.
+- **Not in the model, yours:** discount (the model gets the original price; its own discount weight is −0.07), stock,
+  already bought, open cart, trend. Checked: outside trend windows the subcategories that trended earlier are not
+  over-shown (3.6 % of slots against 4.8 % of organic purchases).
+- **The viewed product itself** is ranked like any similar product, by design (in the list for 10 % of views, old
+  and new alike). Your x2 test for new shoppers showed no gain; I have nothing that says otherwise.
+
+### 5. What to expect in the final round
+
+- **300 new products at 09:00:** embedded from their fields by your sync; expect them near their organic share of
+  slots (about 5 % of the catalogue). No model knows them by ID; the checks above are on exactly that case.
+- **Trend:** practice trends started every 2 hours at :30 and lasted 45 minutes, one subcategory each (03:30
+  Sneakers, 05:30 Watches). By that schedule the next are 07:30 and 09:30. In the Sneakers window trending products
+  got 7.3 % of our slots against 6.2 % of organic purchases and sold 0.17 % per showing against 0.21 % for the
+  rest: x8 is about right, slightly strong. Conversion inside trend windows equals outside (2.05–2.08 % vs 2.14 %).
+- **Known weak spot:** a new shopper without recent views (6 % of answers, 1.1 % conversion). The model has only
+  device, region, page and hour there. Agreed that 40 purchases support no change.
+- **Calibration:** v10 0.12, v11 0.25 (max decile error). Rankings are unaffected; treat v11's level with care in
+  any refit.
+
 ## 2026-11-15 06:36 UTC: v10 and v11 delivered (training data ends 06:24 UTC)
 
 Both of your asks are on the branch (`0ff21b9`, `01649a8`), 25 minutes early. No scorer change; all checks pass.
