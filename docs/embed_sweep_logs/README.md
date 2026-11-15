@@ -47,6 +47,36 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Cold-request analysis (side session, Sun 00:40–01:30) and what we do with it
+
+Full report: `docs/cold_analysis/README.md` on branch `claude/cold-analysis-50bdea` (not merged). Key points:
+- Organically, new users buy exactly like known users (18.6 % vs 18.4 % of sessions end in a purchase; same
+  categories, prices, top products). **In our carousels they buy 2.87× [2.38, 3.51] as often** (click 1.64×), on every
+  page and device, also on the fixed fallback list. The effect grows with their own live purchases so far.
+- A user-level "buys more" does not change the ranking within a request. What does: the user's **open cart**
+  (odds ratio for a purchase 5–6, both splits), the user's own categories, popularity (more for new users), and an
+  **already-bought product** (odds ratio 0.06). Our policy spends 0.76 of 10 slots per known-user carousel on
+  already-bought products, and 0.06 slots per new-user carousel on open-cart products although half of them have one.
+- Early in a stream new users have almost no history (70 % none in the first hour, median 4 events in the second),
+  while our live hold-out's new users have a median of 20+.
+
+Decisions:
+1. **Split history into views / open cart / purchases (proposal 1): not tonight.** It needs a retrain of the user
+   tower, and our organic-purchase proxy cannot measure it fairly (it removes the purchased product's own events from
+   the history, which is exactly the open cart). **Serving rule for Bas instead** (the report's cheap fallback, in his
+   layer): drop products the user already bought, and put the user's open-cart products (carted, not bought since)
+   first. The bought filter alone frees 7.6 % of known-user impressions.
+2. **Short-history training for new users (proposal 2)** and **`is_new` gain on the product bias (proposal 3)**:
+   implemented as fine-tuning options (`ft.new_user_trunc`, `ft.new_gain`, default off); being tested on the phase C
+   base (`embed-cold`, 2 × 2 × 2 seeds), judged on new users with 0/1/3/5/10 live events (new evaluation lengths).
+3. Proposals 4 (purchase-head offset) and 5 (activity scalars): skipped (calibration is already within target;
+   expected effect within noise).
+4. The 2.87× purchase propensity of new users is a level effect: relevant for Bas's calibration of corrections per
+   user type, not for our ranking.
+
+**Compaction check** (`embed-cmp` + `embed-cmpf`, c_a4_25 + history 100, fold 0, 2 seeds): compacted contexts
+history 4.18 / live 2.444 vs gaps 4.15 / 2.433; parity 7.6e-6. Kept.
+
 ### Phase B2 and the phase C configuration (Sun 00:30–01:05)
 
 `embed-b2` / `embed-b2h`: the 4 best A4 configurations by live score, at their own history length and at 100,
