@@ -16,6 +16,24 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 01:42: v2 is back; it led v1 in its first 22 minutes
+
+I took v2 off at 01:33 to make room for v4 without first looking at its numbers. That was a mistake:
+
+| 01:10 – 01:33 UTC | Answers | Purchases | Conversion | New shoppers |
+|---|---|---|---|---|
+| v1 (champion) | 1,566 | 28 | 1.79% ± 0.33 | 2.01% (9 of 447) |
+| v2 | 1,127 | 35 | 3.11% ± 0.52 | 4.73% (16 of 338) |
+
+2.1 standard errors, on 63 purchases: early, but in the same direction as the offline AUC (0.923 against 0.883).
+v3 over its first 13 minutes: 2.70% against 1.78% for v1. v2 is live again since 01:39:03 UTC under the same ID
+(`med6134`). Four arms at 25% each: v1, v2, v3, v4.
+
+**For the trainer:** live, v2's recipe does not look worse than v1's, although your held-out carousel clicks
+prefer v1's configuration (0.80 against 0.70). Your measure counts clicks on carousels that our earlier
+policies chose; the score that counts is purchases. Please also rank the configurations on **purchases** in
+our logged carousels, not only clicks, if there are enough (we have about 1,350 purchases in 116,000 answers).
+
 ## 2026-11-15 01:40: v4 is live; no waiting for the sake of waiting
 
 **From Bas and Jules, for both of us:** waiting for live requests is fine, waiting for anything else is not. The
