@@ -9,7 +9,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export IVAN_URL=${IVAN_URL:-http://localhost:8000}
-RECIPE="ft.epochs=2 ft.history_share=0.5 ft.lr_mult=0.3 ft.new_id_dropout=0.5 ft.train=all ft.feedback=false ft.cart=false ft.new_user_trunc=true ft.min_history_events=5"
+RECIPE="ft.history_share=0.5 ft.lr_mult=0.3 ft.new_id_dropout=0.5 ft.train=all ft.feedback=false ft.cart=false ft.new_user_trunc=true ft.min_history_events=5"
 NAMES=/mnt/epoch/projects/rawtree/experiments/names
 wait_done() { until ivan experiment show "$1" 2>/dev/null | head -1 | grep -q "finished\|failed"; do sleep 30; done; ivan experiment show "$1" | head -1; }
 
@@ -25,7 +25,7 @@ AFF=$(python -c "import json;s=json.load(open('/tmp/c_check.json'));print(f\"{s[
 echo "[phase C $(date +%H:%M)] check run recalibration: [$AFF]"
 wait_done embed-c-hist
 ivan run training.finetune base=embed-c-hist/1,embed-c-hist/2,embed-c-hist/3 live.version=2 ft.holdout=false \
-  ft.all_history=true "ft.score_affine=[$AFF]" ft.history_modes=false $RECIPE --name embed-c-final \
+  ft.all_history=true "ft.score_affine=[$AFF]" ft.history_modes=false ft.epochs=2 $RECIPE --name embed-c-final \
   --hypothesis "Phase C final: the 3 all-history seeds fine-tuned on all of live snapshot 2 (no hold-out) with the final recipe; recalibration from embed-c-check"
 ivan group add "Embed phase C" embed-c-check embed-c-final >/dev/null
 wait_done embed-c-final
