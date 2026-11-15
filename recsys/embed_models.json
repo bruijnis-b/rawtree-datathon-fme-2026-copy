@@ -2,7 +2,6 @@
   "default": "v4",
   "models": {
     "v0": {
-      "release": "embed-v0",
       "notes": "Sat 22:00 first model, history only (exp-0189); ignores is_new_user",
       "sha256": {
         "model.npz": "fd0169cebeecfad686bca0ba9fe226c73e3d8138c5220fcb59ea75d82a4d0380",
@@ -10,7 +9,6 @@
       }
     },
     "v1": {
-      "release": "embed-v1",
       "notes": "Sat 23:31 CET: b_a2_43 fine-tuned on the live practice stream up to Sat 21:00 UTC (exp-0200); learns is_new_user",
       "sha256": {
         "model.npz": "1dc688389060ba2d3f0b0aad0111714656c2cecd896a402ea87b8208cebbe910",
@@ -18,7 +16,6 @@
       }
     },
     "v2": {
-      "release": "embed-v2",
       "notes": "Based on: history configuration `c_a4_25` with a 100-event history (IVAN `embed-cmp/1`, fold 0), fine-tuned on",
       "sha256": {
         "model.npz": "557eb2b06ac56092d2799788a1741044e1af7b527f27ae30f7382e1230360341",
@@ -26,7 +23,6 @@
       }
     },
     "v3": {
-      "release": "embed-v3",
       "notes": "Based on: v2's configuration (`c_a4_25`, 100-event history), now trained on **all** history (IVAN `embed-c-hist/2`,",
       "sha256": {
         "model.npz": "212a86403b6c284232b899602cf3f45d7803a79cd8f7fce7e88984e1f93745e3",
@@ -34,7 +30,6 @@
       }
     },
     "v4": {
-      "release": "embed-v4",
       "notes": "Based on: **v1's configuration** (`b_a2_43`) with a **100-event history** (v1: 20), trained on all history (IVAN",
       "sha256": {
         "model.npz": "a59dce631cf51de1c4f85f9b1446ef215a8d5f4ad3670edaaff03b5e04aaca99",

@@ -59,7 +59,7 @@ request go unanswered or late because of the policy:
 | `trends.py` | `TrendDetector`: which subcategories are trending right now, from `shop.events` |
 | `popularity.py` | `Popularity`: best-seller rankings from history plus the last hour of live purchases, with new products included |
 | `profiles.py` | `Profiles`: per shopper, the categories viewed, the cart and the purchases, from `shop.events` and `shop.history_events` |
-| `embeddings.py` | `Embeddings`: embedding models as a shared service, per request a purchase log-odds per product; model selection, download and publish (below) |
+| `embeddings.py` | `Embeddings`: embedding models as a shared service, per request a purchase log-odds per product; model selection and publish (below) |
 | `refit/` | Refit `embed_score`'s weights for a model on our live feedback (below) |
 | `guard.py` | Exactly 10 distinct, active IDs; pads from the fallback; reports what it fixed |
 | `model_registry.py` | Opaque public `model_version` IDs and the private log of what they mean |
@@ -167,29 +167,28 @@ their history tail plus the live events, exactly as in training. Do not correct 
 not cover: current discounts, trends, cart and bought-before. Corrections go on top, on the log-odds scale (or as
 odds multipliers: `exp(score) x factor`).
 
-**Choosing a model.** Models are folders under `models/` (gitignored). `recsys/embed_models.json` (tracked) lists
-each one with its checksums and its GitHub release, and names the `default`. Policies built on a model have an
+**Choosing a model.** Models are folders under `models/`, committed to the repo. `recsys/embed_models.json` lists
+each one with its checksums and names the `default`. Policies built on a model have an
 `embed_model` setting (`''` = default). It is resolved to the real name at startup, so each model gets its own
 public ID.
 
 ```bash
-python -m recsys.embeddings list              # models, downloaded or not, * = default
-python -m recsys.embeddings fetch v1          # download from its GitHub release (needs gh, logged in)
+python -m recsys.embeddings list              # models, whether their files match, * = default
 python -m recsys.main --policy embed_score --set embed_model=v0 --dry-run
 python -m recsys.main --policy embed_score --ab embed_score:embed_model=v0    # A/B: default vs v0
-python -m recsys.embeddings publish models/v1 --name v1 [--default]   # Jules: upload a new model
+python -m recsys.embeddings publish path/to/export --name v5 [--default]   # add a model, then commit models/v5
 ```
 
-A model is 2 MB of weights plus ~18 MB of user vectors: too big to commit one per version, so each one is a
-release asset of this (private) repo. A name never changes content: the checksums in the manifest refuse a
+A model is 1-2 MB of weights plus 12-24 MB of user vectors (15-25 MB a model, all versions in the repo). A name
+never changes content: the checksums in the manifest refuse a
 different file under the same name. A model with a new architecture adds its format in `load_backend`;
-policies do not change. A folder path also works as `embed_model` for trying a model that is not published.
+policies do not change. A folder path also works as `embed_model` for trying a model that is not added yet.
 
 ### Final setup (15 Nov)
 
 `arms.final.txt` (repo root): `embed_score` on embedding model **v4**, default settings (the model ranks; on top:
 discount lift, trend x8, cart x6; bought products never shown). Start it with `python -m recsys.main --arms
-arms.final.txt` after `python -m recsys.embeddings fetch v4`. v4 is also the manifest default.
+arms.final.txt`. v4 is also the manifest default.
 
 Why v4, on the official expected score (leaderboard per-model view, 02:30-05:25 UTC, ~7,900 requests per arm):
 

@@ -16,13 +16,12 @@ v0 stays, and Jules tells you.
 
 ## What you get
 
-Each model is a folder under `models/` (gitignored), published as a release asset of this private repo and listed
-in `recsys/embed_models.json` (tracked: name, release, checksums, and which model is the `default`). The scorer is
+Each model is a folder under `models/`, committed to the repo, and listed in `recsys/embed_models.json` (name,
+checksums, and which model is the `default`). The scorer is
 `training/export/scorer.py` (numpy only); `recsys/embeddings.py` serves it to every policy.
 
 ```bash
-python -m recsys.embeddings fetch v0      # once per model (needs gh, logged in)
-python -m recsys.embeddings list          # downloaded or not, * = default
+python -m recsys.embeddings list          # files present and matching, * = default
 ```
 
 | File | Content |

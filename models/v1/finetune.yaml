@@ -1,0 +1,107 @@
+wandb:
+  project: rawtree
+  entity: null
+data:
+  dataset: rawtree_history
+  version: null
+  fold: 0
+  all: false
+history: ${ivan:${data.dataset},${data.version}}
+sweep:
+  method: random
+  run_cap: 80
+  seed: 13
+  metric:
+    name: live_objective
+    goal: maximize
+  hypothesis: A fine-tuning recipe on the live stream beats the history-only model
+    on the live hold-out without forgetting the history
+  parameters:
+    ft.train:
+      values:
+      - all
+      - new_parts
+      - freeze_hist_ids
+    ft.lr_mult:
+      values:
+      - 0.1
+      - 0.3
+      - 1.0
+    ft.epochs:
+      values:
+      - 1
+      - 2
+      - 4
+    ft.history_share:
+      values:
+      - 0.0
+      - 0.5
+      - 0.8
+    ft.feedback:
+      values:
+      - true
+      - false
+    ft.half_life_h:
+      values:
+      - 0
+      - 6
+    ft.new_id_dropout:
+      values:
+      - 0.25
+      - 0.5
+      - 0.75
+      - 1.0
+preset: default
+model:
+  dim: 64
+  hidden: 128
+  id_dropout: 0.25
+  history_dropout: 0.3
+  history_len: 20
+  pooling: recency
+  recency_decay: 0.7
+  slot: learned
+  description: false
+  price: true
+  no_id_offset: true
+organic:
+  mode: joint
+  weight: 1.0
+  logq: true
+  type_weights:
+  - 1.0
+  - 3.0
+  - 6.0
+loss:
+  propensity_clip: 0.0
+  click_weight: 1.0
+train:
+  lr: 0.002
+  weight_decay: 1.0e-05
+  batch_size: 2048
+  epochs: 20
+  epoch_fraction: 1.0
+  seed: 0
+  calibrate_epochs: 0
+  score_affine: null
+eval:
+  every_epoch: true
+  bootstrap: 1000
+  max_organic: 40000
+export:
+  user_vectors: true
+base: embed-b/13
+live:
+  version: 1
+live_data: ${ivan:rawtree_live,${live.version}}
+ft:
+  holdout: true
+  all_history: false
+  train: all
+  lr_mult: 1.0
+  epochs: 2
+  history_share: 0.5
+  feedback: false
+  new_id_dropout: 0.5
+  half_life_h: 0
+  score_affine: null

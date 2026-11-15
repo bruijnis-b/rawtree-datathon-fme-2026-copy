@@ -17,9 +17,8 @@ products are not in it.
 
 ## Which model
 
-Models are named folders under `models/` (gitignored; a few MB to ~20 MB each), listed in
-`recsys/embed_models.json` with their checksums and the GitHub release they are published in. That file also
-names the `default` model. Policies pick one with their `embed_model` setting:
+Models are named folders under `models/`, committed to the repo (15-25 MB each), and listed in
+`recsys/embed_models.json` with their checksums. That file also names the `default` model. Policies pick one with their `embed_model` setting:
 
     python -m recsys.main --policy embed_score                       # the default model
     python -m recsys.main --policy embed_score --set embed_model=v0   # another one
@@ -27,9 +26,8 @@ names the `default` model. Policies pick one with their `embed_model` setting:
 
 The resolved name is part of the policy's settings, so each model gets its own public model ID.
 
-    python -m recsys.embeddings list              # models, which are downloaded, which is the default
-    python -m recsys.embeddings fetch v1          # download one from its GitHub release (needs `gh`)
-    python -m recsys.embeddings publish models/v1 --name v1 [--default]   # upload a new one (Jules)
+    python -m recsys.embeddings list              # models, whether their files match the manifest, the default
+    python -m recsys.embeddings publish path/to/export --name v5 [--default]   # add a new one (then commit models/v5)
 
 ## Live sync
 
@@ -43,7 +41,6 @@ import argparse
 import hashlib
 import json
 import logging
-import subprocess
 import sys
 import threading
 import time
@@ -62,7 +59,7 @@ log = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parent.parent
 MODELS_DIR = ROOT / "models"
 MANIFEST = Path(__file__).resolve().parent / "embed_models.json"
-FILES = ("model.npz", "user_vectors.npz", "README.txt", "metrics.json", "config.yaml")  # published per model
+FILES = ("model.npz", "user_vectors.npz", "README.txt", "metrics.json", "config.yaml")  # kept per model
 CHECKED = ("model.npz", "user_vectors.npz")  # files whose checksum must match the manifest
 SYNC_S = 0.2  # how often the background thread checks the catalogue for new products
 
@@ -103,10 +100,10 @@ def resolve(name: str = "") -> tuple[str, Path]:
         if want is None:
             continue
         if not (folder / f).exists():
-            raise RuntimeError(f"embedding model {name!r} is not downloaded: python -m recsys.embeddings fetch {name}")
+            raise RuntimeError(f"embedding model {name!r} is missing from {folder}: git pull (models are in the repo)")
         if sha256(folder / f) != want:
             raise RuntimeError(f"{folder / f} does not match {MANIFEST.name} (other version of {name!r}?): "
-                               f"delete the folder and run python -m recsys.embeddings fetch {name}")
+                               f"git checkout -- models/{name}")
     return name, folder
 
 
@@ -282,12 +279,7 @@ class Embeddings:
             return self.models[model_id]
 
 
-# ---------------------------------------------------------------- CLI: list, fetch, publish
-def _repo() -> str:
-    return subprocess.run(["gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"], cwd=ROOT,
-                          capture_output=True, text=True, check=True).stdout.strip()
-
-
+# ---------------------------------------------------------------- CLI: list, publish
 def cmd_list(_: argparse.Namespace) -> None:
     m = manifest()
     for name, e in m["models"].items():
@@ -296,27 +288,13 @@ def cmd_list(_: argparse.Namespace) -> None:
             resolve(name)
             state = "ready"
         except RuntimeError:
-            state = "different version on disk" if folder.exists() else "not downloaded"
-        print(f"{'*' if name == m.get('default') else ' '} {name:12s} {state:26s} release {e.get('release', '-'):14s} "
-              f"{e.get('notes', '')}")
-    print("\n* = default. Download: python -m recsys.embeddings fetch NAME")
-
-
-def cmd_fetch(args: argparse.Namespace) -> None:
-    entry = manifest()["models"].get(args.name)
-    if entry is None:
-        sys.exit(f"{args.name!r} is not in {MANIFEST.name}: git pull first?")
-    folder = MODELS_DIR / args.name
-    folder.mkdir(parents=True, exist_ok=True)
-    cmd = ["gh", "release", "download", entry["release"], "--repo", _repo(), "--dir", str(folder), "--clobber"]
-    for f in FILES:
-        cmd += ["--pattern", f]
-    subprocess.run(cmd, check=True)
-    resolve(args.name)  # checksums
-    print(f"{args.name}: ready in {folder}")
+            state = "files differ" if folder.exists() else "missing (git pull)"
+        print(f"{'*' if name == m.get('default') else ' '} {name:12s} {state:20s} {e.get('notes', '')}")
+    print("\n* = default")
 
 
 def cmd_publish(args: argparse.Namespace) -> None:
+    """Copy an exported model into models/<name> and add it to the manifest; then commit both."""
     folder = Path(args.folder)
     files = [folder / f for f in FILES if (folder / f).exists()]
     if not (folder / "model.npz").exists():
@@ -325,31 +303,23 @@ def cmd_publish(args: argparse.Namespace) -> None:
     if args.name in m["models"] and not args.replace:
         sys.exit(f"{args.name!r} already exists: published models never change (pick a new name)")
     load_backend(folder)  # refuses a model this code cannot serve
-    release = f"embed-{args.name}"
-    readme = folder / "README.txt"
-    notes = ["--notes-file", str(readme)] if readme.exists() else ["--notes", args.notes or args.name]
-    subprocess.run(["gh", "release", "create", release, "--repo", _repo(), "--title", f"Embedding model {args.name}",
-                    "--prerelease", *notes, *map(str, files)], check=True)
-    m["models"][args.name] = {"release": release, "notes": args.notes,
-                              "sha256": {f: sha256(folder / f) for f in CHECKED if (folder / f).exists()}}
-    if args.default:
-        m["default"] = args.name
-    MANIFEST.write_text(json.dumps(m, indent=2) + "\n", encoding="utf-8")
     dest = MODELS_DIR / args.name
     if folder.resolve() != dest.resolve():
         dest.mkdir(parents=True, exist_ok=True)
         for f in files:
             (dest / f.name).write_bytes(f.read_bytes())
-    print(f"published {args.name} as release {release}; commit {MANIFEST.relative_to(ROOT)} so others see it")
+    m["models"][args.name] = {"notes": args.notes,
+                              "sha256": {f: sha256(dest / f) for f in CHECKED if (dest / f).exists()}}
+    if args.default:
+        m["default"] = args.name
+    MANIFEST.write_text(json.dumps(m, indent=2) + "\n", encoding="utf-8")
+    print(f"added {args.name} in {dest.relative_to(ROOT)}; commit it and {MANIFEST.relative_to(ROOT)}")
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Embedding models: list, download, publish.")
+    ap = argparse.ArgumentParser(description="Embedding models: list, publish.")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list").set_defaults(fn=cmd_list)
-    f = sub.add_parser("fetch")
-    f.add_argument("name")
-    f.set_defaults(fn=cmd_fetch)
     p = sub.add_parser("publish")
     p.add_argument("folder")
     p.add_argument("--name", required=True)
