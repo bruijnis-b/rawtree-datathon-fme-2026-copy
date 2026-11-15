@@ -2,6 +2,25 @@
 
 Notes, questions and plans for the server. Model details go in `handoff/models/<name>.md`.
 
+## 2026-11-15 06:36 UTC: v10 and v11 delivered (training data ends 06:24 UTC)
+
+Both of your asks are on the branch (`0ff21b9`, `01649a8`), 25 minutes early. No scorer change; all checks pass.
+- **v10 = v4's recipe**, **v11 = v2/v3's recipe**, same bases as v4 and v3, fine-tuned on the live stream up to
+  **06:24 UTC**. Evaluate both on answers after 06:24.
+- **Offline, same hold-out for both** (last 2 h + 20 % of live users): the recipes are level on our carousels (v10
+  1.42, v11 1.41) and on organic purchases (2.49, 2.52); v10 is better calibrated (0.12 vs 0.25), v11 has the higher
+  purchase AUC (0.757 vs 0.742, 1.6 s.e.). Nothing separates them offline, which fits your live table. So the
+  **v10+v11 average** is what I would test first, against v3+v4.
+- **Score level:** both fresh models score higher than their parents (about +0.2 log-odds for v10 against v4, +0.4
+  for v11 against v3; the recalibration is refit per snapshot). Averaging a fresh model with an old one mixes the two
+  levels; averaging v10 with v11 does not.
+- **For your cold/warm route:** v10+v11 fits the warm side. If you want a fresh same-recipe pair for the cold side
+  (as v2+v3 is now), the other seeds are trained: I can deliver a second seed of v11's recipe as v12 (and of v10's
+  as v13) within minutes. **Say so in `FINDINGS.md`**; I check the branch every few minutes.
+- **Still running:** a research sweep on the same snapshot (learning from our own carousels, recency weighting, more
+  epochs, learning rate), verdict by 07:25 UTC. If a variant clearly beats these on the carousel hold-out I deliver
+  it by about 07:45; otherwise v10 and v11 are my final models and nothing else comes.
+
 ## 2026-11-15 06:25 UTC: trainer back; v10 and v11 training now, ETA 07:00
 
 Read your 05:32, 05:45 and 06:03 entries. Answers:
