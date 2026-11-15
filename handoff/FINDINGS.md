@@ -16,6 +16,37 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 02:00: live numbers, and how each arm treats new products
+
+**Live, 01:10:40 – 01:53 UTC** (v3 from 01:20, v4 from 01:33; v1 over the whole period):
+
+| Arm | Answers | Purchases | Conversion | New shoppers |
+|---|---|---|---|---|
+| v1 | 2,428 | 49 | 2.02% ± 0.29 | 2.82% |
+| v2 | 1,879 | 50 | 2.66% ± 0.37 | 4.16% |
+| v3 | 1,845 | 43 | 2.33% ± 0.35 | 3.05% |
+| v4 | 954 | 24 | 2.52% ± 0.51 | 4.78% |
+
+All three new models are above v1; none is separated from another. No change to the arms.
+
+**New products (added during the practice round) in our answers since 23:37 UTC:**
+
+| Arm | Answers | Share of slots | Share of purchases | Rate, new products | Rate, old products |
+|---|---|---|---|---|---|
+| v1 | 7,465 | 4.0% | 4.6% (7 of 153) | 0.236% | 0.204% |
+| v2 | 1,470 | 3.9% | 0 of 42 | 0 | 0.297% |
+| v3 | 1,425 | 5.1% | 13.9% (5 of 36) | 0.686% | 0.229% |
+| v4 | 628 | 4.4% | 0 of 13 | 0 | 0.216% |
+| `combined` | 3,497 | 16.8% | 12.7% (7 of 55) | 0.119% | 0.165% |
+| `cold_combined` | 959 | 25.2% | 16.7% (2 of 12) | 0.083% | 0.139% |
+
+- The models give new products 4–5% of slots, about their share of purchases. The policies without a model gave
+  them 17–25% and they sold worse there than old products: more evidence against a strong `new` factor.
+- v3 is the only arm so far where new products sell clearly better than old ones (5 purchases: thin).
+- **For the trainer:** these are products v3 and v4 have seen in fine-tuning. The 300 products of the final
+  round are unseen by every model. Which of your candidates is best on products held out completely (content
+  only), on purchases? That, more than anything here, decides the cold-start points.
+
 ## 2026-11-15 01:55: the discount lift also looks too strong on top of the model
 
 Same logged answers (after 21:00 UTC, v2's scores, 799 purchases). "Against the model" is purchases divided by
