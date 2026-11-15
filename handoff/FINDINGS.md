@@ -16,6 +16,48 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 02:25: our models against the other teams, on the official numbers
+
+The public leaderboard has a per-model view with **expected** conversion (the simulator's probabilities, not the
+purchases that happened to fall). It is the real score and far less noisy than counting purchases, which is what
+every table above this entry does. `handoff/tools/board.py "<from>" "<to>"` (UTC, 15 min to 3 h; run from the repo
+root with the `.env` loaded) prints it for our arms and for every team. **Use this from now on, both of us.**
+Score = our estimate of the leaderboard score out of 100 from the two conversions (`monitor/data.py`).
+
+**Last 3 hours (23:23 – 02:23 UTC), single models with 2,500+ requests:**
+
+| Whose | Model | Score | Conversion | Cold conversion | Requests |
+|---|---|---|---|---|---|
+| team_06 | their best | 74.3 | 2.58% | 3.30% | 3,140 |
+| team_17 | their main | 67.7 | 2.40% | 3.10% | 10,671 |
+| team_06 | 2nd–4th | 66.4–67.4 | 2.36–2.40% | 2.99–3.13% | 3,159–8,825 |
+| team_14 | their best | 66.9 | 2.38% | 2.94% | 9,117 |
+| team_42 | their best | 65.2 | 2.33% | 2.97% | 5,922 |
+| team_03 | their main | 62.7 | 2.26% | 2.90% | 19,451 |
+| team_37 | their main | 62.5 | 2.27% | 2.74% | 17,440 |
+| **us** | **v2** | **61.0** | 2.23% | 2.59% | 3,090 |
+| **us** | **v3** | **60.9** | 2.22% | 2.83% | 2,921 |
+| us | v4 (last 70 min) | 56.9 | 2.07% | 2.85% | 1,990 |
+| us | v1 | 55.7 | 2.07% | 2.70% | 7,806 |
+| us | v1 refit | 49.9 | 1.91% | 2.42% | 5,551 |
+| us | `combined` | 38.2 | 1.59% | 2.06% | 4,266 |
+| organisers | reference | 51.4 | 1.98% | 1.80% | |
+
+Team scores over the same 3 hours: team_06 65.2, team_03 61.6, team_17 61.0, team_14 59.1, team_42 58.4,
+team_22 57.4, team_26 53.1, **us 51.7 (8th)**.
+
+- **Our rank understates us.** The team score is the average over every arm we tried, the weak ones included.
+  Had v2 or v3 answered everything, we would have scored about 61: 2nd to 4th, 4 points behind team_06.
+- **The gap to the best is real: about 7% in conversion** (2.22% against 2.37–2.40%) and more on cold requests
+  (2.6–2.8% against 3.0–3.3%). Cold is where the others are ahead of us.
+- **v2 and v3 are equal** (61.0, 60.9) and both clearly above v1 (55.7). v3 is better on cold requests.
+- **v4 is behind v2 and v3** over its 2,000 requests (56.9). That is the trainer's candidate recipe.
+- Two teams (26, 01) have models whose conversion equals their cold conversion exactly: those models answer only
+  cold requests. They send cold and warm requests to different models. Worth a thought for us: v3 and v4 are
+  our best on cold, v2 on warm.
+- Noise: over 20–40 minutes one arm's score still swings by 10 points or more (v1: 38.7, then 63.4). Trust
+  3,000+ requests.
+
 ## 2026-11-15 02:20: three arms until 05:30, nothing else
 
 Bas asked for few arms that collect requests instead of many that never separate. Live since 02:18 UTC, a third
