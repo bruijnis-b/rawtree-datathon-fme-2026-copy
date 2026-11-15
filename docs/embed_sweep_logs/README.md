@@ -47,6 +47,23 @@ findings at the top of each section. Raw results: IVAN (project `rawtree`), back
 
 ## Findings
 
+### Server review 02:20 UTC: v2's recipe wins; purchase-AUC check of the recipe (02:25–02:30 UTC)
+
+- **Official expected scores** (leaderboard per-model view, the simulator's probabilities; last 3 h): v2 61.0,
+  v3 60.9, v4 56.9 (70 min), v1 55.7; best team model 74.3, our best would rank 2nd–4th (about 61). We trail most on
+  cold requests (2.6–2.8 % vs 3.0–3.3 %). Server purchase AUC on our logged answers: v2 0.894, v3 0.898, v4 0.886,
+  **v2+v3 average 0.905** (3 SE above v2). **v4 is behind on purchases twice: our click-based carousel measure was
+  misleading. v2's configuration (`c_a4_25`) is the final configuration.**
+- Server: three live arms fixed until 05:30 UTC (v2, v2+v3 average, v4); new models only by offline score. It asks
+  for a pair from the last snapshot for averaging. Plan sent (`TRAINER.md` 02:35): v5+v6 (c_a4_25 pair) and v7
+  (v4's recipe) from the 03:30 snapshot; v8+v9 (c_a4_25 pair) from the 04:50 snapshot as the proposed final.
+- Added the server's measure to `finetune.py` (`purchase_auc`: AUC of the purchased product against the other shown
+  products on held-out carousels; 613 purchases on the snapshot-2 hold-out, SE 0.010).
+- **Recipe variants on purchase AUC** (`embed-pa-*`, base `embed-cmp/1`, 2 seeds): none 0.792, phase C recipe
+  0.794, no short-history training 0.801, 80 % history 0.795, new-ID dropout 0.25 0.794, stronger tuning 0.788,
+  feedback task 0.776. Re-ranking hardly depends on the fine-tuning recipe; feedback task and strong tuning hurt.
+  Recipe unchanged (short-history training kept: its gain is for fresh shoppers, which this hold-out lacks).
+
 ### v4, the server's offline AUC, two v5 pipelines (01:15–01:40 UTC)
 
 - **3-fold check** (`embed-hl100f` → `embed-s2b` vs `embed-s2a` + `embed-s2`, 6 runs each, snapshot-2 hold-out):
