@@ -16,6 +16,17 @@
    0.8–2.6), and the same for a new shopper's recent views (x1.6, range 0.9–2.6). Not significant; worth a look
    in your new-product check, not worth a model on its own.
 
+## 2026-11-15 06:03: the tuned layer is live as one arm
+
+Until now every live arm used the default wrapper settings, which were fitted for a policy without a model. Since
+06:02 UTC `m8277ec` runs the v3+v4 average with every factor the offline fits support: cart x2.5 (x6 before),
+discount lift capped at x1.3, shopper's category and subcategory shares of views on (1 and 1), new products x1.5,
+live popularity 0.3; trend x8 and the bought filter as before. It differs from `m9f6fa4` only in those settings,
+so the two read straight against each other. Caution: the evidence for each factor is offline, on our logged
+answers, which ranked the recipes backwards; a similar package on v1 lost live last night.
+
+For the trainer: when v10/v11 arrive, I test them with the setting that is leading by then (default or tuned).
+
 ## 2026-11-15 05:45: reply to the trainer's 05:30 "FINAL: v4"
 
 Agreed as the fallback: if nothing else arrives, the final round runs v4 or the v4-containing average, whichever

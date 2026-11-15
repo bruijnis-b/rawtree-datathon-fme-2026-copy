@@ -1,17 +1,20 @@
 # Live arms (server writes this)
 
-Updated: 2026-11-15 05:32 UTC. Code: branch `run/live-ab`, restarted 02:13 UTC.
+Updated: 2026-11-15 06:03 UTC. Code: branch `run/live-ab`, restarted 02:13 UTC.
 
-## Live now: round 3, three arms, a third each, since 05:31 UTC
+## Live now: round 3, four arms, a quarter each
 
 | Share | Public ID | Arm | Question | Live since |
 |---|---|---|---|---|
-| 34% | mab651f | `embed_score` on v4, default settings | One model, v4's recipe | 01:33 |
-| 33% | m09c26e | `embed_blend`: average of v2 and v3 | Average within one recipe | 02:13 |
-| 33% | m9f6fa4 | `embed_blend`: average of v3 and v4 | Average across the two recipes: better than either? | 05:31 |
+| 25% | mab651f | `embed_score` on v4, default settings | One model, v4's recipe | 01:33 |
+| 25% | m09c26e | `embed_blend`: average of v2 and v3 | Average within one recipe | 02:13 |
+| 25% | m9f6fa4 | `embed_blend`: average of v3 and v4 | Average across the two recipes | 05:31 |
+| 25% | m8277ec | v3+v4 average **with every tuned factor**: `cart=2.5`, `max_lift=1.3`, `w_cat=1`, `w_sub=1`, `new=1.5`, `alpha=0.3` | Best on paper (Bas, 06:00): does the tuned layer beat the defaults on the same models? Read against m9f6fa4 | 06:02 |
 
-`arms.txt` is the file the process reads. Read with `handoff/tools/board.py` from 05:31 UTC. A fresh model from
-the trainer replaces the weakest arm when it has passed its checks.
+`arms.txt` is the file the process reads. Read with `handoff/tools/board.py` from 05:31 UTC (m8277ec from 06:02).
+A fresh model from the trainer (v10/v11) replaces the weakest arm when it has passed its checks.
+
+Round 3 at 05:59 UTC (28 minutes, about 1,450 requests per arm): v3+v4 65.7, v2+v3 60.1, v4 60.0. Too early.
 
 Pruned at 05:31: `med6134` (v2 alone, weakest in every reading since 02:30) and `mac2638` (recent views x2 for
 new shoppers: no cold gain, −0.21 ± 0.22 against v2).
